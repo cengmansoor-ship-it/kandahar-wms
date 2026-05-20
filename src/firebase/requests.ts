@@ -186,6 +186,7 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
       ]);
       return requestId;
     }
+  }
 
   const reqRef = doc(collection(db, REQUESTS_COL));
   

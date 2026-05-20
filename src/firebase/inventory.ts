@@ -187,6 +187,7 @@ export const createItem = async (
     console.warn("Backend createItem failed; falling back to Firebase/Local");
     if (!isFirebaseConfigured) {
     const items = seedDemoItems();
+
     const newItem: WarehouseItem = {
       id: makeLocalId("item"),
       name: itemData.name || "",
@@ -232,7 +233,8 @@ export const createItem = async (
     }
     return newItem.id;
   }
-  
+  }
+
   const resultId = await runTransaction(db, async (transaction) => {
     const itemRef = doc(collection(db, ITEMS_COL));
     
@@ -328,6 +330,7 @@ export const updateItem = async (id: string, itemData: Partial<WarehouseItem>, u
     setLocalItem("items", items);
     return;
   }
+  }
 
   const itemRef = doc(db, ITEMS_COL, id);
   
@@ -413,6 +416,7 @@ export const performStockTransaction = async (
     });
     saveDemoTransactions(transactions);
     return { stockBefore, stockAfter };
+  }
   }
 
   return await runTransaction(db, async (transaction) => {
