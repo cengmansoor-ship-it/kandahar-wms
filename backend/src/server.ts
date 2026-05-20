@@ -10,6 +10,8 @@ import deliveryRoutes from './routes/delivery.routes';
 import reportsRoutes from './routes/reports.routes';
 import lookupRoutes from './routes/lookup.routes';
 import emailRoutes from './routes/email.routes';
+import traceabilityRoutes from './routes/traceability.routes';
+import { TraceabilityService } from './services/traceability.service';
 
 dotenv.config();
 
@@ -19,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 checkDbConnection();
+TraceabilityService.runMigrations().then(() => console.log('[WMS] Traceability migrations complete.')).catch(e => console.warn('[WMS] Traceability migrations warning:', e.message));
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/requests', requestRoutes);
@@ -28,6 +31,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/lookup', lookupRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/traceability', traceabilityRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });

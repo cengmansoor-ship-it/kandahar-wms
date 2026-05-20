@@ -1,0 +1,493 @@
+You are a senior React 18 + TypeScript + Tailwind CSS + Node.js/Express + MySQL engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Task:
+Implement and fix ONLY the Traceability Menu and its related backend/frontend integration.
+
+Do NOT rewrite the whole project.
+Do NOT redesign the whole UI.
+Do NOT touch unrelated modules unless required for Traceability data.
+Do NOT use fake/template data.
+Do NOT break Inventory, Requests, Receiving, Delivery, Reports, Official Forms, RBAC, or Dashboard.
+All visible UI text must be Pashto/Dari only.
+
+Goal:
+Create a real Traceability Menu that shows exactly where university items are assigned:
+- administrative side
+- faculties side
+- level
+- department
+- person
+- person ledger
+- assigned items
+- stock source
+- request/delivery source
+- print/export
+
+────────────────────────
+TRACEABILITY MENU STRUCTURE
+────────────────────────
+
+Add/fix a main menu item:
+
+Pashto:
+تعقیب د اجناسو
+
+Dari:
+ردیابی اجناس
+
+Route example:
+ورته مناسب route جوړ کړه، مثلاً:
+/traceability
+
+The Traceability page must use a clean grid/card layout.
+
+Main page must show two large clickable sections/cards:
+
+1. Administrative Section / اداري برخه
+2. Faculties Section / د پوهنځیو برخه
+
+Each card must show:
+- total assigned items count
+- total assigned quantity
+- number of departments
+- number of persons
+- last assignment date if available
+
+The counts must come from real MySQL/backend data, not template data.
+
+────────────────────────
+FACULTIES SECTION FLOW
+────────────────────────
+
+When clicking Faculties Section:
+
+Show level cards:
+
+1. Bachelor / لېسانس
+2. Master / ماسټري
+3. PhD / دوکتورا
+
+Each level card must show:
+- total faculties count if available
+- total departments count
+- total people count
+- total assigned items count
+- total assigned quantity
+
+When clicking a level:
+Show faculties/departments under that level.
+
+Each faculty/department card must show:
+- department name
+- total persons
+- total assigned items
+- total quantity
+- low/returned/damaged count if available
+
+When clicking a department:
+Show all persons in that department.
+
+Each person card/row must show:
+- person name
+- position
+- department
+- faculty
+- total assigned items
+- total quantity
+- latest assignment date
+- ledger button
+
+When clicking Ledger:
+Show full person ledger.
+
+Person ledger must show:
+- item name
+- item code if available
+- item specification/type
+- quantity assigned
+- unit
+- assigned date
+- request ID / tracking ID
+- delivery ID / FS5 reference if available
+- assigned by user
+- source type
+- status: active / returned / damaged / transferred if available
+- notes
+
+────────────────────────
+ADMINISTRATIVE SECTION FLOW
+────────────────────────
+
+When clicking Administrative Section:
+
+Show administrative departments.
+
+Each department card must show:
+- department name
+- total persons
+- total assigned items
+- total quantity
+
+When clicking department:
+Show all persons in that admin department.
+
+When clicking person ledger:
+Show the same person ledger structure as faculty section.
+
+Administrative section must work the same way as faculty section, but without academic level if not applicable.
+
+────────────────────────
+MANUAL ASSIGNMENT FEATURE
+────────────────────────
+
+Add a safe button where role allows:
+
+Pashto:
+جنس اضافه کول
+
+Dari:
+اضافه کردن جنس
+
+This button must allow manual assignment of an item to:
+- person
+- department
+- faculty
+- administrative department
+
+Required fields:
+- item
+- quantity
+- unit
+- receiver type
+- receiver person/department/faculty
+- reason/notes
+- assignment date
+- source type: manual / request / delivery / FS5
+
+Rules:
+1. Quantity must be greater than 0.
+2. Stock must be checked before assignment.
+3. Assignment must decrease stock from items.current_stock.
+4. Negative stock must be blocked.
+5. A stock_transactions OUT record must be created.
+6. An item_assignments record must be created.
+7. Audit log must be created.
+8. Counts must update immediately after assignment.
+9. If backend is not available, show Pashto/Dari error; do not fake success.
+10. Do not deduct stock twice for the same delivery/assignment.
+
+Manual assignment must be available only for allowed roles:
+- Super Admin
+- Admin if allowed
+- Warehouse Director
+- Warehouse Entry Person if allowed
+
+Requester must NOT manually assign items.
+
+────────────────────────
+BACKEND / MYSQL REQUIREMENTS
+────────────────────────
+
+Inspect existing backend first.
+
+Use existing tables if they already exist:
+- item_assignments
+- items
+- stock_transactions
+- requests
+- deliveries
+- delivery_items
+- faculties
+- departments
+- people
+- audit_logs
+
+If missing, add safely with IF NOT EXISTS.
+Do not drop existing data.
+
+Create or fix backend APIs:
+
+GET /api/traceability/summary
+Returns:
+- administrative total counts
+- faculties total counts
+- total assigned items
+- total quantity
+
+GET /api/traceability/faculties
+Returns faculty side grouped data.
+
+GET /api/traceability/faculties/levels
+Returns Bachelor, Master, PhD level counts.
+
+GET /api/traceability/faculties/levels/:level
+Returns faculties/departments for selected level.
+
+GET /api/traceability/departments/:departmentId/persons
+Returns persons and item counts.
+
+GET /api/traceability/admin
+Returns administrative departments and counts.
+
+GET /api/traceability/person/:personId/ledger
+Returns person ledger.
+
+POST /api/traceability/manual-assignment
+Creates manual assignment and deducts stock safely.
+
+GET /api/traceability/export
+Optional CSV/Excel export data.
+
+Backend rules:
+- Use MySQL transactions for manual assignment.
+- Prevent negative stock.
+- Create stock transaction.
+- Create item assignment.
+- Create audit log.
+- Return consistent JSON:
+{
+  "success": true,
+  "data": ...
+}
+
+Errors:
+{
+  "success": false,
+  "message": "Pashto/Dari message"
+}
+
+────────────────────────
+FRONTEND REQUIREMENTS
+────────────────────────
+
+Create/fix frontend page:
+
+Suggested path:
+src/pages/Traceability/TraceabilityDashboard.tsx
+
+Create/fix service file:
+
+Suggested:
+src/firebase/traceability.ts
+or
+src/services/traceability.ts
+
+Use existing project pattern.
+
+Frontend must:
+1. Load real backend data.
+2. Show loading state in Pashto/Dari.
+3. Show empty state in Pashto/Dari.
+4. Show errors in Pashto/Dari.
+5. Keep localStorage fallback only if existing and safe.
+6. Use responsive grid layout.
+7. Work in light and dark mode.
+8. Avoid invisible text in dark/light mode.
+9. Add route in App.tsx.
+10. Add menu item in AppSidebar.tsx with role-based visibility.
+
+────────────────────────
+FILTERS / SEARCH
+────────────────────────
+
+Traceability header must have dynamic filters.
+
+Required filters:
+- section: all / administrative / faculties
+- level: Bachelor / Master / PhD
+- faculty
+- department
+- person
+- item
+- request ID / tracking ID
+- date range
+- status
+- source type
+
+Search must be dynamic:
+- search while typing
+- search Pashto/Dari/English text
+- search item name
+- search person name
+- search department
+- search tracking ID
+- no refresh required
+
+If no result:
+Show:
+Pashto:
+هیڅ معلومات ونه موندل شول
+
+Dari:
+هیچ معلوماتی یافت نشد
+
+────────────────────────
+PRINT AND EXCEL EXPORT
+────────────────────────
+
+Add buttons:
+- Print / چاپ
+- Excel / اکسیل
+
+When clicking Print/Excel, user must be able to choose:
+
+1. All Traceability
+2. Administrative section only
+3. Faculties section only
+4. Selected faculty
+5. Selected department
+6. Selected person
+7. Current filtered result only
+
+Print must include:
+- Kandahar University title
+- report title
+- selected filters
+- Hijri/Shamsi date if project utility exists
+- data table
+- signature area if project reports use it
+
+Excel/CSV must export:
+- person
+- department
+- faculty
+- level
+- item
+- specification
+- quantity
+- unit
+- assignment date
+- source request/delivery
+- status
+- notes
+
+If Excel library does not exist, implement CSV export safely.
+Do not fake export success.
+
+────────────────────────
+COUNT ROLL-UP RULE
+────────────────────────
+
+Counts must be accurate and consistent:
+
+Person ledger count →
+Department total →
+Faculty or Administrative section total →
+Level total if academic →
+Main Traceability total
+
+When a new assignment is added:
+- person count updates
+- department count updates
+- faculty/level count updates
+- main section count updates
+- dashboard count updates if dashboard uses assignment data
+
+No mixed data:
+- one person’s item must not appear under another person
+- one department’s items must not appear under another department
+- admin items must not appear under faculty section
+- faculty items must not appear under admin section
+
+────────────────────────
+RBAC RULES
+────────────────────────
+
+Allowed full access:
+- Super Admin
+
+Allowed operational access:
+- Admin
+- Warehouse Director
+- Warehouse Entry Person if system allows
+
+View-only access:
+- Request Confirmer if relevant
+- Procurement Director only if relevant
+- Requester only for their own assigned items if system supports it
+
+Block unauthorized actions:
+- manual assignment
+- stock deduction
+- export if restricted
+- edit/delete assignments if restricted
+
+If unauthorized:
+Show Pashto/Dari access denied message.
+Do not silently show blank page.
+
+────────────────────────
+INTEGRATION WITH DELIVERY / FS5
+────────────────────────
+
+When FS5/delivery completes:
+- item assignment must automatically appear in Traceability.
+- delivery must deduct stock once only.
+- assignment must link to:
+  - request id
+  - delivery id
+  - FS5 reference if available
+  - receiver person/department/faculty
+
+If delivery logic already creates item_assignments, reuse it.
+If not, add safe integration without breaking existing delivery.
+
+────────────────────────
+TESTING REQUIREMENTS
+────────────────────────
+
+Run:
+npm run build
+
+Backend:
+cd backend
+npm run build
+
+Test these manually or by API where possible:
+
+1. Open Traceability menu.
+2. Administrative and Faculty section cards show real counts.
+3. Click Faculties section.
+4. Click Bachelor/Master/PhD.
+5. Click a department.
+6. Click a person ledger.
+7. Ledger shows assigned items.
+8. Add manual assignment.
+9. Stock decreases.
+10. item_assignments record created.
+11. stock_transactions OUT record created.
+12. audit log created.
+13. Counts update.
+14. Negative stock is blocked.
+15. Print works.
+16. Excel/CSV works.
+17. Filters work.
+18. Search works dynamically.
+19. Dark/light mode text visible.
+20. Unauthorized user cannot assign items.
+
+────────────────────────
+FINAL REPORT REQUIRED
+────────────────────────
+
+Return concise report:
+1. Files created.
+2. Files modified.
+3. Backend endpoints created/fixed.
+4. Frontend pages/services created/fixed.
+5. Menu/route added.
+6. Traceability sections implemented.
+7. Manual assignment status.
+8. Stock deduction status.
+9. Roll-up count status.
+10. Print/Excel status.
+11. Search/filter status.
+12. RBAC status.
+13. Build result.
+14. Remaining limitations.
+
+Do not stop at planning.
+Implement Traceability now.

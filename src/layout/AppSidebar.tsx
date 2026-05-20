@@ -70,6 +70,7 @@ const AppSidebar: React.FC = () => {
       { name: "کاروونکي / کاربران", path: "/user-management", roles: [ROLES.SUPER_ADMIN] },
       { name: "صلاحیتونه / دسترسی‌ها", path: "/role-management", roles: [ROLES.SUPER_ADMIN] },
     ] },
+    { id: "traceability", icon: <ListIcon />, name: "تعقیب د اجناسو / ردیابی اجناس", path: "/traceability" },
     { id: "about_us", icon: <UserCircleIcon />, name: "زموږ په اړه / درباره ما", path: "/about" },
   ].filter((item) => canAccessMenu(profile?.role, item.id));
 
