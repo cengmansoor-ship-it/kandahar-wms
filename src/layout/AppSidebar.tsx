@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import { canAccessMenu } from "../utils/permissions";
 import { ROLES } from "../constants/roles";
 
+const kuLogo = "/kandahar-university-logo.png";
+
 type NavItem = {
   id: string;
   name: string;
@@ -124,9 +126,17 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside dir="rtl" className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 right-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-l border-gray-200 ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"} ${isMobileOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`} onMouseEnter={() => !isExpanded && setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <div className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
-        <Link to="/dashboard" className="text-right">
-          {isExpanded || isHovered || isMobileOpen ? <span className="block text-sm font-bold leading-6 text-gray-800 dark:text-white/90">د کندهار پوهنتون<br />ګدام او تدارکات</span> : <span className="text-xl">🏛️</span>}
+      <div className={`py-6 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
+        <Link to="/dashboard" className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-950 p-1.5 overflow-hidden">
+            <img src={kuLogo} alt="KU" className="h-full w-full object-contain rounded-lg" />
+          </div>
+          {(isExpanded || isHovered || isMobileOpen) && (
+            <span className="block text-sm font-bold leading-5 text-gray-800 dark:text-white/90 text-right">
+              د کندهار پوهنتون<br />
+              <span className="text-xs font-medium text-brand-500">ګدام او تدارکات</span>
+            </span>
+          )}
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
