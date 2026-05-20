@@ -127,7 +127,7 @@ export class TraceabilityService {
   static async getPersonsByDepartment(departmentId: number) {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT
-        p.id, p.full_name, p.position, p.phone, p.email,
+        p.id, p.full_name, p.position, p.phone, p.email, p.photo,
         d.name_ps as dept_name_ps, d.name_fa as dept_name_fa,
         f.name_ps as faculty_name_ps, f.name_fa as faculty_name_fa, f.level,
         COUNT(DISTINCT ia.item_id) as item_count,

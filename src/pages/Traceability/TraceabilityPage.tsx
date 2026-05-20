@@ -3,7 +3,9 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { ROLES } from "../../constants/roles";
 import { traceabilityService } from "../../services/traceability";
+import { managementService } from "../../services/management";
 import PageMeta from "../../components/common/PageMeta";
+import ManagementPanel from "./ManagementPanel";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type ViewLevel = "main" | "admin-depts" | "faculty-levels" | "faculty-depts" | "persons" | "ledger-modal";
@@ -12,7 +14,7 @@ interface Summary { admin: any; faculty: any; }
 interface Dept { id: number; name_ps: string; name_fa: string; person_count: number; item_count: number; total_quantity: number; last_assignment_date?: string; }
 interface LevelInfo { level: string; faculty_count: number; department_count: number; person_count: number; item_count: number; total_quantity: number; }
 interface FacultyDept { faculty_id: number; faculty_name_ps: string; faculty_name_fa: string; level?: string; department_id: number; dept_name_ps: string; dept_name_fa: string; person_count: number; item_count: number; total_quantity: number; }
-interface Person { id: number; full_name: string; position: string; dept_name_ps: string; dept_name_fa: string; faculty_name_ps?: string; faculty_name_fa?: string; item_count: number; total_quantity: number; latest_assignment_date?: string; }
+interface Person { id: number; full_name: string; position: string; email?: string; phone?: string; photo?: string; dept_name_ps: string; dept_name_fa: string; faculty_name_ps?: string; faculty_name_fa?: string; item_count: number; total_quantity: number; latest_assignment_date?: string; }
 interface LedgerEntry { id: number; item_name_ps: string; item_name_fa: string; item_code: string; quantity: number; unit_name_ps: string; unit_name_fa: string; assigned_at: string; source_type: string; tracking_id?: string; request_tracking_id?: string; delivery_id?: number; delivery_fs5?: string; status: string; notes?: string; assigned_by_name?: string; }
 
 const LEVEL_LABELS: Record<string, { ps: string; dr: string; color: string; gradient: string }> = {
@@ -80,6 +82,16 @@ export default function TraceabilityPage() {
   const role = profile?.role || "";
 
   const canAssign = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON].includes(role as any);
+  const canManage = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role as any);
+
+  // Management panel
+  const [showManagement, setShowManagement] = useState(false);
+
+  // Email modal
+  const [emailPerson, setEmailPerson] = useState<Person | null>(null);
+  const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailResult, setEmailResult] = useState("");
 
   // Navigation state
   const [view, setView] = useState<ViewLevel>("main");
@@ -476,19 +488,33 @@ export default function TraceabilityPage() {
           }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md flex-shrink-0">
-              <span className="text-white font-bold text-sm">{p.full_name?.[0] || "؟"}</span>
+            {/* Photo avatar */}
+            <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md flex-shrink-0 border-2 border-white dark:border-gray-700">
+              {p.photo
+                ? <img src={p.photo} alt={p.full_name} className="w-full h-full object-cover" />
+                : <span className="text-white font-bold text-sm">{p.full_name?.[0] || "؟"}</span>
+              }
             </div>
             <div className="text-right">
               <p className="font-bold text-gray-800 dark:text-white text-sm">{p.full_name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{p.position || pick("بست نه دی ثبت","موقف ثبت نشده")}</p>
+              {p.email && <p className="text-xs text-sky-500 dark:text-sky-400 mt-0.5" dir="ltr">{p.email}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <div className="hidden sm:flex gap-4 text-xs text-gray-500 dark:text-gray-400">
               <span className="flex flex-col items-center"><span className="font-bold text-gray-700 dark:text-gray-200">{p.item_count || 0}</span><span>{pick("اجناس","اجناس")}</span></span>
               <span className="flex flex-col items-center"><span className="font-bold text-gray-700 dark:text-gray-200">{p.total_quantity || 0}</span><span>{pick("مقدار","مقدار")}</span></span>
             </div>
+            {p.email && (
+              <button
+                onClick={e => { e.stopPropagation(); setEmailPerson(p); setEmailForm({ subject: "", body: "" }); setEmailResult(""); }}
+                className="flex items-center gap-1 bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-600 dark:text-sky-400 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all duration-200"
+                title={pick("ایمیل لیږل","ارسال ایمیل")}
+              >
+                ✉️
+              </button>
+            )}
             <button
               onClick={e => { e.stopPropagation(); setSelectedPerson(p); loadLedger(p.id); setShowLedger(true); setSearch(""); }}
               className="flex items-center gap-1.5 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 text-brand-700 dark:text-brand-300 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 group-hover:shadow-sm"
@@ -654,6 +680,61 @@ export default function TraceabilityPage() {
     </div>
   );
 
+  // ─── Email handler ─────────────────────────────────────────────────────────
+  const handleSendEmail = async () => {
+    if (!emailPerson?.email) { setEmailResult(pick("ایمیل ادرس نشته","آدرس ایمیل موجود نیست")); return; }
+    if (!emailForm.subject.trim() || !emailForm.body.trim()) { setEmailResult(pick("موضوع او متن اړین دي","موضوع و متن الزامی است")); return; }
+    setEmailSending(true); setEmailResult("");
+    try {
+      await managementService.sendEmail({ to: emailPerson.email, subject: emailForm.subject, body: emailForm.body });
+      setEmailResult(pick("✅ ایمیل بریالیتوب سره ولیږل شو!","✅ ایمیل با موفقیت ارسال شد!"));
+      setEmailForm({ subject: "", body: "" });
+    } catch (e: any) {
+      const msg = e?.message || "";
+      if (msg.includes("SMTP_NOT_CONFIGURED")) setEmailResult(pick("⚠️ SMTP تنظیم نه دی. مهرباني وکړئ د ایمیل اعتبارات وتنظیم کړئ.","⚠️ SMTP پیکربندی نشده. لطفاً اعتبارات ایمیل را تنظیم کنید."));
+      else setEmailResult(pick("❌ ایمیل ونه لیږل شو: ","❌ ارسال ناموفق: ") + msg);
+    }
+    finally { setEmailSending(false); }
+  };
+
+  // ─── Email Modal ────────────────────────────────────────────────────────────
+  const renderEmailModal = () => emailPerson && (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in" onClick={() => setEmailPerson(null)}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-md w-full animate-scale-in" dir="rtl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => setEmailPerson(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">✕</button>
+          <div className="text-right">
+            <h3 className="font-bold text-gray-800 dark:text-white text-base">✉️ {pick("ایمیل لیږل","ارسال ایمیل")}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{emailPerson.full_name} — <span dir="ltr">{emailPerson.email}</span></p>
+          </div>
+        </div>
+        {emailResult && (
+          <div className={`mb-3 p-3 rounded-xl text-sm text-center font-medium ${emailResult.includes("✅") ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"}`}>{emailResult}</div>
+        )}
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1">{pick("موضوع *","موضوع *")}</label>
+            <input value={emailForm.subject} onChange={e => setEmailForm(f => ({...f, subject: e.target.value}))}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1">{pick("پیغام *","متن *")}</label>
+            <textarea value={emailForm.body} onChange={e => setEmailForm(f => ({...f, body: e.target.value}))} rows={5}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none" />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-4">
+          <button onClick={() => setEmailPerson(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">{pick("لغوه","لغو")}</button>
+          <button onClick={handleSendEmail} disabled={emailSending}
+            className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold shadow transition-all">
+            {emailSending ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{pick("لیږل...","ارسال...")}</span> : `✉️ ${pick("لیږل","ارسال")}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // ─── Top bar with search & actions ───────────────────────────────────────────
   const renderTopBar = () => (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
@@ -665,7 +746,13 @@ export default function TraceabilityPage() {
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         {search && <button onClick={() => setSearch("")} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg transition-colors">✕</button>}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap justify-end">
+        {canManage && (
+          <button onClick={() => setShowManagement(true)}
+            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
+            ⚙️ {pick("مدیریت","مدیریت")}
+          </button>
+        )}
         {canAssign && (
           <button onClick={() => { setShowAssign(true); loadAssignLookups(); }}
             className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
@@ -751,6 +838,12 @@ export default function TraceabilityPage() {
         {showLedger && renderLedgerModal()}
         {showAssign && renderAssignModal()}
       </div>
+
+      {/* Management Panel */}
+      {showManagement && <ManagementPanel onClose={() => setShowManagement(false)} pick={pick} />}
+
+      {/* Email Modal */}
+      {renderEmailModal()}
 
       {/* Print styles */}
       <style>{`

@@ -11,17 +11,21 @@ import reportsRoutes from './routes/reports.routes';
 import lookupRoutes from './routes/lookup.routes';
 import emailRoutes from './routes/email.routes';
 import traceabilityRoutes from './routes/traceability.routes';
+import managementRoutes from './routes/management.routes';
 import { TraceabilityService } from './services/traceability.service';
+import { ManagementService } from './services/management.service';
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 checkDbConnection();
 TraceabilityService.runMigrations().then(() => console.log('[WMS] Traceability migrations complete.')).catch(e => console.warn('[WMS] Traceability migrations warning:', e.message));
+ManagementService.runMigrations().then(() => console.log('[WMS] Management migrations complete.')).catch(e => console.warn('[WMS] Management migrations warning:', e.message));
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/requests', requestRoutes);
@@ -32,6 +36,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/lookup', lookupRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/traceability', traceabilityRoutes);
+app.use('/api/management', managementRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });
