@@ -86,6 +86,7 @@ export default function TraceabilityPage() {
 
   // Management panel
   const [showManagement, setShowManagement] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Email modal
   const [emailPerson, setEmailPerson] = useState<Person | null>(null);
@@ -136,14 +137,17 @@ export default function TraceabilityPage() {
     setSearch("");
   };
 
-  // Load summary on mount
+  // Load summary on mount and whenever data is refreshed (e.g. after management panel closes)
   useEffect(() => {
     setLoading(true);
     traceabilityService.getSummary()
       .then(d => setSummary(d))
       .catch(() => setError(pick("د معلوماتو پورته کول ونه شو. سرور بند وي.", "بارگذاری اطلاعات ناموفق بود.")))
       .finally(() => setLoading(false));
-  }, []);
+    // If not on main view, also reload current view
+    if (view === "admin-depts") loadAdminDepts();
+    else if (view === "faculty-levels") loadFacultyLevels();
+  }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAdminDepts = useCallback(() => {
     setLoading(true);
@@ -840,7 +844,16 @@ export default function TraceabilityPage() {
       </div>
 
       {/* Management Panel */}
-      {showManagement && <ManagementPanel onClose={() => setShowManagement(false)} pick={pick} />}
+      {showManagement && (
+        <ManagementPanel
+          onClose={() => {
+            setShowManagement(false);
+            // Refresh all traceability data so new faculties/departments/people appear immediately
+            setRefreshKey(k => k + 1);
+          }}
+          pick={pick}
+        />
+      )}
 
       {/* Email Modal */}
       {renderEmailModal()}

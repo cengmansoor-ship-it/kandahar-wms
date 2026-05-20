@@ -150,8 +150,8 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
       {confirm !== null && <ConfirmDialog message={pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")} onConfirm={() => doDelete(confirm)} onCancel={() => setConfirm(null)} />}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-md w-full animate-scale-in" dir="rtl">
             <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-4 text-right">
               {editing ? "✏️ " + pick("سمول","ویرایش") : "➕ " + pick("پوهنځی اضافه کول","افزودن دانشکده")}
@@ -273,8 +273,8 @@ function DepartmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
       {confirm !== null && <ConfirmDialog message={pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")} onConfirm={() => doDelete(confirm!)} onCancel={() => setConfirm(null)} />}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-md w-full animate-scale-in" dir="rtl">
             <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-4">{editing ? "✏️ " + pick("سمول","ویرایش") : "➕ " + pick("اداره اضافه کول","افزودن دپارتمان")}</h3>
             {error && <div className="mb-3 p-2 bg-red-50 text-red-700 rounded-lg text-sm text-center">{error}</div>}
@@ -322,6 +322,12 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
   const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
   const [emailSending, setEmailSending] = useState(false);
   const [emailResult, setEmailResult] = useState("");
+  // Bulk email
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkEmailModal, setBulkEmailModal] = useState(false);
+  const [bulkEmailForm, setBulkEmailForm] = useState({ subject: "", body: "" });
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ ok: number; fail: number; errors: string[] } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -353,6 +359,41 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
     try { await managementService.deletePerson(id); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
   };
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const peopleWithEmail = people.filter(p => p.email);
+  const allEmailSelected = peopleWithEmail.length > 0 && peopleWithEmail.every(p => selectedIds.has(p.id));
+
+  const toggleSelectAll = () => {
+    if (allEmailSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(peopleWithEmail.map(p => p.id)));
+  };
+
+  const sendBulkEmail = async () => {
+    const targets = people.filter(p => selectedIds.has(p.id) && p.email);
+    if (targets.length === 0) { setBulkResult({ ok: 0, fail: 0, errors: [pick("هیڅ شخص د ایمیل سره غوره نه دی","هیچ شخصی با ایمیل انتخاب نشده")] }); return; }
+    if (!bulkEmailForm.subject.trim() || !bulkEmailForm.body.trim()) { setBulkResult({ ok: 0, fail: 0, errors: [pick("موضوع او متن اړین دي","موضوع و متن الزامی است")] }); return; }
+    setBulkSending(true); setBulkResult(null);
+    let ok = 0; const errors: string[] = [];
+    for (const p of targets) {
+      try {
+        await managementService.sendEmail({ to: p.email, subject: bulkEmailForm.subject, body: bulkEmailForm.body });
+        ok++;
+      } catch (e: any) {
+        errors.push(`${p.full_name}: ${e?.message || "error"}`);
+      }
+    }
+    setBulkResult({ ok, fail: errors.length, errors });
+    setBulkSending(false);
+    if (ok > 0) { setSelectedIds(new Set()); setBulkEmailForm({ subject: "", body: "" }); }
+  };
+
   const sendEmail = async () => {
     if (!emailModal?.email) { setEmailResult(pick("ایمیل ادرس نشته","آدرس ایمیل موجود نیست")); return; }
     if (!emailForm.subject.trim() || !emailForm.body.trim()) { setEmailResult(pick("موضوع او متن اړین دي","موضوع و متن الزامی است")); return; }
@@ -379,10 +420,28 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
             className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-right text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-400" />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
-          ➕ {pick("کس اضافه کول","افزودن شخص")}
-        </button>
+        <div className="flex gap-2">
+          {selectedIds.size > 0 && (
+            <button onClick={() => { setBulkEmailModal(true); setBulkResult(null); setBulkEmailForm({ subject: "", body: "" }); }}
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
+              ✉️ {pick(`ټول ایمیل (${selectedIds.size})`, `ارسال گروهی (${selectedIds.size})`)}
+            </button>
+          )}
+          <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
+            ➕ {pick("کس اضافه کول","افزودن شخص")}
+          </button>
+        </div>
       </div>
+
+      {/* Select-all row */}
+      {peopleWithEmail.length > 0 && (
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-xs text-gray-400">{selectedIds.size > 0 ? pick(`${selectedIds.size} غوره شوي`, `${selectedIds.size} انتخاب شده`) : ""}</span>
+          <button onClick={toggleSelectAll} className="text-xs text-sky-600 dark:text-sky-400 hover:underline font-medium" dir="rtl">
+            {allEmailSelected ? pick("ټول لغوه کړئ","لغو همه") : pick("ټول د ایمیل سره غوره کړئ","انتخاب همه با ایمیل")}
+          </button>
+        </div>
+      )}
 
       {error && <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl text-sm text-center">{error}</div>}
 
@@ -393,8 +452,15 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
       ) : (
         <div className="space-y-2">
           {filtered.map((p, i) => (
-            <div key={p.id} className="flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition-all animate-slide-up" style={{ animationDelay: `${i * 25}ms` }}>
+            <div key={p.id} className={`flex items-center justify-between border rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition-all animate-slide-up ${selectedIds.has(p.id) ? "bg-sky-50 dark:bg-sky-900/20 border-sky-300 dark:border-sky-700" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"}`} style={{ animationDelay: `${i * 25}ms` }}>
               <div className="flex items-center gap-2">
+                {/* Checkbox for email selection */}
+                {p.email && (
+                  <button onClick={() => toggleSelect(p.id)}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${selectedIds.has(p.id) ? "bg-sky-500 border-sky-500 text-white" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"}`}>
+                    {selectedIds.has(p.id) && <span className="text-xs">✓</span>}
+                  </button>
+                )}
                 {p.email && (
                   <button onClick={() => { setEmailModal(p); setEmailForm({ subject: "", body: "" }); setEmailResult(""); }}
                     className="p-1.5 rounded-lg bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 text-sky-600 text-sm transition-all" title="ایمیل">✉️</button>
@@ -407,7 +473,7 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
                   <p className="font-semibold text-gray-800 dark:text-white text-sm">{p.full_name}</p>
                   <div className="flex items-center gap-2 justify-end mt-0.5">
                     {p.position && <span className="text-xs text-gray-500 dark:text-gray-400">{p.position}</span>}
-                    {p.email && <span className="text-xs text-sky-500">✉️ {p.email}</span>}
+                    {p.email && <span className="text-xs text-sky-500" dir="ltr">{p.email}</span>}
                   </div>
                   {p.dept_name_ps && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">🏢 {p.dept_name_ps}</p>}
                 </div>
@@ -462,16 +528,16 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
         </div>
       )}
 
-      {/* Email Modal */}
+      {/* Single Email Modal */}
       {emailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEmailModal(null)} />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEmailModal(null)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-md w-full animate-scale-in" dir="rtl">
             <div className="flex items-center justify-between mb-4">
               <button onClick={() => setEmailModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">✕</button>
               <div className="text-right">
                 <h3 className="font-bold text-gray-800 dark:text-white text-base">✉️ {pick("ایمیل لیږل","ارسال ایمیل")}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{emailModal.full_name} — {emailModal.email}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{emailModal.full_name} — <span dir="ltr">{emailModal.email}</span></p>
               </div>
             </div>
             {emailResult && (
@@ -488,6 +554,57 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
               <button onClick={() => setEmailModal(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">{pick("لغوه","لغو")}</button>
               <button onClick={sendEmail} disabled={emailSending} className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold shadow transition-all">
                 {emailSending ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{pick("لیږل...","ارسال...")}</span> : `✉️ ${pick("لیږل","ارسال")}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Email Modal */}
+      {bulkEmailModal && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setBulkEmailModal(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-lg w-full animate-scale-in" dir="rtl">
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setBulkEmailModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">✕</button>
+              <div className="text-right">
+                <h3 className="font-bold text-gray-800 dark:text-white text-base">📢 {pick("ګروپي ایمیل","ایمیل گروهی")}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {pick(`${people.filter(p => selectedIds.has(p.id) && p.email).length} ترلاسه کوونکي`, `${people.filter(p => selectedIds.has(p.id) && p.email).length} گیرنده`)}
+                </p>
+              </div>
+            </div>
+
+            {/* Selected recipients preview */}
+            <div className="mb-4 p-3 bg-sky-50 dark:bg-sky-900/20 rounded-xl max-h-28 overflow-auto">
+              <div className="flex flex-wrap gap-1.5 justify-end">
+                {people.filter(p => selectedIds.has(p.id) && p.email).map(p => (
+                  <span key={p.id} className="text-xs bg-sky-100 dark:bg-sky-800 text-sky-700 dark:text-sky-300 px-2 py-1 rounded-full">{p.full_name}</span>
+                ))}
+              </div>
+            </div>
+
+            {bulkResult && (
+              <div className={`mb-3 p-3 rounded-xl text-sm text-center font-medium ${bulkResult.fail === 0 ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"}`}>
+                ✅ {bulkResult.ok} {pick("بریالي","موفق")} {bulkResult.fail > 0 && `• ❌ ${bulkResult.fail} ${pick("ناکام","ناموفق")}`}
+                {bulkResult.errors.length > 0 && <div className="mt-1 text-xs opacity-70">{bulkResult.errors[0]}</div>}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div><label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1">{pick("موضوع *","موضوع *")}</label>
+                <input value={bulkEmailForm.subject} onChange={e => setBulkEmailForm(f => ({...f, subject: e.target.value}))} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400" /></div>
+              <div><label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1">{pick("پیغام *","متن *")}</label>
+                <textarea value={bulkEmailForm.body} onChange={e => setBulkEmailForm(f => ({...f, body: e.target.value}))} rows={6}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none" /></div>
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setBulkEmailModal(false)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">{pick("لغوه","لغو")}</button>
+              <button onClick={sendBulkEmail} disabled={bulkSending} className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold shadow transition-all">
+                {bulkSending
+                  ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{pick("لیږل...","ارسال...")}</span>
+                  : `📢 ${pick("ټولو ته ولیږئ","ارسال به همه")}`
+                }
               </button>
             </div>
           </div>
@@ -583,8 +700,8 @@ function AssignmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
       {confirm !== null && <ConfirmDialog message={pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")} onConfirm={() => doDelete(confirm!)} onCancel={() => setConfirm(null)} />}
 
       {editStatus && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditStatus(null)} />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditStatus(null)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-scale-in" dir="rtl">
             <h3 className="font-bold text-gray-800 dark:text-white text-base mb-4">✏️ {pick("د ټاکنې وضعیت بدلول","تغییر وضعیت تخصیص")}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 text-right">{editStatus.item_name_ps} — {editStatus.person_name || pick("اداره","دپارتمان")}</p>
