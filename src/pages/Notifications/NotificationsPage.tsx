@@ -58,14 +58,13 @@ export default function NotificationsPage() {
     setSending(true);
     setMsg("");
     try {
-      const status: DemoEmailLog["status"] = navigator.onLine ? "Sent" : "Queued";
-      const log = await saveEmailDraft({ ...form, status });
+      const log = await saveEmailDraft({ ...form, status: "Draft" });
       await load();
-      setMsg(status === "Sent" ? "ایمیل بریالیتوب سره استول شو." : "انټرنېټ نشته — ایمیل د انتظار حالت کې خوندي شو.");
-      if (status === "Sent") await openMailClient(log);
-      setTimeout(() => setMsg(""), 5000);
+      setMsg("📋 ایمیل د تاریخچې کې خوندي شو. د لیږلو لپاره به ستاسې د ایمیل پروګرام خلاص شي.");
+      await openMailClient(log);
+      setTimeout(() => setMsg(""), 8000);
     } catch (e) {
-      setMsg("د ایمیل استولو پر مهال تېروتنه رامنځته شوه.");
+      setMsg("تېروتنه رامنځته شوه. بیا هڅه وکړئ.");
     } finally {
       setSending(false);
     }
@@ -82,8 +81,18 @@ export default function NotificationsPage() {
       <Breadcrumb pageTitle="خبرتیاوې / اعلانات" />
 
       <div className="space-y-6" dir="rtl">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/20 flex gap-3 items-start">
+          <span className="text-xl shrink-0">⚠️</span>
+          <div>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">د ډیمو حالت — ریښتیني ایمیل نه لیږل کېږي</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-5">
+              دا سیستم د ډیمو حالت کې کار کوي. کله چې تاسې "ایمیل استول" کلیک کوئ، ستاسې د کمپیوټر د ایمیل پروګرام (لکه Outlook یا Gmail) خلاصیدو هڅه کوي — مګر هیڅ ریښتینی ایمیل د سیستم لخوا نه لیږل کېږي. د ریښتیني ایمیل لیږلو لپاره د سیستم مدیر سره اړیکه ونیسئ.
+            </p>
+          </div>
+        </div>
+
         {msg && (
-          <div className={`rounded-lg border p-3 text-sm ${msg.includes("بریالیتوب") ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300" : "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300"}`}>
+          <div className={`rounded-lg border p-3 text-sm ${msg.includes("تېروتنه") ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300" : "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300"}`}>
             {msg}
           </div>
         )}

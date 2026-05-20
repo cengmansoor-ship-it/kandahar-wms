@@ -26,5 +26,9 @@ export const saveEmailDraft = async (payload: Omit<DemoEmailLog, "id" | "created
 export const openMailClient = async (log: DemoEmailLog) => {
   const subject = encodeURIComponent(log.subject);
   const body = encodeURIComponent(log.body);
-  window.location.href = `mailto:${encodeURIComponent(log.to)}?subject=${subject}&body=${body}`;
+  const mailtoUrl = `mailto:${encodeURIComponent(log.to)}?subject=${subject}&body=${body}`;
+  const win = window.open(mailtoUrl, "_blank");
+  if (!win) {
+    window.location.href = mailtoUrl;
+  }
 };
