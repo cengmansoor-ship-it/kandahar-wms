@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import PageMeta from "../../components/common/PageMeta";
@@ -23,7 +23,6 @@ function buildMonthlyStockData(transactions: StockTransaction[]) {
   const now = Date.now();
   const sixMonthsAgo = now - 6 * 30 * 24 * 60 * 60 * 1000;
   const recent = transactions.filter(tx => tx.createdAt >= sixMonthsAgo);
-
   const buckets: Record<string, { in: number; out: number }> = {};
   recent.forEach(tx => {
     const d = new Date(tx.createdAt);
@@ -32,11 +31,9 @@ function buildMonthlyStockData(transactions: StockTransaction[]) {
     if (tx.type === "IN") buckets[key].in += tx.quantity;
     else buckets[key].out += tx.quantity;
   });
-
   const labels: string[] = [];
   const inData: number[] = [];
   const outData: number[] = [];
-
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now);
     d.setMonth(d.getMonth() - i);
@@ -45,7 +42,6 @@ function buildMonthlyStockData(transactions: StockTransaction[]) {
     inData.push(buckets[key]?.in || 0);
     outData.push(buckets[key]?.out || 0);
   }
-
   return { labels, inData, outData };
 }
 
@@ -65,10 +61,7 @@ function buildRequestStatusData(requests: InventoryRequest[]) {
       r.status;
     statusMap[label] = (statusMap[label] || 0) + 1;
   });
-  return {
-    labels: Object.keys(statusMap),
-    series: Object.values(statusMap),
-  };
+  return { labels: Object.keys(statusMap), series: Object.values(statusMap) };
 }
 
 function buildCategoryData(items: WarehouseItem[]) {
@@ -77,10 +70,7 @@ function buildCategoryData(items: WarehouseItem[]) {
     const cat = item.category || "نور";
     catMap[cat] = (catMap[cat] || 0) + item.currentQuantity;
   });
-  return {
-    labels: Object.keys(catMap),
-    series: Object.values(catMap),
-  };
+  return { labels: Object.keys(catMap), series: Object.values(catMap) };
 }
 
 export default function Home() {
@@ -89,6 +79,10 @@ export default function Home() {
   const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
+  const navigate = useNavigate();
+
+  const navigateRef = useRef(navigate);
+  useEffect(() => { navigateRef.current = navigate; }, [navigate]);
 
   useEffect(() => {
     let alive = true;
@@ -138,15 +132,20 @@ export default function Home() {
   const { labels: catLabels, series: catSeries } = buildCategoryData(items);
 
   const stockBarOptions: ApexOptions = {
-    chart: { type: "bar", toolbar: { show: false }, fontFamily: "inherit", background: "transparent", events: {
-      dataPointSelection: (_e, _chart, config) => {
-        const idx = config.dataPointIndex;
-        const seriesIdx = config.seriesIndex;
-        if (seriesIdx === 0) window.location.href = `/inventory/ledger?type=IN&month=${idx}`;
-        else window.location.href = `/inventory/ledger?type=OUT&month=${idx}`;
-      }
-    } },
-    plotOptions: { bar: { borderRadius: 6, columnWidth: "55%", dataLabels: { position: "top" } } },
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "inherit",
+      background: "transparent",
+      events: {
+        dataPointSelection: (_e, _chart, config) => {
+          const seriesIdx = config.seriesIndex;
+          if (seriesIdx === 0) navigateRef.current("/inventory/ledger?type=IN");
+          else navigateRef.current("/inventory/ledger?type=OUT");
+        },
+      },
+    },
+    plotOptions: { bar: { borderRadius: 6, columnWidth: "55%" } },
     dataLabels: { enabled: false },
     colors: ["#3b82f6", "#f97316"],
     xaxis: { categories: monthLabels, labels: { style: { fontFamily: "inherit", fontSize: "12px" } } },
@@ -162,9 +161,14 @@ export default function Home() {
   ];
 
   const requestDonutOptions: ApexOptions = {
-    chart: { type: "donut", fontFamily: "inherit", background: "transparent", events: {
-      dataPointSelection: () => { window.location.href = "/requests"; }
-    } },
+    chart: {
+      type: "donut",
+      fontFamily: "inherit",
+      background: "transparent",
+      events: {
+        dataPointSelection: () => { navigateRef.current("/requests"); },
+      },
+    },
     labels: statusLabels,
     colors: ["#10b981", "#3b82f6", "#8b5cf6", "#f97316", "#ef4444", "#06b6d4", "#f59e0b", "#6366f1", "#ec4899"],
     legend: { position: "bottom", fontFamily: "inherit", labels: { colors: "#6b7280" } },
@@ -174,13 +178,19 @@ export default function Home() {
   };
 
   const categoryBarOptions: ApexOptions = {
-    chart: { type: "bar", toolbar: { show: false }, fontFamily: "inherit", background: "transparent", events: {
-      dataPointSelection: () => { window.location.href = "/inventory/items"; }
-    } },
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "inherit",
+      background: "transparent",
+      events: {
+        dataPointSelection: () => { navigateRef.current("/inventory/items"); },
+      },
+    },
     plotOptions: { bar: { borderRadius: 6, horizontal: true } },
     dataLabels: { enabled: true, style: { fontFamily: "inherit", fontSize: "11px" } },
     colors: ["#6366f1"],
-    xaxis: { labels: { style: { fontFamily: "inherit", fontSize: "11px" } } },
+    xaxis: { categories: catLabels, labels: { style: { fontFamily: "inherit", fontSize: "11px" } } },
     yaxis: { labels: { style: { fontFamily: "inherit", fontSize: "12px" } } },
     grid: { borderColor: "#f3f4f6", strokeDashArray: 4 },
     tooltip: { theme: "light", style: { fontFamily: "inherit" } },
@@ -229,7 +239,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Charts Row 1: Stock In/Out Bar + Request Status Donut */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center justify-between mb-4">
@@ -239,12 +248,7 @@ export default function Home() {
             {loading ? (
               <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">بارول...</div>
             ) : (
-              <ReactApexChart
-                options={stockBarOptions}
-                series={stockBarSeries}
-                type="bar"
-                height={280}
-              />
+              <ReactApexChart options={stockBarOptions} series={stockBarSeries} type="bar" height={280} />
             )}
           </div>
 
@@ -258,17 +262,11 @@ export default function Home() {
             ) : requests.length === 0 ? (
               <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">کومه غوښتنه نشته</div>
             ) : (
-              <ReactApexChart
-                options={requestDonutOptions}
-                series={statusSeries}
-                type="donut"
-                height={280}
-              />
+              <ReactApexChart options={requestDonutOptions} series={statusSeries} type="donut" height={280} />
             )}
           </div>
         </div>
 
-        {/* Charts Row 2: Category Bar + Modules + Recent Transactions */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center justify-between mb-4">
@@ -280,12 +278,7 @@ export default function Home() {
             ) : items.length === 0 ? (
               <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">کوم جنس نشته</div>
             ) : (
-              <ReactApexChart
-                options={{ ...categoryBarOptions, xaxis: { ...categoryBarOptions.xaxis, categories: catLabels } }}
-                series={categoryBarSeries}
-                type="bar"
-                height={240}
-              />
+              <ReactApexChart options={categoryBarOptions} series={categoryBarSeries} type="bar" height={240} />
             )}
           </div>
 
