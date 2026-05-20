@@ -8,6 +8,8 @@ router.get('/:id', RequestController.getRequestById);
 router.post('/', RequestController.createRequest);
 router.put('/:id/status', RequestController.updateStatus);
 router.put('/:id/level', RequestController.updateLevel);
+router.get('/:id/level-history', RequestController.getLevelHistory);
+router.get('/:id/pipeline', RequestController.getPipelineHistory);
 router.delete('/:id', RequestController.deleteRequest);
 
 export default router;

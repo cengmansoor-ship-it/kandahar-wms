@@ -62,6 +62,24 @@ export const updateLevel = async (req: Request, res: Response): Promise<any> => 
   }
 };
 
+export const getLevelHistory = async (req: Request, res: Response) => {
+  try {
+    const history = await RequestService.getLevelHistory(Number(req.params.id));
+    res.json({ success: true, data: history });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const getPipelineHistory = async (req: Request, res: Response) => {
+  try {
+    const pipeline = await RequestService.getPipelineHistory(Number(req.params.id));
+    res.json({ success: true, data: pipeline });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 export const deleteRequest = async (req: Request, res: Response) => {
   try {
     const userId = 1;

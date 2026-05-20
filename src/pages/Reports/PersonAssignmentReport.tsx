@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
-import { getFullCollection, exportToCSV } from "../../firebase/reports";
+import { getPersonAssignmentReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
 
 export default function PersonAssignmentReport() {
@@ -14,8 +14,12 @@ export default function PersonAssignmentReport() {
 
   const fetchData = async () => {
     setLoading(true);
-    const assignments = await getFullCollection("item_assignments");
-    setData(assignments);
+    try {
+      const rows = await getPersonAssignmentReport();
+      setData(Array.isArray(rows) ? rows : []);
+    } catch {
+      setData([]);
+    }
     setLoading(false);
   };
 
@@ -23,11 +27,15 @@ export default function PersonAssignmentReport() {
 
   const handleExport = () => {
     const exportData = data.map(a => ({
-      'شخص': a.assignedToName,
-      'پوهنځی': a.facultyName,
-      'جنس': a.itemName,
-      'مقدار': a.quantity,
-      'نیټه': a.assignedAtHijriShamsi
+      'شخص': a.person_name || a.assignedToName || "",
+      'پوهنځی': a.faculty_name || a.facultyName || "",
+      'ډیپارټمنټ': a.department_name || "",
+      'جنس': a.item_name || a.itemName || "",
+      'کود': a.item_code || "",
+      'واحد': a.unit_name || a.unit || "",
+      'مقدار': a.quantity || 0,
+      'حالت': a.status || "",
+      'نیټه': a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : (a.assignedAtHijriShamsi || ""),
     }));
     exportToCSV(exportData, "person_assignment_report");
   };
@@ -53,22 +61,26 @@ export default function PersonAssignmentReport() {
                 <th className="px-4 py-3 border">نیټه</th>
                 <th className="px-4 py-3 border">شخص / غوښتونکی</th>
                 <th className="px-4 py-3 border">پوهنځی</th>
+                <th className="px-4 py-3 border">ډیپارټمنټ</th>
                 <th className="px-4 py-3 border">جنس</th>
+                <th className="px-4 py-3 border">واحد</th>
                 <th className="px-4 py-3 border">مقدار</th>
                 <th className="px-4 py-3 border">حالت</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-10">بارول...</td></tr>
+                <tr><td colSpan={8} className="text-center py-10">بارول...</td></tr>
               ) : data.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-10">معلومات نشته.</td></tr>
+                <tr><td colSpan={8} className="text-center py-10">معلومات نشته.</td></tr>
               ) : data.map((a, i) => (
                 <tr key={i} className="border-b hover:bg-gray-50 transition">
-                  <td className="px-4 py-2 border text-xs">{a.assignedAtHijriShamsi}</td>
-                  <td className="px-4 py-2 border font-bold">{a.assignedToName}</td>
-                  <td className="px-4 py-2 border text-xs">{a.facultyName}</td>
-                  <td className="px-4 py-2 border font-bold">{a.itemName}</td>
+                  <td className="px-4 py-2 border text-xs">{a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : (a.assignedAtHijriShamsi || "")}</td>
+                  <td className="px-4 py-2 border font-bold">{a.person_name || a.assignedToName}</td>
+                  <td className="px-4 py-2 border text-xs">{a.faculty_name || a.facultyName}</td>
+                  <td className="px-4 py-2 border text-xs">{a.department_name}</td>
+                  <td className="px-4 py-2 border font-bold">{a.item_name || a.itemName}</td>
+                  <td className="px-4 py-2 border text-xs">{a.unit_name || a.unit}</td>
                   <td className="px-4 py-2 border text-primary font-black">{a.quantity}</td>
                   <td className="px-4 py-2 border text-[10px] font-bold text-green-600">{a.status}</td>
                 </tr>

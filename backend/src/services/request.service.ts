@@ -136,6 +136,49 @@ export class RequestService {
     }
   }
 
+  static async getLevelHistory(id: number) {
+    const [rows] = await db.query<RowDataPacket[]>(`
+      SELECT h.*, u.name as changed_by_name
+      FROM request_level_history h
+      LEFT JOIN users u ON h.changed_by = u.id
+      WHERE h.request_id = ?
+      ORDER BY h.created_at DESC
+    `, [id]);
+    return rows;
+  }
+
+  static async getPipelineHistory(id: number) {
+    const [request] = await db.query<RowDataPacket[]>(`
+      SELECT r.tracking_id, r.status, r.progress_percent, r.request_level,
+        r.created_at, r.updated_at
+      FROM requests r
+      WHERE r.id = ? AND r.is_deleted = FALSE
+    `, [id]);
+
+    if (request.length === 0) throw new Error('not_found');
+
+    const [auditLogs] = await db.query<RowDataPacket[]>(`
+      SELECT al.action, al.new_value, al.created_at
+      FROM audit_logs al
+      WHERE al.entity_type = 'REQUEST' AND al.entity_id = ?
+      ORDER BY al.created_at ASC
+    `, [id.toString()]);
+
+    const [levelHistory] = await db.query<RowDataPacket[]>(`
+      SELECT h.*, u.name as changed_by_name
+      FROM request_level_history h
+      LEFT JOIN users u ON h.changed_by = u.id
+      WHERE h.request_id = ?
+      ORDER BY h.created_at ASC
+    `, [id]);
+
+    return {
+      request: request[0],
+      audit_trail: auditLogs,
+      level_history: levelHistory
+    };
+  }
+
   static async deleteRequest(id: number, userId: number | null) {
     const [result] = await db.query<ResultSetHeader>(`UPDATE requests SET is_deleted = TRUE WHERE id = ?`, [id]);
     if (result.affectedRows === 0) throw new Error('not_found');

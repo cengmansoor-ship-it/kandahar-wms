@@ -1,0 +1,470 @@
+You are a senior full-stack recovery engineer, React 18 + TypeScript + Tailwind CSS expert, Node.js + Express + MySQL backend engineer, QA engineer, and deployment portability specialist.
+
+I uploaded my full project ZIP.
+
+Project Name:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Current Stack:
+- Frontend: React 18 + TypeScript + Tailwind CSS + Vite
+- Backend: Node.js + Express.js + TypeScript
+- Database: MySQL
+- Some old services still use Firebase/localStorage fallback
+- Official forms are in public/forms/official-forms.html
+- The system is a university warehouse, inventory, request, procurement, receiving, reporting, traceability, forecasting, and maintenance system.
+
+Important Background:
+This project was built in phases. Some parts are completed, some are partial, some are still localStorage-only, and some integration is incomplete. The backend and MySQL were created, but the frontend is not fully connected. The system must now become actually functional, not only UI/demo.
+
+Your mission:
+Fix, complete, stabilize, and package this system so that it works correctly on any Windows computer after setup.
+
+Do NOT leave the system in its current broken/partial state.
+Do NOT only create a plan.
+Do NOT only audit.
+You must implement the fixes in the codebase and return the repaired project ZIP.
+
+────────────────────────────
+ABSOLUTE RULES
+────────────────────────────
+
+1. Do NOT rewrite the entire project from scratch.
+2. Do NOT destroy the existing UI.
+3. Do NOT remove existing working pages.
+4. Do NOT remove official forms.
+5. Do NOT redesign the layout, colors, sidebar, dashboard style, or form design unless a tiny fix is required.
+6. Do NOT hardcode computer-specific paths such as C:\Users\...
+7. Do NOT hardcode MySQL root password.
+8. Do NOT expose secrets.
+9. Do NOT remove localStorage fallback until API integration is stable.
+10. Do NOT make fake buttons or fake success messages.
+11. Do NOT say a feature is complete unless it really saves, loads, validates, and works after refresh.
+12. User-visible UI text must be Pashto/Dari only.
+13. Official forms must remain printable and visually unchanged.
+14. The project must run on another computer using normal setup steps, not only on my computer.
+
+────────────────────────────
+EXPECTED FINAL ARCHITECTURE
+────────────────────────────
+
+The final project must support:
+
+Frontend:
+- React 18 + TypeScript + Tailwind CSS + Vite
+
+Backend:
+- Node.js + Express + TypeScript
+
+Database:
+- MySQL as the main database for real system data
+
+Firebase:
+- Only for optional online services if already present:
+  - email
+  - notifications
+  - chatbot
+  - online tracking if needed
+
+Fallback:
+- localStorage fallback may stay only as safety/demo backup, but main functional flow should use MySQL backend APIs where backend exists.
+
+Official forms:
+- Must remain in:
+  public/forms/official-forms.html
+- Viewer should remain:
+  src/components/OfficialFormViewer.tsx
+- Do not damage templates or print layout.
+
+────────────────────────────
+PHASE 1 — RECOVERY, PORTABILITY, AND BUILD STABILITY
+────────────────────────────
+
+First inspect the uploaded project.
+
+Fix:
+1. npm install issues.
+2. npm run dev issues.
+3. npm run build errors.
+4. backend npm install issues.
+5. backend npm run dev issues.
+6. TypeScript import/export errors.
+7. missing files.
+8. broken routes.
+9. blank screen.
+10. runtime crashes.
+11. CORS issues between frontend and backend.
+12. incorrect environment variable handling.
+13. hardcoded local paths.
+
+Required:
+- Frontend must run using:
+  npm install
+  npm run dev
+
+- Backend must run using:
+  cd backend
+  npm install
+  npm run dev
+
+- Backend must not depend on one specific machine path.
+- Add/update .env.example for frontend and backend.
+- Do not include real passwords in committed files.
+- Create clear setup instructions in README or SETUP.md.
+
+Backend .env.example must include:
+PORT=5000
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=kandahar_wms_db
+
+Frontend .env.example must include:
+VITE_API_BASE_URL=http://localhost:5000/api
+
+MySQL portability:
+- Provide schema.sql and seed.sql.
+- Ensure schema.sql creates the database safely:
+  CREATE DATABASE IF NOT EXISTS kandahar_wms_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  USE kandahar_wms_db;
+- Ensure Pashto/Dari text imports correctly using utf8mb4.
+- Add setup instructions:
+  mysql -u root -p --default-character-set=utf8mb4
+  source path/to/backend/src/database/schema.sql;
+  source path/to/backend/src/database/seed.sql;
+
+Do not hardcode:
+- MySQL password
+- absolute paths
+- local machine username
+- Firebase secrets
+
+────────────────────────────
+PHASE 2 — BACKEND + MYSQL COMPLETION
+────────────────────────────
+
+Inspect backend.
+
+The backend must have working APIs for:
+
+1. Inventory
+- items
+- categories
+- units
+- warehouses
+- stock in
+- stock out
+- stock transactions
+- negative stock prevention
+- soft delete
+- audit logs
+
+2. Requests
+- create request
+- request items
+- request list
+- request details
+- status update
+- request level update
+- request level history
+- progress percentage
+- soft delete
+- audit logs
+
+3. Procurement
+- create procurement case from request
+- vendors
+- vendor offers
+- 3 vendor rule before winner selection
+- winner selection
+- purchase order creation
+- audit logs
+
+4. Receiving
+- receive items from purchase order
+- increase stock
+- create receiving records
+- create stock IN transaction
+- audit logs
+
+5. Delivery / FS5
+- create delivery from request
+- delivery items
+- decrease stock
+- prevent negative stock
+- prevent duplicate deduction
+- create item assignment
+- create stock OUT transaction
+- update request status/progress
+- audit logs
+
+6. Basic Reports APIs if possible
+- inventory summary
+- stock movement
+- request summary
+- procurement summary
+- receiving/delivery summary
+- traceability data
+- forecasting/needs data
+
+If a backend feature is partially implemented, finish it.
+If an endpoint exists but returns wrong shape, fix it.
+If database table is missing, add it safely.
+If stock logic is unsafe, fix it with MySQL transaction.
+
+Do NOT drop existing data automatically.
+Use safe IF NOT EXISTS where possible.
+
+All backend APIs should return consistent JSON:
+{
+  "success": true,
+  "data": ...
+}
+
+For errors:
+{
+  "success": false,
+  "message": "Pashto/Dari user message",
+  "error": "technical message only if needed"
+}
+
+────────────────────────────
+PHASE 3 — FRONTEND SERVICE INTEGRATION
+────────────────────────────
+
+Connect the existing React service layer to backend APIs.
+
+Do NOT redesign UI pages.
+Do NOT rewrite pages unless necessary.
+
+Create/use:
+src/api/apiClient.ts
+
+API base:
+VITE_API_BASE_URL or default http://localhost:5000/api
+
+Service files to connect:
+- src/firebase/inventory.ts
+- src/firebase/requests.ts
+- src/firebase/procurement.ts
+- src/firebase/receiving.ts
+- src/firebase/reports.ts if backend endpoints exist
+- src/firebase/maintenance.ts if backup/trash endpoints exist
+- src/firebase/notifications.ts only if backend/email support exists
+
+Rules:
+1. Preserve existing exported function names.
+2. Preserve return shapes expected by current React pages.
+3. Backend API first.
+4. localStorage fallback second.
+5. If backend is down, the app should not crash.
+6. Show user-friendly Pashto/Dari errors.
+7. Do not leave broken buttons.
+8. Do not fake database success.
+
+Inventory frontend must actually:
+- load categories/units/warehouses from backend
+- add item to MySQL
+- list items from MySQL
+- edit item in MySQL
+- soft delete item in MySQL
+- stock in through backend
+- stock out through backend
+- show transactions from backend
+
+Requests frontend must actually:
+- create request in MySQL
+- save request items
+- list requests from backend
+- update status
+- update request level
+- show request details
+- preserve local fallback
+
+Procurement frontend must actually:
+- create procurement case
+- add vendor offers
+- enforce backend 3-vendor rule
+- select winner
+- create purchase order
+
+Receiving frontend must actually:
+- receive purchased items
+- increase stock through backend
+- create receipt record
+- deliver request items
+- decrease stock through backend
+- create item assignment / ledger record
+
+Official forms:
+- Do not change official-forms.html design.
+- Only connect buttons/data if required.
+- If form data connection is incomplete, connect safely without breaking print layout.
+
+────────────────────────────
+PHASE 4 — FINAL QA, REPORTS, TRACEABILITY, FORECASTING, BACKUP, AND PACKAGE
+────────────────────────────
+
+Complete and verify these areas:
+
+1. Reports
+- inventory report
+- stock movement report
+- request report
+- procurement report
+- receiving/delivery report
+- faculty report
+- department report
+- person assignment report
+- audit activity report
+- print buttons
+- Excel export if already present or easy to safely implement
+
+2. Traceability
+Must show:
+- administrative section
+- faculties section
+- levels if implemented
+- departments
+- people
+- person ledger
+- assigned items
+- quantities
+- dates
+- request/delivery source
+- print/export if available
+
+3. Forecasting / Needs Analysis
+Must use real stock OUT / consumption data where possible:
+- last 12 months
+- last 6 months
+- last 3 months
+- urgent / medium / low / enough
+- recommended purchase
+- print/export if available
+
+4. Localization
+- Remove visible English from UI where possible.
+- UI must be Pashto/Dari.
+- Do not mix Pashto words inside Dari mode or Dari words inside Pashto mode if language switch exists.
+- Keep technical abbreviations only where unavoidable:
+  ID, API, PDF, Excel
+
+5. Dates
+- Visible dates should be Hijri/Shamsi if project already has utilities.
+- If not complete, at least avoid introducing new Gregorian UI labels.
+
+6. Official forms
+- Ensure all seven forms are accessible:
+  Proposal
+  Tender
+  Comparison
+  Purchase Order
+  Receipt Report
+  SI9
+  FS5
+- Print buttons should work if existing.
+- Do not break official layout.
+
+7. Backup / Maintenance
+- Trash/recovery should not crash.
+- Backup/export buttons should either work or show clear Pashto/Dari message.
+- Do not show fake successful backup.
+
+8. Security / RBAC
+- Protected routes should work.
+- Unauthorized users should not access restricted pages.
+- Service-level dangerous actions should check role if current project supports auth.
+- Do not expose passwords/tokens.
+
+9. Cross-computer portability
+This is very important:
+The final ZIP must work on another Windows computer after:
+- installing Node.js
+- installing MySQL Server
+- importing schema.sql and seed.sql
+- copying .env from .env.example
+- npm install
+- npm run dev
+
+No absolute paths.
+No local username paths.
+No hardcoded database password.
+No dependency on my computer only.
+
+────────────────────────────
+TESTING REQUIREMENTS
+────────────────────────────
+
+After implementation, run and verify:
+
+Frontend:
+npm install
+npm run build
+
+Backend:
+cd backend
+npm install
+npm run build
+npm run dev
+
+Database:
+- schema.sql imports successfully
+- seed.sql imports successfully
+- /api/health works
+- /api/inventory/categories returns correct Pashto/Dari text
+- /api/inventory/items works
+- creating an item stores it in MySQL
+- stock-in changes current_stock
+- stock-out decreases current_stock and prevents negative stock
+
+Workflow tests:
+1. Add item.
+2. Stock in.
+3. Stock out.
+4. Create request.
+5. Update request status.
+6. Send request to procurement.
+7. Add vendor offers.
+8. Select winner after 3 offers.
+9. Create purchase order.
+10. Receive items.
+11. Deliver items.
+12. Confirm inventory changes.
+13. Confirm reports do not crash.
+14. Confirm official forms still open and print.
+15. Confirm app still runs if backend is temporarily unavailable using fallback.
+
+────────────────────────────
+FINAL DELIVERABLE REQUIRED
+────────────────────────────
+
+Return a repaired ZIP project.
+
+Also provide a final report with:
+
+1. What was broken.
+2. What was fixed.
+3. Files changed.
+4. Backend APIs completed.
+5. Frontend services connected.
+6. MySQL setup status.
+7. Official forms status.
+8. Reports/traceability/forecasting status.
+9. Build results.
+10. Test results.
+11. Any remaining limitations.
+12. Exact setup steps for another computer.
+13. How to run frontend.
+14. How to run backend.
+15. How to import MySQL database.
+16. Environment variables required.
+
+Do not claim 100% complete unless you tested it.
+
+If something cannot be completed safely, implement the safest possible working version and clearly report the limitation.
+
+Most important:
+Make this system actually work, not just look complete.
+Do not leave the existing broken/partial state.
+Return the fixed ZIP.

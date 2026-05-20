@@ -43,9 +43,12 @@ export const createFromRequest = async (req: Request, res: Response) => {
 
 export const addVendorOffer = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { vendor_id, total_price } = req.body;
-    if (!vendor_id || total_price === undefined) {
-      return res.status(400).json({ success: false, message: 'د شرکت ID او مجموعي قیمت اړین دي.' });
+    const { vendor_id, vendor_name, total_price, total_amount } = req.body;
+    if (!vendor_id && !vendor_name) {
+      return res.status(400).json({ success: false, message: 'د شرکت ID یا نوم اړین دی.' });
+    }
+    if (total_price === undefined && total_amount === undefined) {
+      return res.status(400).json({ success: false, message: 'مجموعي قیمت اړین دی.' });
     }
     const userId = 1;
     const id = await ProcurementService.addVendorOffer(Number(req.params.id), req.body, userId);

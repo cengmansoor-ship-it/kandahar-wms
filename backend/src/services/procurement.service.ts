@@ -75,11 +75,29 @@ export class ProcurementService {
     }
   }
 
+  static async resolveVendorId(data: any): Promise<number> {
+    if (data.vendor_id && !isNaN(Number(data.vendor_id))) return Number(data.vendor_id);
+    if (data.vendor_name) {
+      const [existing] = await db.query<RowDataPacket[]>(
+        `SELECT id FROM vendors WHERE name = ? AND is_deleted = FALSE LIMIT 1`, [data.vendor_name]
+      );
+      if ((existing as RowDataPacket[]).length > 0) return (existing as RowDataPacket[])[0].id;
+      const [created] = await db.query<ResultSetHeader>(
+        `INSERT INTO vendors (name, phone, address) VALUES (?, ?, ?)`,
+        [data.vendor_name, data.vendor_phone || null, data.vendor_address || null]
+      );
+      return created.insertId;
+    }
+    throw new Error('vendor_id or vendor_name required');
+  }
+
   static async addVendorOffer(caseId: number, data: any, userId: number | null) {
+    const vendorId = await ProcurementService.resolveVendorId(data);
+    const totalPrice = data.total_price ?? data.total_amount ?? 0;
     const [result] = await db.query<ResultSetHeader>(`
       INSERT INTO vendor_offers (procurement_case_id, vendor_id, total_price, currency, details_json)
       VALUES (?, ?, ?, ?, ?)
-    `, [caseId, data.vendor_id, data.total_price, data.currency || 'AFN', JSON.stringify(data.details || {})]);
+    `, [caseId, vendorId, totalPrice, data.currency || 'AFN', JSON.stringify(data.details || {})]);
 
     await db.query(`
       INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_value)

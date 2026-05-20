@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
-import { getDocs, collection } from "firebase/firestore";
-import { db } from "../../firebase/firebase";
-import { exportToCSV } from "../../firebase/reports";
-import { useAuth } from "../../context/AuthContext";
+import { getInventoryReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
 
 export default function InventoryReport() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { profile } = useAuth();
 
   useEffect(() => {
     fetchItems();
@@ -18,8 +14,12 @@ export default function InventoryReport() {
 
   const fetchItems = async () => {
     setLoading(true);
-    const snap = await getDocs(collection(db, "items"));
-    setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    try {
+      const data = await getInventoryReport();
+      setItems(Array.isArray(data) ? data : []);
+    } catch {
+      setItems([]);
+    }
     setLoading(false);
   };
 
@@ -27,12 +27,15 @@ export default function InventoryReport() {
 
   const handleExport = () => {
     const exportData = items.map(i => ({
-      'نوم': i.name,
-      'کټګوري': i.category,
-      'مقدار': i.currentQuantity,
-      'واحد': i.unit,
-      'واحد قیمت': i.unitPrice,
-      'مجموعي ارزښت': (i.currentQuantity || 0) * (i.unitPrice || 0)
+      'کود': i.item_code || i.itemCode || "",
+      'نوم': i.name_ps || i.name || "",
+      'کټګوري': i.category_name || i.category || "",
+      'واحد': i.unit_name || i.unit || "",
+      'ګدام': i.warehouse_name || "",
+      'مجموعي داخل': i.total_in || 0,
+      'مجموعي صادر': i.total_out || 0,
+      'موجودي': i.current_stock ?? i.currentQuantity ?? 0,
+      'لږترلږه موجودي': i.minimum_stock ?? i.minimumStockLevel ?? 0,
     }));
     exportToCSV(exportData, "inventory_report");
   };
@@ -55,55 +58,53 @@ export default function InventoryReport() {
           <table className="w-full text-right table-auto border-collapse">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white/90">
+                <th className="px-4 py-4 border">کود</th>
                 <th className="px-4 py-4 border">نوم</th>
                 <th className="px-4 py-4 border">کټګوري</th>
-                <th className="px-4 py-4 border">مقدار</th>
-                <th className="px-4 py-4 border">واحد قیمت</th>
-                <th className="px-4 py-4 border">مجموعي ارزښت</th>
+                <th className="px-4 py-4 border">واحد</th>
+                <th className="px-4 py-4 border">ګدام</th>
+                <th className="px-4 py-4 border">موجودي</th>
+                <th className="px-4 py-4 border">لږترلږه</th>
+                <th className="px-4 py-4 border">مجموعي داخل</th>
+                <th className="px-4 py-4 border">مجموعي صادر</th>
                 <th className="px-4 py-4 border">حالت</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-10">بارول...</td></tr>
-              ) : items.map((item, idx) => {
-                const totalValue = (item.currentQuantity || 0) * (item.unitPrice || 0);
-                const isLow = (item.currentQuantity || 0) <= (item.minimumStockLevel || 0);
+                <tr><td colSpan={10} className="text-center py-10">بارول...</td></tr>
+              ) : items.length === 0 ? (
+                <tr><td colSpan={10} className="text-center py-10">معلومات نشته.</td></tr>
+              ) : items.map((i, idx) => {
+                const stock = i.current_stock ?? i.currentQuantity ?? 0;
+                const minStock = i.minimum_stock ?? i.minimumStockLevel ?? 0;
+                const isLow = stock > 0 && stock <= minStock;
+                const isOut = stock === 0;
                 return (
-                  <tr key={idx} className="border-b hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                    <td className="px-4 py-3 border font-bold">{item.name}</td>
-                    <td className="px-4 py-3 border">{item.category}</td>
-                    <td className="px-4 py-3 border font-bold">{item.currentQuantity} {item.unit}</td>
-                    <td className="px-4 py-3 border">{item.unitPrice} AFN</td>
-                    <td className="px-4 py-3 border font-bold">{totalValue.toLocaleString()} AFN</td>
-                    <td className="px-4 py-3 border">
-                      {item.currentQuantity === 0 ? (
-                        <span className="text-red-600 font-bold">ختمه</span>
+                  <tr key={idx} className="border-b hover:bg-gray-50 transition">
+                    <td className="px-4 py-2 border text-xs text-gray-500">{i.item_code || i.itemCode}</td>
+                    <td className="px-4 py-2 border font-bold">{i.name_ps || i.name}</td>
+                    <td className="px-4 py-2 border text-xs">{i.category_name || i.category}</td>
+                    <td className="px-4 py-2 border text-xs">{i.unit_name || i.unit}</td>
+                    <td className="px-4 py-2 border text-xs">{i.warehouse_name}</td>
+                    <td className={`px-4 py-2 border font-black text-lg ${isOut ? 'text-red-600' : isLow ? 'text-yellow-600' : 'text-green-600'}`}>{stock}</td>
+                    <td className="px-4 py-2 border text-gray-500">{minStock}</td>
+                    <td className="px-4 py-2 border text-green-600 font-bold">{i.total_in || 0}</td>
+                    <td className="px-4 py-2 border text-red-600 font-bold">{i.total_out || 0}</td>
+                    <td className="px-4 py-2 border">
+                      {isOut ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">تمام شوی</span>
                       ) : isLow ? (
-                        <span className="text-orange-600 font-bold">کمه</span>
+                        <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-bold">کم موجودي</span>
                       ) : (
-                        <span className="text-green-600 font-bold">عادي</span>
+                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">سم دی</span>
                       )}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot>
-              <tr className="bg-gray-100 dark:bg-gray-800 font-black">
-                <td colSpan={4} className="px-4 py-4 border text-center text-gray-800 dark:text-white/90">مجموعي ارزښت:</td>
-                <td colSpan={2} className="px-4 py-4 border text-primary">
-                  {items.reduce((sum, i) => sum + ((i.currentQuantity || 0) * (i.unitPrice || 0)), 0).toLocaleString()} AFN
-                </td>
-              </tr>
-            </tfoot>
           </table>
-        </div>
-
-        <div className="mt-8 hidden print:block text-right border-t pt-4">
-          <p className="text-sm">د کندهار پوهنتون - د ګودام مدیریت سیسټم</p>
-          <p className="text-xs text-gray-500">د راپور نیټه: {new Date().toLocaleDateString('fa-AF', { calendar: 'persian' })}</p>
-          <p className="text-xs text-gray-500">جوړونکی: {profile?.name} ({profile?.role})</p>
         </div>
       </div>
     </>

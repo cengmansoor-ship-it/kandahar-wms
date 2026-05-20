@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
-import { getFullCollection, exportToCSV } from "../../firebase/reports";
+import { getAuditLogs, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
 
 export default function AuditActivityReport() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState({ entity_type: "", action: "" });
 
   useEffect(() => {
     fetchData();
@@ -14,8 +15,15 @@ export default function AuditActivityReport() {
 
   const fetchData = async () => {
     setLoading(true);
-    const logs = await getFullCollection("audit_logs");
-    setData(logs);
+    try {
+      const params: any = {};
+      if (filter.entity_type) params.entity_type = filter.entity_type;
+      if (filter.action) params.action = filter.action;
+      const rows = await getAuditLogs(params);
+      setData(Array.isArray(rows) ? rows : []);
+    } catch {
+      setData([]);
+    }
     setLoading(false);
   };
 
@@ -23,11 +31,11 @@ export default function AuditActivityReport() {
 
   const handleExport = () => {
     const exportData = data.map(l => ({
-      'نیټه': l.timestampHijriShamsi,
-      'کاروونکی': l.userName,
-      'رول': l.userRole,
-      'عمل': l.action,
-      'جزیات': JSON.stringify(l.details || {})
+      'نیټه': l.created_at ? new Date(l.created_at).toLocaleString() : (l.timestampHijriShamsi || ""),
+      'ډول': l.entity_type || "",
+      'ID': l.entity_id || "",
+      'عمل': l.action || "",
+      'نوي ارزښت': JSON.stringify(l.new_value || {}),
     }));
     exportToCSV(exportData, "audit_report");
   };
@@ -41,6 +49,19 @@ export default function AuditActivityReport() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 no-print">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">د سیسټم د فعالیتونو تاریخچه (Audit Log)</h3>
           <div className="flex gap-2">
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={filter.entity_type}
+              onChange={e => setFilter(f => ({ ...f, entity_type: e.target.value }))}
+            >
+              <option value="">ټول ډولونه</option>
+              <option value="REQUEST">غوښتنه</option>
+              <option value="PROCUREMENT_CASE">تدارکات</option>
+              <option value="RECEIVING_RECORD">رسید</option>
+              <option value="DELIVERY">تسلیمي</option>
+              <option value="ITEM">جنس</option>
+            </select>
+            <Button variant="outline" size="sm" onClick={fetchData}>فلټر</Button>
             <Button variant="outline" size="sm" onClick={handlePrint}>🖨️ چاپ</Button>
             <Button variant="outline" size="sm" onClick={handleExport}>📊 اکسل</Button>
           </div>
@@ -51,10 +72,10 @@ export default function AuditActivityReport() {
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800">
                 <th className="px-4 py-3 border">نیټه</th>
-                <th className="px-4 py-3 border">کاروونکی</th>
-                <th className="px-4 py-3 border">رول</th>
+                <th className="px-4 py-3 border">ډول</th>
+                <th className="px-4 py-3 border">ID</th>
                 <th className="px-4 py-3 border">عمل</th>
-                <th className="px-4 py-3 border">جزیات</th>
+                <th className="px-4 py-3 border">نوي ارزښت</th>
               </tr>
             </thead>
             <tbody>
@@ -64,11 +85,13 @@ export default function AuditActivityReport() {
                 <tr><td colSpan={5} className="text-center py-10">معلومات نشته.</td></tr>
               ) : data.map((l, i) => (
                 <tr key={i} className="border-b hover:bg-gray-50 transition">
-                  <td className="px-4 py-2 border whitespace-nowrap">{l.timestampHijriShamsi || l.createdAtHijriShamsi}</td>
-                  <td className="px-4 py-2 border font-bold">{l.userName}</td>
-                  <td className="px-4 py-2 border text-gray-500">{l.userRole}</td>
+                  <td className="px-4 py-2 border whitespace-nowrap">{l.created_at ? new Date(l.created_at).toLocaleString() : (l.timestampHijriShamsi || l.createdAtHijriShamsi || "")}</td>
+                  <td className="px-4 py-2 border">
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">{l.entity_type}</span>
+                  </td>
+                  <td className="px-4 py-2 border text-gray-500">{l.entity_id}</td>
                   <td className="px-4 py-2 border font-bold text-primary">{l.action}</td>
-                  <td className="px-4 py-2 border max-w-xs truncate">{JSON.stringify(l.details || {})}</td>
+                  <td className="px-4 py-2 border max-w-xs truncate text-gray-500">{typeof l.new_value === 'object' ? JSON.stringify(l.new_value) : (l.new_value || JSON.stringify(l.details || {}))}</td>
                 </tr>
               ))}
             </tbody>

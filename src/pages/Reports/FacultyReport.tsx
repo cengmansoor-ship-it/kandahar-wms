@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
-import { getFullCollection, exportToCSV } from "../../firebase/reports";
+import { getFacultyReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
 
 export default function FacultyReport() {
@@ -14,18 +14,12 @@ export default function FacultyReport() {
 
   const fetchData = async () => {
     setLoading(true);
-    const assignments = await getFullCollection("item_assignments");
-    
-    // Group by faculty
-    const faculties: Record<string, any> = {};
-    assignments.forEach((a: any) => {
-      const f = a.facultyName || "نامعلوم";
-      if (!faculties[f]) faculties[f] = { name: f, count: 0, items: [] };
-      faculties[f].count += Number(a.quantity || 0);
-      faculties[f].items.push(a.itemName);
-    });
-
-    setData(Object.values(faculties));
+    try {
+      const rows = await getFacultyReport();
+      setData(Array.isArray(rows) ? rows : []);
+    } catch {
+      setData([]);
+    }
     setLoading(false);
   };
 
@@ -33,8 +27,10 @@ export default function FacultyReport() {
 
   const handleExport = () => {
     const exportData = data.map(f => ({
-      'پوهنځی': f.name,
-      'مجموعي اجناس': f.count
+      'پوهنځی': f.name_ps || f.name || "",
+      'مجموعي غوښتنې': f.total_requests || 0,
+      'سپارل شوي': f.delivered_requests || 0,
+      'د ثبت شوو اجناسو مجموعه': f.total_assignments || 0,
     }));
     exportToCSV(exportData, "faculty_report");
   };
@@ -58,18 +54,22 @@ export default function FacultyReport() {
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800">
                 <th className="px-4 py-3 border">پوهنځی</th>
-                <th className="px-4 py-3 border">مجموعي سپارل شوي اجناس</th>
+                <th className="px-4 py-3 border">مجموعي غوښتنې</th>
+                <th className="px-4 py-3 border">سپارل شوي</th>
+                <th className="px-4 py-3 border">د ثبت شوو اجناسو مجموعه</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={2} className="text-center py-10">بارول...</td></tr>
+                <tr><td colSpan={4} className="text-center py-10">بارول...</td></tr>
               ) : data.length === 0 ? (
-                <tr><td colSpan={2} className="text-center py-10">معلومات نشته.</td></tr>
+                <tr><td colSpan={4} className="text-center py-10">معلومات نشته.</td></tr>
               ) : data.map((f, i) => (
                 <tr key={i} className="border-b hover:bg-gray-50 transition">
-                  <td className="px-4 py-2 border font-bold text-gray-800 dark:text-white/90">{f.name}</td>
-                  <td className="px-4 py-2 border font-black text-primary">{f.count} واحد</td>
+                  <td className="px-4 py-2 border font-bold text-gray-800 dark:text-white/90">{f.name_ps || f.name}</td>
+                  <td className="px-4 py-2 border text-center font-bold">{f.total_requests || 0}</td>
+                  <td className="px-4 py-2 border text-center font-bold text-green-600">{f.delivered_requests || 0}</td>
+                  <td className="px-4 py-2 border text-center font-black text-primary">{f.total_assignments || 0}</td>
                 </tr>
               ))}
             </tbody>

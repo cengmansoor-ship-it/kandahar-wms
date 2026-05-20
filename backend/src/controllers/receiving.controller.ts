@@ -4,6 +4,7 @@ import { ReceivingService } from '../services/receiving.service';
 const handleError = (res: Response, error: any) => {
   console.error(error);
   if (error.message === 'po_not_found') return res.status(404).json({ success: false, message: 'آمر خریداري ونه موندل شو.' });
+  if (error.message === 'request_not_found') return res.status(404).json({ success: false, message: 'غوښتنه ونه موندل شوه.' });
   return res.status(500).json({ success: false, message: 'تخنیکي ستونزه رامنځته شوه.', error: error.message });
 };
 
@@ -21,6 +22,16 @@ export const getRecordById = async (req: Request, res: Response): Promise<any> =
     const record = await ReceivingService.getRecordById(Number(req.params.id));
     if (!record) return res.status(404).json({ success: false, message: 'د رسیداتو ریکارډ ونه موندل شو.' });
     res.json({ success: true, data: record });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const createFromRequest = async (req: Request, res: Response) => {
+  try {
+    const userId = 1;
+    const id = await ReceivingService.createFromRequest(Number(req.params.requestId), req.body.notes || '', userId);
+    res.status(201).json({ success: true, message: 'د رسیداتو فورم جوړ شو.', data: { id } });
   } catch (error) {
     handleError(res, error);
   }

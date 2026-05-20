@@ -1,11 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 export const apiClient = {
   get: async (path: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}${path}`);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
       }
       const data = await response.json();
       return data.success ? data.data : data;
@@ -19,13 +20,12 @@ export const apiClient = {
     try {
       const response = await fetch(`${API_BASE_URL}${path}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
       }
       const data = await response.json();
       return data.success ? data.data : data;
@@ -39,13 +39,12 @@ export const apiClient = {
     try {
       const response = await fetch(`${API_BASE_URL}${path}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
       }
       const data = await response.json();
       return data.success ? data.data : data;
@@ -61,7 +60,8 @@ export const apiClient = {
         method: 'DELETE',
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
       }
       const data = await response.json();
       return data.success ? data.data : data;

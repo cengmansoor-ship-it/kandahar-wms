@@ -36,6 +36,45 @@ export class ReceivingService {
     return { ...records[0], items };
   }
 
+  static async createFromRequest(requestId: number, notes: string, userId: number | null) {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [reqs] = await db.query<RowDataPacket[]>(`SELECT id FROM requests WHERE id = ? AND is_deleted = FALSE`, [requestId]);
+      if (reqs.length === 0) throw new Error('request_not_found');
+
+      const [poRows] = await db.query<RowDataPacket[]>(`
+        SELECT po.id FROM purchase_orders po
+        JOIN procurement_cases pc ON po.procurement_case_id = pc.id
+        WHERE pc.request_id = ? AND po.is_deleted = FALSE
+        ORDER BY po.created_at DESC LIMIT 1
+      `, [requestId]);
+
+      const purchaseOrderId = poRows.length > 0 ? poRows[0].id : null;
+
+      const [result] = await connection.query<ResultSetHeader>(`
+        INSERT INTO receiving_records (purchase_order_id, request_id, received_by, notes)
+        VALUES (?, ?, ?, ?)
+      `, [purchaseOrderId, requestId, userId, notes]);
+
+      await connection.query(`
+        INSERT INTO audit_logs (user_id, action, entity_type, entity_id)
+        VALUES (?, ?, ?, ?)
+      `, [userId, 'CREATE', 'RECEIVING_RECORD', result.insertId]);
+
+      await connection.query(`UPDATE requests SET status = 'READY_FOR_DELIVERY', progress_percent = 80 WHERE id = ?`, [requestId]);
+
+      await connection.commit();
+      return result.insertId;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
   static async createFromPurchaseOrder(purchaseOrderId: number, notes: string, userId: number | null) {
     const connection = await db.getConnection();
     try {

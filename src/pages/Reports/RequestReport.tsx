@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
-import { getFullCollection, exportToCSV } from "../../firebase/reports";
+import { getRequestReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'انتظار',
+  CONFIRMED: 'تایید شوی',
+  SENT_TO_PROCUREMENT: 'تدارکاتو ته',
+  READY_FOR_DELIVERY: 'د تسلیم لپاره',
+  DELIVERED: 'سپارل شوی',
+  COMPLETED: 'بشپړ',
+  REJECTED: 'رد شوی',
+};
 
 export default function RequestReport() {
   const [data, setData] = useState<any[]>([]);
@@ -14,8 +24,12 @@ export default function RequestReport() {
 
   const fetchData = async () => {
     setLoading(true);
-    const requests = await getFullCollection("requests");
-    setData(requests);
+    try {
+      const rows = await getRequestReport();
+      setData(Array.isArray(rows) ? rows : []);
+    } catch {
+      setData([]);
+    }
     setLoading(false);
   };
 
@@ -23,12 +37,14 @@ export default function RequestReport() {
 
   const handleExport = () => {
     const exportData = data.map(r => ({
-      'غوښتونکی': r.requesterName,
-      'پوهنځی': r.faculty,
-      'ډیپارټمنټ': r.department,
-      'حالت': r.status,
-      'پرمختګ': r.progress,
-      'نیټه': r.createdAtHijriShamsi
+      'د تعقیب کود': r.tracking_id || "",
+      'غوښتونکی': r.person_name || r.requesterName || "",
+      'پوهنځی': r.faculty_name || r.faculty || "",
+      'ډیپارټمنټ': r.department_name || r.department || "",
+      'حالت': STATUS_LABELS[r.status] || r.status || "",
+      'درجه': r.request_level || "",
+      'پرمختګ': r.progress_percent ?? r.progress ?? 0,
+      'نیټه': r.created_at ? new Date(r.created_at).toLocaleDateString() : (r.createdAtHijriShamsi || ""),
     }));
     exportToCSV(exportData, "request_report");
   };
@@ -51,32 +67,45 @@ export default function RequestReport() {
           <table className="w-full text-right table-auto border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800">
-                <th className="px-4 py-3 border">نیټه</th>
+                <th className="px-4 py-3 border">کود</th>
                 <th className="px-4 py-3 border">غوښتونکی</th>
                 <th className="px-4 py-3 border">پوهنځی</th>
+                <th className="px-4 py-3 border">درجه</th>
                 <th className="px-4 py-3 border">حالت</th>
                 <th className="px-4 py-3 border">پرمختګ</th>
+                <th className="px-4 py-3 border">نیټه</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="text-center py-10">بارول...</td></tr>
-              ) : data.map((r, i) => (
-                <tr key={i} className="border-b hover:bg-gray-50 transition">
-                  <td className="px-4 py-2 border text-xs">{r.createdAtHijriShamsi}</td>
-                  <td className="px-4 py-2 border font-bold">{r.requesterName}</td>
-                  <td className="px-4 py-2 border text-xs">{r.faculty}</td>
-                  <td className="px-4 py-2 border">
-                    <span className="text-xs font-bold text-gray-600">{r.status}</span>
-                  </td>
-                  <td className="px-4 py-2 border">
-                    <div className="w-16 bg-gray-200 rounded-full h-1 ml-auto">
-                      <div className="bg-primary h-1 rounded-full" style={{ width: `${r.progress}%` }}></div>
-                    </div>
-                    <span className="text-[10px]">{r.progress}%</span>
-                  </td>
-                </tr>
-              ))}
+                <tr><td colSpan={7} className="text-center py-10">بارول...</td></tr>
+              ) : data.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-10">معلومات نشته.</td></tr>
+              ) : data.map((r, i) => {
+                const progress = r.progress_percent ?? r.progress ?? 0;
+                return (
+                  <tr key={i} className="border-b hover:bg-gray-50 transition">
+                    <td className="px-4 py-2 border text-xs text-gray-500">{r.tracking_id}</td>
+                    <td className="px-4 py-2 border font-bold">{r.person_name || r.requesterName}</td>
+                    <td className="px-4 py-2 border text-xs">{r.faculty_name || r.faculty}</td>
+                    <td className="px-4 py-2 border">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.request_level === 'URGENT' ? 'bg-red-100 text-red-700' : r.request_level === 'LOW' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700'}`}>
+                        {r.request_level === 'URGENT' ? 'بیړني' : r.request_level === 'LOW' ? 'ټیټ' : 'عادي'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 border">
+                      <span className="text-xs font-bold text-gray-600">{STATUS_LABELS[r.status] || r.status}</span>
+                    </td>
+                    <td className="px-4 py-2 border">
+                      <div className="w-16 bg-gray-200 rounded-full h-1.5 ml-auto">
+                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                      </div>
+                      <span className="text-[10px]">{progress}%</span>
+                    </td>
+                    <td className="px-4 py-2 border text-xs">{r.created_at ? new Date(r.created_at).toLocaleDateString() : (r.createdAtHijriShamsi || "")}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
