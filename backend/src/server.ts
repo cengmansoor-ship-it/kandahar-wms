@@ -10,10 +10,12 @@ import deliveryRoutes from './routes/delivery.routes';
 import reportsRoutes from './routes/reports.routes';
 import lookupRoutes from './routes/lookup.routes';
 import emailRoutes from './routes/email.routes';
+import emailConfigRoutes from './routes/emailConfig.routes';
 import traceabilityRoutes from './routes/traceability.routes';
 import managementRoutes from './routes/management.routes';
 import { TraceabilityService } from './services/traceability.service';
 import { ManagementService } from './services/management.service';
+import { EmailConfigService } from './services/emailConfig.service';
 
 dotenv.config();
 
@@ -26,6 +28,7 @@ app.use(express.urlencoded({ limit: '20mb', extended: true }));
 checkDbConnection();
 TraceabilityService.runMigrations().then(() => console.log('[WMS] Traceability migrations complete.')).catch(e => console.warn('[WMS] Traceability migrations warning:', e.message));
 ManagementService.runMigrations().then(() => console.log('[WMS] Management migrations complete.')).catch(e => console.warn('[WMS] Management migrations warning:', e.message));
+EmailConfigService.runMigrations().then(() => console.log('[WMS] Email config migrations complete.')).catch(e => console.warn('[WMS] Email config migrations warning:', e.message));
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/requests', requestRoutes);
@@ -35,6 +38,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/lookup', lookupRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/email-config', emailConfigRoutes);
 app.use('/api/traceability', traceabilityRoutes);
 app.use('/api/management', managementRoutes);
 
