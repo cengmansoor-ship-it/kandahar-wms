@@ -1,0 +1,59 @@
+#!/bin/bash
+
+MYSQL_DATA_DIR="/home/runner/workspace/mysql_data"
+MYSQL_SOCK="/tmp/mysql.sock"
+MYSQL_PID="/tmp/mysql.pid"
+MYSQL_PORT=3306
+
+start_mysql() {
+  if ! mysqld --user=runner --datadir="$MYSQL_DATA_DIR" \
+    --socket="$MYSQL_SOCK" \
+    --pid-file="$MYSQL_PID" \
+    --port="$MYSQL_PORT" \
+    --mysqlx=OFF \
+    --daemonize 2>/dev/null; then
+    echo "[WMS] Starting MySQL..."
+    mysqld --user=runner --datadir="$MYSQL_DATA_DIR" \
+      --socket="$MYSQL_SOCK" \
+      --pid-file="$MYSQL_PID" \
+      --port="$MYSQL_PORT" \
+      --mysqlx=OFF &
+  fi
+}
+
+wait_for_mysql() {
+  echo "[WMS] Waiting for MySQL to be ready..."
+  for i in $(seq 1 30); do
+    if mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" -e "SELECT 1;" > /dev/null 2>&1; then
+      echo "[WMS] MySQL is ready."
+      return 0
+    fi
+    sleep 1
+  done
+  echo "[WMS] MySQL did not start in time."
+  return 1
+}
+
+init_db() {
+  DB_EXISTS=$(mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" -e "SHOW DATABASES LIKE 'kandahar_wms_db';" 2>/dev/null | grep -c kandahar_wms_db)
+  if [ "$DB_EXISTS" -eq 0 ]; then
+    echo "[WMS] Initializing database schema..."
+    mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" < /home/runner/workspace/backend/src/database/schema.sql
+    echo "[WMS] Database schema created."
+  else
+    echo "[WMS] Database already exists, skipping schema init."
+  fi
+}
+
+if [ ! -d "$MYSQL_DATA_DIR" ]; then
+  echo "[WMS] Initializing MySQL data directory..."
+  mkdir -p "$MYSQL_DATA_DIR"
+  mysqld --initialize-insecure --user=runner --datadir="$MYSQL_DATA_DIR" 2>&1
+fi
+
+start_mysql
+wait_for_mysql || exit 1
+init_db
+
+echo "[WMS] Starting backend API server..."
+exec node_modules/.bin/nodemon --exec node_modules/.bin/ts-node src/server.ts

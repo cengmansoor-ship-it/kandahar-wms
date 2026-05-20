@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -23,6 +22,9 @@ export default defineConfig({
         target: "http://localhost:3001",
         changeOrigin: true,
       },
+    },
+    watch: {
+      ignored: ["**/mysql_data/**", "**/.git/**", "**/node_modules/**"],
     },
   },
 });

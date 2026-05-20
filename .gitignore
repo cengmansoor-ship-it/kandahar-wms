@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 kandahar-wms/
+
+# MySQL local data directory
+mysql_data/
