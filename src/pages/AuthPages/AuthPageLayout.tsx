@@ -12,8 +12,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="relative z-1 flex items-center justify-center">
             <GridShape />
             <div className="flex max-w-sm flex-col items-center px-6 text-center">
-              <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-2xl bg-white/10 p-2 overflow-hidden">
-                <img src={kuLogo} alt="Kandahar University Logo" className="h-full w-full object-contain rounded-xl drop-shadow-lg" />
+              <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-full bg-white/10 p-2 overflow-hidden">
+                <img src={kuLogo} alt="Kandahar University Logo" className="h-full w-full object-contain rounded-full drop-shadow-lg" />
               </div>
               <h2 className="mb-4 text-2xl font-bold text-white">
                 د کندهار پوهنتون WMS

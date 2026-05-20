@@ -6,18 +6,28 @@ import Button from "../ui/button/Button";
 import { login } from "../../firebase/auth";
 import { isFirebaseConfigured } from "../../firebase/firebase";
 
+const DEMO_ACCOUNTS = [
+  { role: "سوپر ادمین", email: "superadmin@ku.edu.af", password: "SuperAdmin@1" },
+  { role: "ادمین", email: "admin@ku.edu.af", password: "Admin@1234" },
+  { role: "د ګدام مدیر", email: "warehouse@ku.edu.af", password: "Warehouse@1" },
+  { role: "تدارکات", email: "procurement@ku.edu.af", password: "Procurement@1" },
+  { role: "غوښتنه کوونکی", email: "requester@ku.edu.af", password: "Requester@1" },
+];
+
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState(isFirebaseConfigured ? "" : "superadmin@ku.edu.af");
   const [password, setPassword] = useState(isFirebaseConfigured ? "" : "SuperAdmin@1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMsg, setForgotMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       await login(email, password);
       window.location.replace("/dashboard");
@@ -25,6 +35,20 @@ export default function SignInForm() {
       console.error("Login failed:", err);
       setError("برېښنالیک یا پټنوم ناسم دی / ایمیل یا رمز اشتباه است");
       setLoading(false);
+    }
+  };
+
+  const handleForgot = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotMsg("مهرباني وکړئ خپل ایمیل ولیکئ.");
+      return;
+    }
+    const found = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === forgotEmail.trim().toLowerCase());
+    if (found) {
+      setForgotMsg(`ستاسې پټنوم: ${found.password}`);
+    } else {
+      setForgotMsg("دا ایمیل پته د سیستم کې نه موندل کېږي. مهرباني وکړئ د سیستم مدیر سره اړیکه ونیسئ.");
     }
   };
 
@@ -41,62 +65,141 @@ export default function SignInForm() {
             </p>
           </div>
 
-
           {error && (
             <div className="mb-4 rounded-lg bg-red-100 p-3 text-sm font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-5">
-              <div>
-                <Label>
-                  برېښنالیک / ایمیل <span className="text-error-500">*</span>
-                </Label>
-                <Input
-                  type="email"
-                  placeholder="admin@kandahar.edu.af"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+          {!showForgot ? (
+            <>
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-5">
+                  <div>
+                    <Label>
+                      برېښنالیک / ایمیل <span className="text-error-500">*</span>
+                    </Label>
+                    <Input
+                      type="email"
+                      placeholder="admin@kandahar.edu.af"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>
+                        پټنوم / رمز <span className="text-error-500">*</span>
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => { setShowForgot(true); setForgotEmail(email); setForgotMsg(""); }}
+                        className="text-xs text-brand-500 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+                      >
+                        پټنوم هیر کړئ؟
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="پټنوم ولیکئ"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <span
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute z-30 -translate-y-1/2 cursor-pointer left-4 top-1/2"
+                      >
+                        {showPassword ? (
+                          <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                        ) : (
+                          <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button className="w-full" size="sm" type="submit" disabled={loading}>
+                    {loading ? "مهرباني وکړئ انتظار وکړئ..." : "سیستم ته ننوتل"}
+                  </Button>
+                </div>
+              </form>
+
+              <div className="mt-5 rounded-lg bg-gray-50 p-3 text-center text-xs text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
+                د نوي حساب جوړول او صلاحیت ورکول یوازې د عمومي صلاحیت لرونکي له لارې کېږي.
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-xl bg-brand-50 border border-brand-200 p-4 dark:bg-brand-900/20 dark:border-brand-800">
+                <p className="text-sm font-semibold text-brand-700 dark:text-brand-300 mb-1">
+                  🔑 د پټنوم بیا رغونه
+                </p>
+                <p className="text-xs text-brand-600 dark:text-brand-400">
+                  خپل ایمیل ولیکئ — سیستم به ستاسې د اکاونټ معلومات وښیي.
+                </p>
               </div>
 
-              <div>
-                <Label>
-                  پټنوم / رمز <span className="text-error-500">*</span>
-                </Label>
-                <div className="relative">
+              <form onSubmit={handleForgot} className="space-y-4">
+                <div>
+                  <Label>برېښنالیک / ایمیل</Label>
                   <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="پټنوم ولیکئ"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    type="email"
+                    placeholder="admin@kandahar.edu.af"
+                    value={forgotEmail}
+                    onChange={(e) => { setForgotEmail(e.target.value); setForgotMsg(""); }}
                   />
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute z-30 -translate-y-1/2 cursor-pointer left-4 top-1/2"
-                  >
-                    {showPassword ? (
-                      <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                    ) : (
-                      <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                    )}
-                  </span>
+                </div>
+
+                {forgotMsg && (
+                  <div className={`rounded-lg p-3 text-sm font-medium ${
+                    forgotMsg.includes("پټنوم:")
+                      ? "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
+                      : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
+                  }`}>
+                    {forgotMsg}
+                  </div>
+                )}
+
+                <Button className="w-full" size="sm" type="submit">
+                  پټنوم لټول
+                </Button>
+              </form>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 dark:bg-white/[0.03] dark:border-gray-700 overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-100 dark:bg-white/[0.05] border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">د ډیمو اکاونټونه</p>
+                </div>
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {DEMO_ACCOUNTS.map(acc => (
+                    <button
+                      key={acc.email}
+                      type="button"
+                      onClick={() => { setEmail(acc.email); setPassword(acc.password); setShowForgot(false); }}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-right hover:bg-brand-50 dark:hover:bg-white/[0.04] transition-colors"
+                    >
+                      <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{acc.password}</span>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{acc.role}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{acc.email}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <Button className="w-full" size="sm" type="submit" disabled={loading}>
-                {loading ? "مهرباني وکړئ انتظار وکړئ..." : "سیستم ته ننوتل"}
-              </Button>
+              <button
+                type="button"
+                onClick={() => setShowForgot(false)}
+                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium py-1"
+              >
+                ← شاته ورستنیدل
+              </button>
             </div>
-          </form>
-
-          <div className="mt-5 rounded-lg bg-gray-50 p-3 text-center text-xs text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
-            د نوي حساب جوړول او صلاحیت ورکول یوازې د عمومي صلاحیت لرونکي له لارې کېږي.
-          </div>
+          )}
         </div>
       </div>
     </div>
