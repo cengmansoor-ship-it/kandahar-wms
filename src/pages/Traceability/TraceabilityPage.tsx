@@ -426,27 +426,33 @@ export default function TraceabilityPage() {
 
   // ─── Faculty Departments ──────────────────────────────────────────────────────
   const renderFacultyDepts = () => {
-    const grouped: Record<string, FacultyDept[]> = {};
+    // Group by faculty, storing faculty meta + departments separately so we
+    // never crash when a faculty has no departments yet (LEFT JOIN returns null dept)
+    const grouped: Record<string, { facultyRow: FacultyDept; departments: FacultyDept[] }> = {};
     filteredFacultyDepts.forEach(d => {
       const key = `${d.faculty_id}-${d.faculty_name_ps}`;
-      if (!grouped[key]) grouped[key] = [];
-      if (d.department_id) grouped[key].push(d);
+      if (!grouped[key]) grouped[key] = { facultyRow: d, departments: [] };
+      if (d.department_id) grouped[key].departments.push(d);
     });
+    const entries = Object.entries(grouped);
     return (
       <div className="space-y-6 animate-fade-in">
-        {Object.keys(grouped).length === 0 && filteredFacultyDepts.length === 0 ? renderEmpty() :
-          Object.entries(grouped).map(([key, items], gi) => {
-            const first = items[0];
-            return (
-              <div key={key} className="animate-slide-up" style={{ animationDelay: `${gi * 80}ms` }}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">🎓</span>
-                  </div>
-                  <h3 className="font-bold text-gray-700 dark:text-gray-200 text-base">{splitPick(`${first.faculty_name_ps} / ${first.faculty_name_fa}`)}</h3>
+        {entries.length === 0 ? renderEmpty() :
+          entries.map(([key, { facultyRow, departments }], gi) => (
+            <div key={key} className="animate-slide-up" style={{ animationDelay: `${gi * 80}ms` }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">🎓</span>
                 </div>
+                <h3 className="font-bold text-gray-700 dark:text-gray-200 text-base">{splitPick(`${facultyRow.faculty_name_ps} / ${facultyRow.faculty_name_fa}`)}</h3>
+              </div>
+              {departments.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 mr-6 py-4 text-center">
+                  {pick("هیڅ اداره نشته","هیچ دپارتمانی ثبت نشده")}
+                </p>
+              ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mr-6">
-                  {items.map((d, i) => (
+                  {departments.map((d, i) => (
                     <button key={d.department_id}
                       onClick={() => {
                         setSelectedDept(d);
@@ -469,9 +475,9 @@ export default function TraceabilityPage() {
                     </button>
                   ))}
                 </div>
-              </div>
-            );
-          })
+              )}
+            </div>
+          ))
         }
       </div>
     );

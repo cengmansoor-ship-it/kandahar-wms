@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [testingId, setTestingId] = useState<number | null>(null);
 
   const loadEmailConfigs = async () => {
     try {
@@ -136,6 +137,23 @@ export default function SettingsPage() {
       flashEmailMsg(pick("د سرور سره اتصال نشو.", "اتصال به سرور برقرار نشد."), "error");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleTest = async (id: number) => {
+    setTestingId(id);
+    try {
+      const res = await fetch(`/api/email-config/${id}/test`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        flashEmailMsg(pick("✅ د ازموینې ایمیل بریالیتوب سره ولیږل شو! خپل inbox وګورئ.", "✅ ایمیل آزمایشی با موفقیت ارسال شد! صندوق ورودی را بررسی کنید."), "success");
+      } else {
+        flashEmailMsg(pick("❌ ازموینه ناکامه شوه: ", "❌ آزمایش ناموفق: ") + data.message, "error");
+      }
+    } catch {
+      flashEmailMsg(pick("د سرور سره اتصال نشو.", "اتصال به سرور برقرار نشد."), "error");
+    } finally {
+      setTestingId(null);
     }
   };
 
@@ -430,6 +448,26 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* Test button */}
+                    <button
+                      onClick={() => handleTest(config.id)}
+                      disabled={testingId === config.id}
+                      className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-600 hover:bg-green-100 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 disabled:opacity-50 transition-colors"
+                      title={pick("د ایمیل ازموینه", "آزمایش ایمیل")}
+                    >
+                      {testingId === config.id ? (
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                      {pick("ازموینه", "آزمایش")}
+                    </button>
+                    {/* Edit button */}
                     <button
                       onClick={() => handleEdit(config)}
                       className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
@@ -439,6 +477,7 @@ export default function SettingsPage() {
                       </svg>
                       {pick("سمول", "ویرایش")}
                     </button>
+                    {/* Delete button */}
                     <button
                       onClick={() => handleDelete(config.id)}
                       disabled={deletingId === config.id}

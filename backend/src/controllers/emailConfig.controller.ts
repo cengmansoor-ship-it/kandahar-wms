@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import nodemailer from 'nodemailer';
 import { EmailConfigService } from '../services/emailConfig.service';
 
 export const getEmailConfigs = async (req: Request, res: Response) => {
@@ -52,5 +53,35 @@ export const deleteEmailConfig = async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const testEmailConfig = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  try {
+    const config = await EmailConfigService.getWithPassword(id);
+    if (!config) return res.status(404).json({ success: false, message: 'Not found' });
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: config.email, pass: config.app_password },
+    });
+
+    await transporter.sendMail({
+      from: `"کندهار پوهنتون WMS" <${config.email}>`,
+      to: config.email,
+      subject: '✅ د ایمیل تنظیماتو ازموینه — Kandahar WMS',
+      text: 'د ایمیل تنظیمات سم کار کوي.\nEmail configuration is working correctly.',
+      html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:14px;line-height:2;color:#1f2937;padding:24px;">
+        <h2 style="color:#16a34a;">✅ د ایمیل تنظیمات بریالي دي</h2>
+        <p>دغه ازموینه ثابتوي چې ستاسو Gmail اپ پاسورډ او ایمیل ادرس سم تنظیم شوی دی.</p>
+        <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;"/>
+        <p style="font-size:12px;color:#9ca3af;">کندهار پوهنتون — د ګدام او تدارکاتو مدیریت سیستم</p>
+      </div>`,
+    });
+
+    return res.json({ success: true, message: 'Test email sent successfully' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message || 'Failed to send test email' });
   }
 };
