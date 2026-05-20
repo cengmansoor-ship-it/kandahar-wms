@@ -125,19 +125,19 @@ export default function UserManagement() {
       <PageMeta title="د کاروونکو مدیریت | Kandahar University WMS" description="د کاروونکو مدیریت" />
       <Breadcrumb pageTitle="د کاروونکو مدیریت / مدیریت کاربران" />
 
-      <div className="space-y-4" dir="rtl">
+      <div className="space-y-4 page-enter" dir="rtl">
         {msg && (
-          <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-green-700 text-sm dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
+          <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-green-700 text-sm dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 animate-slide-down">
             {msg}
           </div>
         )}
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">کاروونکي / کاربران</h3>
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition shadow-md btn-press"
             >
               + نوی کاروونکی
             </button>
@@ -163,24 +163,26 @@ export default function UserManagement() {
           <div className="overflow-x-auto">
             <table className="w-full table-auto">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">نوم</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">ایمیل</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">رول</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">حالت</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">عمل</th>
+                <tr className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/60">
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">نوم</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">ایمیل</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">رول</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">حالت</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">عمل</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-10 text-gray-400">
+                    <td colSpan={5} className="text-center py-10 text-gray-400 animate-fade-in">
                       {search ? `"${search}" لپاره هیڅ کاروونکی ونه موندل شو.` : "هیڅ کاروونکی نشته."}
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map(u => (
-                    <tr key={u.uid} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.02] transition-colors">
+                  filteredUsers.map((u, idx) => (
+                    <tr key={u.uid}
+                      className="border-b border-gray-100 table-row-hover dark:border-gray-800 animate-slide-up"
+                      style={{ animationDelay: `${Math.min(idx, 15) * 35}ms` }}>
                       <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{u.name}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">{u.email}</td>
                       <td className="px-4 py-3 text-right">

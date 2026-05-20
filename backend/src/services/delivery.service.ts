@@ -94,6 +94,14 @@ export class DeliveryService {
         }
       }
 
+      // Fetch FS5 number and request tracking_id for traceability linking
+      const [deliveryMeta] = await connection.query<RowDataPacket[]>(
+        `SELECT d.fs5_number, r.tracking_id FROM deliveries d LEFT JOIN requests r ON d.request_id = r.id WHERE d.id = ?`,
+        [deliveryId]
+      );
+      const fs5Ref = deliveryMeta[0]?.fs5_number || null;
+      const trackingId = deliveryMeta[0]?.tracking_id || null;
+
       for (const item of items) {
         if (!item.item_id || !item.quantity) continue;
 
@@ -120,11 +128,19 @@ export class DeliveryService {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `, [item.item_id, 'OUT', item.quantity, prevStock, newStock, 'DELIVERY_FS5', deliveryId.toString(), userId]);
 
-        // Item Assignment
+        // Item Assignment — includes traceability fields (tracking_id, delivery_id, fs5_reference, assigned_by)
         await connection.query(`
-          INSERT INTO item_assignments (item_id, person_id, department_id, faculty_id, quantity, source_type, source_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [item.item_id, personId, deptId, facId, item.quantity, 'DELIVERY', deliveryId]);
+          INSERT INTO item_assignments
+            (item_id, person_id, department_id, faculty_id, quantity, source_type, source_id,
+             tracking_id, delivery_id, fs5_reference, assigned_by, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          item.item_id, personId, deptId, facId,
+          item.quantity, 'DELIVERY', deliveryId,
+          trackingId, deliveryId, fs5Ref,
+          userId,
+          `FS5 تسلیمي — د غوښتنې شمیره: ${trackingId || '-'}`
+        ]);
       }
 
       if (reqId) {

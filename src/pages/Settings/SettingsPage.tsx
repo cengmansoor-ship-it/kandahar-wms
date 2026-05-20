@@ -27,8 +27,8 @@ export default function SettingsPage() {
     <>
       <PageMeta title={pick("تنظیمات", "تنظیمات")} description={pick("د سیستم تنظیمات", "تنظیمات سیستم")} />
       <Breadcrumb pageTitle={pick("تنظیمات", "تنظیمات")} />
-      <div className="space-y-6" dir="rtl">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="space-y-6 page-enter" dir="rtl">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up" style={{ animationDelay: "0ms" }}>
           <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">
             {pick("د سوپر اډمین تنظیمات", "تنظیمات سوپر ادمین")}
           </h1>
@@ -41,7 +41,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Language Switcher */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "80ms" }}>
           <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90">
             {pick("د سیستم ژبه / زبان سیستم", "زبان سیستم / د سیستم ژبه")}
           </h2>
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "160ms" }}>
             <h2 className="mb-4 text-lg font-bold">
               {pick("د ورځني غوښتنو حد", "محدودیت درخواست‌های روزانه")}
             </h2>
@@ -111,7 +111,7 @@ export default function SettingsPage() {
             {message && <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">{message}</p>}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "220ms" }}>
             <h2 className="mb-4 text-lg font-bold">
               {pick("د فایربیس اتصال طریقه", "روش اتصال Firebase")}
             </h2>

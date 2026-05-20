@@ -89,8 +89,8 @@ export class TraceabilityService {
       LEFT JOIN people p ON p.department_id = d.id AND p.is_deleted = FALSE
       LEFT JOIN item_assignments ia ON (ia.faculty_id = f.id OR ia.department_id = d.id OR ia.person_id = p.id) AND ia.is_deleted = FALSE
       WHERE f.is_deleted = FALSE
-      GROUP BY COALESCE(f.level, 'General')
-      ORDER BY FIELD(COALESCE(f.level,'General'), 'Bachelor', 'Master', 'PhD', 'General')
+      GROUP BY level
+      ORDER BY FIELD(level, 'Bachelor', 'Master', 'PhD', 'General')
     `);
     const levels = ['Bachelor', 'Master', 'PhD'];
     const result: any[] = [...rows];

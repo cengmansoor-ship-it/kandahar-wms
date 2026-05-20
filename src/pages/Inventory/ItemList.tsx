@@ -96,55 +96,74 @@ export default function ItemList() {
         </div>
 
         <div className="max-w-full overflow-x-auto">
-          <table className="w-full table-auto">
+          {loading ? (
+            <div className="space-y-2 py-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton-shimmer h-14 rounded-xl" style={{ animationDelay: `${i * 60}ms` }} />
+              ))}
+            </div>
+          ) : (
+          <table className="w-full table-auto" dir="rtl">
             <thead>
-              <tr className="bg-gray-100 text-left dark:bg-gray-800">
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("د جنس نوم", "نام جنس")}</th>
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("کټګوري", "دسته‌بندی")}</th>
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("نوعیت", "نوع/مشخصات")}</th>
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("موجودي", "موجودی")}</th>
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("واحد", "واحد")}</th>
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("کمترینه کچه", "حداقل سطح")}</th>
-                <th className="px-4 py-4 font-medium text-gray-800 dark:text-white/90 text-right">{pick("عملیات", "عملیات")}</th>
+              <tr className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/60">
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("د جنس نوم", "نام جنس")}</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("کټګوري", "دسته‌بندی")}</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("نوعیت", "نوع/مشخصات")}</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("موجودي", "موجودی")}</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("واحد", "واحد")}</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("کمترینه کچه", "حداقل سطح")}</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("عملیات", "عملیات")}</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-500">{pick("بارول...", "در حال بارگذاری...")}</td></tr>
-              ) : filteredItems.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-500">
+              {filteredItems.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-10 text-gray-500 animate-fade-in">
                   {search ? `"${search}" ${pick("لپاره هیڅ جنس ونه موندل شو.", "برای هیچ جنسی پیدا نشد.")}` : pick("هیڅ جنس ونه موندل شو.", "هیچ جنسی پیدا نشد.")}
                 </td></tr>
               ) : (
-                filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.02] transition-colors">
-                    <td className="px-4 py-4 text-gray-800 dark:text-white/90 text-right font-medium">{item.name}</td>
-                    <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-right">{item.category || "-"}</td>
-                    <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-right text-xs">{item.typeOrSpecification || "-"}</td>
+                filteredItems.map((item, idx) => (
+                  <tr key={item.id}
+                    className="border-b border-gray-100 table-row-hover dark:border-gray-800 animate-slide-up"
+                    style={{ animationDelay: `${Math.min(idx, 15) * 35}ms` }}>
+                    <td className="px-4 py-4 text-gray-800 dark:text-white/90 text-right font-semibold">{item.name}</td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium">
+                        {item.category || "-"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-gray-500 dark:text-gray-400 text-right text-xs">{item.typeOrSpecification || "-"}</td>
                     <td className="px-4 py-4 text-right font-bold">
-                      <span className={item.currentQuantity === 0 ? "text-red-500" : item.currentQuantity <= item.minimumStockLevel ? "text-orange-500" : "text-green-600"}>
+                      <span className={`inline-flex items-center gap-1 text-sm font-bold ${
+                        item.currentQuantity === 0
+                          ? "text-red-500"
+                          : item.currentQuantity <= item.minimumStockLevel
+                          ? "text-orange-500"
+                          : "text-green-600"
+                      }`}>
+                        {item.currentQuantity === 0 && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                        {item.currentQuantity > 0 && item.currentQuantity <= item.minimumStockLevel && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />}
                         {item.currentQuantity}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-right">{item.unit}</td>
-                    <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-right">{item.minimumStockLevel}</td>
+                    <td className="px-4 py-4 text-gray-600 dark:text-gray-400 text-right text-sm">{item.unit}</td>
+                    <td className="px-4 py-4 text-gray-500 dark:text-gray-500 text-right text-sm">{item.minimumStockLevel}</td>
                     <td className="px-4 py-4 text-right">
-                      <div className="flex items-center gap-2 justify-end flex-wrap">
+                      <div className="flex items-center gap-1.5 justify-end flex-wrap">
                         {canStockIn && (
-                          <Link to={`/inventory/stock-in/${item.id}`} className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 transition">
+                          <Link to={`/inventory/stock-in/${item.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-500 hover:text-white dark:bg-green-900/30 dark:text-green-400 transition-all font-medium btn-press">
                             {pick("داخلول", "ورودی")}
                           </Link>
                         )}
                         {canStockOut && (
-                          <Link to={`/inventory/stock-out/${item.id}`} className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 transition">
+                          <Link to={`/inventory/stock-out/${item.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-500 hover:text-white dark:bg-red-900/30 dark:text-red-400 transition-all font-medium btn-press">
                             {pick("ایستل", "خروجی")}
                           </Link>
                         )}
-                        <Link to={`/inventory/ledger?item=${item.id}`} className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 transition">
+                        <Link to={`/inventory/ledger?item=${item.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-500 hover:text-white dark:bg-blue-900/30 dark:text-blue-400 transition-all font-medium btn-press">
                           {pick("لیجر", "دفتر کل")}
                         </Link>
                         {canEdit && (
-                          <Link to={`/inventory/edit/${item.id}`} className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 transition">
+                          <Link to={`/inventory/edit/${item.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-500 hover:text-white dark:bg-gray-700 dark:text-gray-300 transition-all font-medium btn-press">
                             {pick("سمون", "ویرایش")}
                           </Link>
                         )}
@@ -155,6 +174,7 @@ export default function ItemList() {
               )}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </>

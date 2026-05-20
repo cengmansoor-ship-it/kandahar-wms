@@ -137,32 +137,35 @@ export default function RequestList() {
 
         <div className="max-w-full overflow-x-auto">
           {isLoading ? (
-            <div className="text-center py-20">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-              <p className="mt-4 text-gray-500">{pick("بارول...", "در حال بارگذاری...")}</p>
+            <div className="space-y-2 py-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton-shimmer h-16 rounded-xl" style={{ animationDelay: `${i * 60}ms` }} />
+              ))}
             </div>
           ) : !profile ? (
-            <div className="text-center py-20 text-orange-500">{pick("د کاروونکي معلومات ونه موندل شول.", "اطلاعات کاربر یافت نشد.")}</div>
+            <div className="text-center py-20 text-orange-500 animate-fade-in">{pick("د کاروونکي معلومات ونه موندل شول.", "اطلاعات کاربر یافت نشد.")}</div>
           ) : filteredRequests.length === 0 ? (
-            <div className="text-center py-20 text-gray-500">
+            <div className="text-center py-20 text-gray-500 animate-fade-in">
               {search ? `"${search}" ${pick("لپاره هیڅ غوښتنه ونه موندل شوه.", "برای هیچ درخواستی پیدا نشد.")}` : pick("تر اوسه کومه غوښتنه نشته.", "تاکنون هیچ درخواستی وجود ندارد.")}
             </div>
           ) : (
             <table className="w-full table-auto" dir="rtl">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("نیټه", "تاریخ")}</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("پوهنځی / غوښتونکی", "پوهنکده / درخواست‌کننده")}</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("درجه", "درجه")}</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("اجناس", "اجناس")}</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("حالت", "وضعیت")}</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("پرمختګ", "پیشرفت")}</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("عمل", "عملیات")}</th>
+                <tr className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/60">
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("نیټه", "تاریخ")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("پوهنځی / غوښتونکی", "پوهنکده / درخواست‌کننده")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("درجه", "درجه")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("اجناس", "اجناس")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("حالت", "وضعیت")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("پرمختګ", "پیشرفت")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">{pick("عمل", "عملیات")}</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.02] transition-colors">
+                {filteredRequests.map((r, idx) => (
+                  <tr key={r.id}
+                    className="border-b border-gray-100 table-row-hover dark:border-gray-800 animate-slide-up"
+                    style={{ animationDelay: `${Math.min(idx, 12) * 40}ms` }}>
                     <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{r.createdAtHijriShamsi || "-"}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="font-bold text-gray-800 dark:text-white/90">{r.faculty || pick("ناپیژندل", "ناشناخته")}</div>
@@ -170,20 +173,28 @@ export default function RequestList() {
                       {r.departmentOrPerson && <div className="text-xs text-gray-400 dark:text-gray-500">{r.departmentOrPerson}</div>}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right whitespace-nowrap">{r.currentRequestLevel || pick("عادي", "عادی")}</td>
-                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right">{r.items?.length || 0} {pick("قلمه", "قلم")}</td>
+                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                        {r.items?.length || 0} {pick("قلمه", "قلم")}
+                      </span>
+                    </td>
                     <td className="px-4 py-4 text-right">
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-600"}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-600"}`}>
                         {statusLabels(r.status)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <div className="w-24 bg-gray-200 rounded-full h-1.5 dark:bg-gray-700 mr-auto">
-                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${r.progress || 0}%` }}></div>
+                      <div className="w-24 bg-gray-200 rounded-full h-2 dark:bg-gray-700 mr-auto overflow-hidden">
+                        <div className="bg-gradient-to-r from-primary to-blue-400 h-2 rounded-full transition-all duration-700" style={{ width: `${r.progress || 0}%` }}></div>
                       </div>
-                      <span className="text-[10px] text-gray-500">{r.progress || 0}%</span>
+                      <span className="text-[10px] text-gray-500 font-medium">{r.progress || 0}%</span>
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <Link to={`/requests/details/${r.id}`} className="text-primary text-sm font-bold hover:underline">{pick("جزیات", "جزئیات")}</Link>
+                      <Link to={`/requests/details/${r.id}`}
+                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all font-bold btn-press">
+                        {pick("جزیات", "جزئیات")}
+                      </Link>
                     </td>
                   </tr>
                 ))}

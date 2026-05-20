@@ -184,58 +184,80 @@ export default function Home() {
     { title: pick("فورمونه", "فرم‌ها"), desc: pick("رسمي فورمونه او اسناد", "فرم‌های رسمی و اسناد"), to: "/official-forms" },
   ];
 
+  const staggerDelay = (i: number) => ({ animationDelay: `${i * 60}ms` });
+
   return (
     <>
       <PageMeta title={pick("عمومي پاڼه", "داشبورد") + " | Kandahar University WMS"} description="" />
-      <div className="space-y-6" dir="rtl">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">
+      <div className="space-y-6 page-enter" dir="rtl">
+
+        {/* Hero header */}
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-l from-primary/10 via-white to-blue-50 p-6 dark:from-primary/20 dark:via-white/[0.03] dark:to-blue-900/10 dark:border-primary/30 animate-slide-down">
+          <div className="absolute -top-8 -left-8 w-40 h-40 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-6 right-10 w-28 h-28 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white/90 relative z-10">
             {pick("د کندهار پوهنتون د عمومي ګدام او تدارکاتو مدیریت سیستم", "سیستم مدیریت انبار و تدارکات پوهنتون کندهار")}
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 relative z-10">
             {pick("د موجودۍ، غوښتنو، تدارکاتو، ترلاسه کولو، تسلیمۍ او راپورونو لپاره یو واحد سیستم.", "یک سیستم واحد برای موجودی، درخواست‌ها، تدارکات، تحویل‌گیری و گزارش‌ها.")}
           </p>
           {profile && (
-            <p className="mt-2 text-xs text-primary font-medium">
-              {pick("ښه راغلاست،", "خوش آمدید،")} {profile.name} — {profile.role}
+            <p className="mt-2 text-xs text-primary font-medium relative z-10">
+              {pick("ښه راغلاست،", "خوش آمدید،")} <span className="font-bold">{profile.name}</span> — <span className="opacity-70">{profile.role}</span>
             </p>
           )}
         </div>
 
+        {/* Stat cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-          {cards.map((card) => (
-            <Link key={card.label} to={card.to}
-              className="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md hover:border-primary/30 transition-all dark:border-gray-800 dark:bg-white/[0.03]">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-2xl">{card.icon}</span>
-                <div className={`w-2 h-2 rounded-full ${card.color}`}></div>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{card.label}</p>
-              <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors">{card.value}</p>
-            </Link>
-          ))}
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]" style={staggerDelay(i)}>
+                  <div className="skeleton-shimmer h-6 w-8 rounded mb-3" />
+                  <div className="skeleton-shimmer h-3 w-20 rounded mb-2" />
+                  <div className="skeleton-shimmer h-7 w-14 rounded" />
+                </div>
+              ))
+            : cards.map((card, i) => (
+                <Link key={card.label} to={card.to}
+                  className="group rounded-2xl border border-gray-200 bg-white p-5 card-interactive hover:shadow-lg hover:border-primary/30 dark:border-gray-800 dark:bg-white/[0.03] animate-scale-in"
+                  style={staggerDelay(i)}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-2xl transition-transform group-hover:scale-125 duration-300">{card.icon}</span>
+                    <div className={`w-2.5 h-2.5 rounded-full ${card.color} animate-pulse-ring`}></div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{card.label}</p>
+                  <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors stat-pop">{card.value}</p>
+                </Link>
+              ))
+          }
         </div>
 
+        {/* Charts row */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in" style={{ animationDelay: '150ms' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د ګدام داخل / خارج (وروستي ۶ میاشتې)", "ورودی / خروجی انبار (۶ ماه اخیر)")}</h2>
-              <Link to="/inventory/ledger" className="text-xs text-primary hover:underline">{pick("ټول لیجر ←", "همه دفتر کل ←")}</Link>
+              <Link to="/inventory/ledger" className="text-xs text-primary hover:underline btn-press">{pick("ټول لیجر ←", "همه دفتر کل ←")}</Link>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">{pick("بارول...", "در حال بارگذاری...")}</div>
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="skeleton-shimmer h-10 rounded-lg" style={staggerDelay(i)} />
+                ))}
+              </div>
             ) : (
               <ReactApexChart key={lang} options={stockBarOptions} series={stockBarSeries} type="bar" height={280} />
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in" style={{ animationDelay: '220ms' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د غوښتنو وضعیت", "وضعیت درخواست‌ها")}</h2>
-              <Link to="/requests" className="text-xs text-primary hover:underline">{pick("ټولې غوښتنې ←", "همه درخواست‌ها ←")}</Link>
+              <Link to="/requests" className="text-xs text-primary hover:underline btn-press">{pick("ټولې غوښتنې ←", "همه درخواست‌ها ←")}</Link>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">{pick("بارول...", "در حال بارگذاری...")}</div>
+              <div className="flex items-center justify-center h-[280px]"><div className="skeleton-shimmer h-48 w-48 rounded-full" /></div>
             ) : requests.length === 0 ? (
               <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">{pick("کومه غوښتنه نشته", "هیچ درخواستی وجود ندارد")}</div>
             ) : (
@@ -244,14 +266,15 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Bottom row */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in" style={{ animationDelay: '100ms' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د کټګورۍ موجودي", "موجودی بر اساس دسته‌بندی")}</h2>
               <Link to="/inventory/items" className="text-xs text-primary hover:underline">{pick("ټول اجناس ←", "همه اجناس ←")}</Link>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">{pick("بارول...", "در حال بارگذاری...")}</div>
+              <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton-shimmer h-8 rounded-lg" style={staggerDelay(i)} />)}</div>
             ) : items.length === 0 ? (
               <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">{pick("کوم جنس نشته", "هیچ جنسی وجود ندارد")}</div>
             ) : (
@@ -259,24 +282,27 @@ export default function Home() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in" style={{ animationDelay: '180ms' }}>
             <h2 className="mb-4 text-base font-bold text-gray-800 dark:text-white/90">{pick("د سیستم اصلي برخې", "بخش‌های اصلی سیستم")}</h2>
             <div className="grid grid-cols-1 gap-2">
-              {modules.map((module) => (
+              {modules.map((module, i) => (
                 <Link key={module.to} to={module.to}
-                  className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 transition hover:border-primary hover:bg-primary/5 dark:border-gray-800 dark:hover:bg-white/[0.04]">
-                  <h3 className="font-bold text-sm text-gray-800 dark:text-white/90">{module.title}</h3>
+                  className="group flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 card-interactive hover:border-primary hover:bg-primary/5 dark:border-gray-800 dark:hover:bg-white/[0.04] animate-slide-in-right"
+                  style={staggerDelay(i)}>
+                  <h3 className="font-bold text-sm text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors">{module.title}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{module.desc}</p>
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in" style={{ animationDelay: '240ms' }}>
             <h2 className="mb-4 text-base font-bold text-gray-800 dark:text-white/90">{pick("وروستي حرکات", "آخرین تراکنش‌ها")}</h2>
             <div className="space-y-2">
               {loading ? (
-                <p className="text-sm text-gray-400 text-center py-4">{pick("بارول...", "در حال بارگذاری...")}</p>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="skeleton-shimmer h-12 rounded-xl" style={staggerDelay(i)} />
+                ))
               ) : transactions.length === 0 ? (
                 <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-white/[0.04] dark:text-gray-400 text-center">
                   {pick("تر اوسه کوم حرکت نه دی ثبت شوی.", "تاکنون هیچ تراکنشی ثبت نشده است.")}
@@ -284,12 +310,13 @@ export default function Home() {
               ) : (
                 transactions.slice(0, 8).map((tx, index) => (
                   <Link to="/inventory/ledger" key={tx.id || index}
-                    className="flex items-center justify-between rounded-xl bg-gray-50 p-3 hover:bg-gray-100 transition dark:bg-white/[0.04] dark:hover:bg-white/[0.07]">
+                    className="flex items-center justify-between rounded-xl bg-gray-50 p-3 table-row-hover dark:bg-white/[0.04] dark:hover:bg-white/[0.07] animate-slide-up"
+                    style={staggerDelay(index)}>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-gray-800 dark:text-white/90">{tx.itemName}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{tx.quantity} {tx.unit}</p>
                     </div>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${tx.type === "IN" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"}`}>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${tx.type === "IN" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"}`}>
                       {tx.type === "IN" ? pick("داخل", "ورودی") : pick("خارج", "خروجی")}
                     </span>
                   </Link>
@@ -297,7 +324,7 @@ export default function Home() {
               )}
             </div>
             {transactions.length > 0 && (
-              <Link to="/inventory/ledger" className="mt-4 block text-center text-xs text-primary hover:underline">
+              <Link to="/inventory/ledger" className="mt-4 block text-center text-xs text-primary hover:underline btn-press">
                 {pick("ټول حرکات وګورئ ←", "مشاهده همه تراکنش‌ها ←")}
               </Link>
             )}

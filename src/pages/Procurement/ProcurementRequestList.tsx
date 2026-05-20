@@ -96,30 +96,37 @@ export default function ProcurementRequestList() {
         </div>
 
         <div className="max-w-full overflow-x-auto">
+          {loading ? (
+            <div className="space-y-2 py-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="skeleton-shimmer h-16 rounded-xl" style={{ animationDelay: `${i * 60}ms` }} />
+              ))}
+            </div>
+          ) : (
           <table className="w-full table-auto" dir="rtl">
             <thead>
-              <tr className="bg-gray-100 dark:bg-gray-800">
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">نیټه</th>
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">پوهنځی / غوښتونکی</th>
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">اجناس</th>
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">درجه</th>
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">حالت</th>
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">پرمختګ</th>
-                <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">عمل</th>
+              <tr className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/60">
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">نیټه</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">پوهنځی / غوښتونکی</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">اجناس</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">درجه</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">حالت</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">پرمختګ</th>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">عمل</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400">بارول...</td></tr>
-              ) : filteredRequests.length === 0 ? (
+              {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-gray-500">
+                  <td colSpan={7} className="text-center py-10 text-gray-500 animate-fade-in">
                     {search ? `"${search}" لپاره هیڅ تدارکاتي غوښتنه ونه موندل شوه.` : "هیڅ تدارکاتي غوښتنه نشته."}
                   </td>
                 </tr>
               ) : (
                 filteredRequests.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.02] transition-colors">
+                  <tr key={r.id}
+                    className="border-b border-gray-100 table-row-hover dark:border-gray-800 animate-slide-up"
+                    style={{ animationDelay: `${Math.min(filteredRequests.indexOf(r), 15) * 35}ms` }}>
                     <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{r.createdAtHijriShamsi || "-"}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="font-bold text-gray-800 dark:text-white/90">{r.faculty || "-"}</div>
@@ -150,6 +157,7 @@ export default function ProcurementRequestList() {
               )}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </>

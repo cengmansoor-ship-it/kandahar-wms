@@ -140,9 +140,9 @@ export default function NotificationsPage() {
       <PageMeta title={pick("خبرتیاوې", "اعلانات") + " | Kandahar University WMS"} description="" />
       <Breadcrumb pageTitle="خبرتیاوې / اعلانات" />
 
-      <div className="space-y-6" dir="rtl">
+      <div className="space-y-6 page-enter" dir="rtl">
         {msg && (
-          <div className={`rounded-xl border p-4 text-sm flex items-start gap-3 ${
+          <div className={`rounded-xl border p-4 text-sm flex items-start gap-3 animate-slide-down ${
             msg.type === "success"
               ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
               : msg.type === "info"
@@ -155,7 +155,7 @@ export default function NotificationsPage() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           {/* Compose */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "60ms" }}>
             <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90">✉️ {pick("ایمیل استول", "ارسال ایمیل")}</h2>
             <div className="space-y-4">
               <div>
@@ -222,7 +222,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* History */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "120ms" }}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">📋 {pick("د ایمیل تاریخچه", "تاریخچه ایمیل")}</h2>
               <div className="flex items-center gap-2">
@@ -242,8 +242,10 @@ export default function NotificationsPage() {
                   {pick("تاریخچه نشته.", "تاریخچه‌ای وجود ندارد.")}
                 </div>
               ) : (
-                visibleLogs.map(log => (
-                  <div key={log.id} className="rounded-xl border border-gray-100 p-4 dark:border-gray-700 dark:bg-white/[0.02]">
+                visibleLogs.map((log, idx) => (
+                  <div key={log.id}
+                    className="rounded-xl border border-gray-100 p-4 dark:border-gray-700 dark:bg-white/[0.02] animate-fade-in hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+                    style={{ animationDelay: `${idx * 50}ms` }}>
                     <div className="flex items-start justify-between gap-2">
                       <strong className="text-sm text-gray-800 dark:text-white/90 leading-tight">{log.subject}</strong>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${

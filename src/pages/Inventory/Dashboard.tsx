@@ -98,60 +98,66 @@ export default function InventoryDashboard() {
     },
   ];
 
+  const staggerDelay = (i: number) => ({ animationDelay: `${i * 80}ms` });
+
   return (
     <>
       <PageMeta title="د ګودام عمومي پاڼه | Kandahar University WMS" description="د موجودي عمومي ارقام" />
       <Breadcrumb pageTitle="د موجودۍ ډشبورډ / داشبورد موجودی" />
 
-      {loading ? (
-        <div className="text-center py-20 text-gray-500">بارول...</div>
-      ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {cards.map((card) => (
-              <Link
-                key={card.title}
-                to={card.to}
-                className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-primary/30 transition-all dark:border-gray-800 dark:bg-white/[0.03]"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.colorClass}`}>
-                    {card.icon}
-                  </div>
-                  <svg className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                  </svg>
+      <div className="space-y-6 page-enter">
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]" style={staggerDelay(i)}>
+                  <div className="skeleton-shimmer h-12 w-12 rounded-xl mb-4" />
+                  <div className="skeleton-shimmer h-3 w-24 rounded mb-2" />
+                  <div className="skeleton-shimmer h-8 w-16 rounded" />
                 </div>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.title}</span>
-                <h4 className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors">{card.value}</h4>
+              ))
+            : cards.map((card, i) => (
+                <Link
+                  key={card.title}
+                  to={card.to}
+                  className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm card-interactive hover:shadow-xl hover:border-primary/30 dark:border-gray-800 dark:bg-white/[0.03] stat-card-load"
+                  style={staggerDelay(i)}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.colorClass} transition-transform group-hover:scale-110 duration-300`}>
+                      {card.icon}
+                    </div>
+                    <svg className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.title}</span>
+                  <h4 className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors">{card.value}</h4>
+                </Link>
+              ))
+          }
+        </div>
+
+        {/* Quick Actions */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up" style={{ animationDelay: '400ms' }}>
+          <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90" dir="rtl">چټکې عملیات</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" dir="rtl">
+            {[
+              { to: "/inventory/add", icon: "➕", label: "جنس اضافه کول", hover: "hover:border-primary hover:bg-primary/5" },
+              { to: "/inventory/stock-in", icon: "📥", label: "د ګدام داخل", hover: "hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20" },
+              { to: "/inventory/stock-out", icon: "📤", label: "د ګدام خارج", hover: "hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" },
+              { to: "/inventory/ledger", icon: "📊", label: "لیجر", hover: "hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20" },
+            ].map((action, i) => (
+              <Link key={action.to} to={action.to}
+                className={`group flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 card-interactive ${action.hover} dark:border-gray-700 animate-scale-in`}
+                style={staggerDelay(i)}>
+                <span className="text-2xl transition-transform group-hover:scale-125 duration-300">{action.icon}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{action.label}</span>
               </Link>
             ))}
           </div>
-
-          {/* Quick Actions */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90" dir="rtl">چټکې عملیات</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" dir="rtl">
-              <Link to="/inventory/add" className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 hover:border-primary hover:bg-primary/5 transition dark:border-gray-700">
-                <span className="text-2xl">➕</span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">جنس اضافه کول</span>
-              </Link>
-              <Link to="/inventory/stock-in" className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 hover:border-green-400 hover:bg-green-50 transition dark:border-gray-700">
-                <span className="text-2xl">📥</span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">د ګدام داخل</span>
-              </Link>
-              <Link to="/inventory/stock-out" className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 hover:border-red-400 hover:bg-red-50 transition dark:border-gray-700">
-                <span className="text-2xl">📤</span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">د ګدام خارج</span>
-              </Link>
-              <Link to="/inventory/ledger" className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition dark:border-gray-700">
-                <span className="text-2xl">📊</span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">لیجر</span>
-              </Link>
-            </div>
-          </div>
         </div>
-      )}
+      </div>
     </>
   );
 }
