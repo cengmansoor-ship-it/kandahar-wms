@@ -62,10 +62,12 @@ export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
   const [seen, setSeen] = useState(false);
+  const [query, setQuery] = useState("");
   const { profile } = useAuth();
   const { lang, pick } = useLanguage();
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getRequests().then(all => {
@@ -89,6 +91,7 @@ export default function NotificationDropdown() {
       }
     };
     document.addEventListener("mousedown", handle);
+    setTimeout(() => searchRef.current?.focus(), 80);
     return () => document.removeEventListener("mousedown", handle);
   }, [isOpen]);
 
@@ -97,9 +100,22 @@ export default function NotificationDropdown() {
   const handleClick = () => {
     setIsOpen(o => !o);
     setSeen(true);
+    if (isOpen) setQuery("");
   };
 
   const statusMap = lang === "dr" ? STATUS_DR : STATUS_PS;
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? requests.filter(r =>
+        r.faculty?.toLowerCase().includes(q) ||
+        r.departmentOrPerson?.toLowerCase().includes(q) ||
+        r.requesterName?.toLowerCase().includes(q) ||
+        r.faculty?.includes(query.trim()) ||
+        r.departmentOrPerson?.includes(query.trim()) ||
+        r.requesterName?.includes(query.trim())
+      )
+    : requests;
 
   return (
     <>
@@ -132,27 +148,72 @@ export default function NotificationDropdown() {
               </h5>
               {requests.length > 0 && (
                 <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
-                  {requests.length}
+                  {q ? `${filtered.length}/${requests.length}` : requests.length}
                 </span>
               )}
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+            <button onClick={() => { setIsOpen(false); setQuery(""); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
               <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" clipRule="evenodd" d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z" fill="currentColor" />
               </svg>
             </button>
           </div>
 
-          <ul className="flex flex-col overflow-y-auto custom-scrollbar gap-1 p-3">
-            {requests.length === 0 ? (
-              <li className="flex flex-col items-center justify-center py-10 text-center">
-                <span className="text-3xl mb-2">🔔</span>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}
-                </p>
+          <div className="px-3 pt-3 pb-1">
+            <div className="relative flex items-center">
+              <svg
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
+                width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={pick("پوهنځی، ډیپارتمنټ یا غوښتونکی...", "پوهنکده، دیپارتمنت یا درخواست‌کننده...")}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-9 pl-8 text-sm text-right text-gray-700 placeholder-gray-400 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 dark:focus:border-brand-600 dark:focus:ring-brand-900/30 transition-all"
+                dir="rtl"
+              />
+              {query && (
+                <button
+                  onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <ul className="flex flex-col overflow-y-auto custom-scrollbar gap-1 p-3 pt-2">
+            {filtered.length === 0 ? (
+              <li className="flex flex-col items-center justify-center py-8 text-center">
+                {q ? (
+                  <>
+                    <span className="text-2xl mb-2">🔍</span>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      {pick("پایله ونه موندله", "نتیجه‌ای پیدا نشد")}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      «{query}»
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-3xl mb-2">🔔</span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}
+                    </p>
+                  </>
+                )}
               </li>
             ) : (
-              requests.map((req, i) => {
+              filtered.map((req, i) => {
                 const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
                 const statusLabel = statusMap[req.status] || req.status;
                 const statusCls = STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
