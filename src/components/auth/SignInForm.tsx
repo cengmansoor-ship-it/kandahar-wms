@@ -8,8 +8,8 @@ import { isFirebaseConfigured } from "../../firebase/firebase";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState(isFirebaseConfigured ? "" : "admin@kandahar.edu.af");
-  const [password, setPassword] = useState(isFirebaseConfigured ? "" : "123456");
+  const [email, setEmail] = useState(isFirebaseConfigured ? "" : "superadmin@ku.edu.af");
+  const [password, setPassword] = useState(isFirebaseConfigured ? "" : "SuperAdmin@1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

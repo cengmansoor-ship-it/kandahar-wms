@@ -22,11 +22,13 @@ export type DemoEmailLog = {
   createdAtHijriQamari: string;
 };
 
+export type DemoSeedUser = UserProfile & { password: string };
+
 export const DEMO_USER_PROFILE: UserProfile = {
-  uid: "demo-super-admin",
-  name: "Enayatullah Mansoor",
-  email: "enayatullahmansoor070@gmail.com",
-  phone: "0704243811",
+  uid: "seed_super_admin",
+  name: "Super Admin",
+  email: "superadmin@ku.edu.af",
+  phone: "",
   role: ROLES.SUPER_ADMIN,
   active: true,
   forcePasswordChange: false,
@@ -34,14 +36,14 @@ export const DEMO_USER_PROFILE: UserProfile = {
   updatedAt: now(),
 };
 
-export const DEMO_SEED_USERS: UserProfile[] = [
-  { uid: "seed_super_admin", name: "Enayatullah Mansoor", email: "enayatullahmansoor070@gmail.com", phone: "0704243811", role: ROLES.SUPER_ADMIN, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
-  { uid: "seed_admin", name: "Fazalrahman Mayar", email: "fazalrahmanmayar2024@gmail.com", phone: "0709009890", role: ROLES.ADMIN, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
-  { uid: "seed_procurement", name: "Abdulhadi Rahimi", email: "adhadirahimi623@gmail.com", phone: "0700362405", role: ROLES.PROCUREMENT_DIRECTOR, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
-  { uid: "seed_warehouse_director", name: "Nazirahmad Bashare", email: "nazirbashare@gmail.com", phone: "0708611400", role: ROLES.WAREHOUSE_DIRECTOR, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
-  { uid: "seed_entry", name: "Mansoor", email: "cengmansoor@gmail.com", phone: "0749031594", role: ROLES.WAREHOUSE_ENTRY_PERSON, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
-  { uid: "seed_confirmer", name: "Doostyar Sahib", email: "enayatkhanmansoor@gmail.com", phone: "0747552032", role: ROLES.REQUEST_CONFIRMER, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
-  { uid: "seed_requester", name: "Afghan Sahib", email: "enayatzoon@gmail.com", phone: "", role: ROLES.REQUESTER, active: true, forcePasswordChange: true, createdAt: BASE_TS, updatedAt: BASE_TS },
+export const DEMO_SEED_USERS: DemoSeedUser[] = [
+  { uid: "seed_super_admin",         name: "Super Admin",            email: "superadmin@ku.edu.af",    phone: "", password: "SuperAdmin@1",  role: ROLES.SUPER_ADMIN,            active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
+  { uid: "seed_admin",               name: "Admin",                  email: "admin@ku.edu.af",         phone: "", password: "Admin@1234",    role: ROLES.ADMIN,                  active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
+  { uid: "seed_procurement",         name: "Procurement Director",   email: "procurement@ku.edu.af",   phone: "", password: "Procure@123",   role: ROLES.PROCUREMENT_DIRECTOR,   active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
+  { uid: "seed_warehouse_director",  name: "Warehouse Director",     email: "warehouse@ku.edu.af",     phone: "", password: "Warehouse@1",   role: ROLES.WAREHOUSE_DIRECTOR,     active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
+  { uid: "seed_requester",           name: "Requester",              email: "requester@ku.edu.af",     phone: "", password: "Request@123",   role: ROLES.REQUESTER,              active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
+  { uid: "seed_confirmer",           name: "Request Confirmer",      email: "confirmer@ku.edu.af",     phone: "", password: "Confirm@123",   role: ROLES.REQUEST_CONFIRMER,      active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
+  { uid: "seed_entry",               name: "Warehouse Entry",        email: "entry@ku.edu.af",         phone: "", password: "Entry@1234",    role: ROLES.WAREHOUSE_ENTRY_PERSON, active: true, forcePasswordChange: false, createdAt: BASE_TS, updatedAt: BASE_TS },
 ];
 
 export function getLocalItem<T>(key: string, fallback: T): T {

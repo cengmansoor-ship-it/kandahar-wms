@@ -8,7 +8,7 @@ import {
 import { auth, isFirebaseConfigured } from "./firebase";
 import { ensureUserProfileExists } from "./firestore";
 import { logAuditEvent } from "./audit";
-import { getDemoUserProfile } from "./localStore";
+import { getDemoUserProfile, DEMO_SEED_USERS } from "./localStore";
 
 const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
 const DEMO_AUTH_EVENT = "kandahar-wms-demo-auth-change";
@@ -21,12 +21,12 @@ const safeRun = async (task: () => Promise<unknown>, label: string) => {
   }
 };
 
-const createDemoUser = (email: string): User => {
-  const cleanEmail = email.trim() || "admin@kandahar.edu.af";
+const createDemoUser = (email: string, uid?: string, displayName?: string): User => {
+  const cleanEmail = email.trim() || "superadmin@ku.edu.af";
   return {
-    uid: "demo-super-admin",
+    uid: uid || "seed_super_admin",
     email: cleanEmail,
-    displayName: "Super Admin",
+    displayName: displayName || "Super Admin",
     emailVerified: true,
     isAnonymous: false,
     metadata: {} as User["metadata"],
@@ -37,7 +37,7 @@ const createDemoUser = (email: string): User => {
     getIdToken: async () => "demo-token",
     getIdTokenResult: async () => ({ token: "demo-token" } as Awaited<ReturnType<User["getIdTokenResult"]>>),
     reload: async () => undefined,
-    toJSON: () => ({ uid: "demo-super-admin", email: cleanEmail }),
+    toJSON: () => ({ uid: uid || "seed_super_admin", email: cleanEmail }),
     phoneNumber: null,
     photoURL: null,
     providerId: "demo",
@@ -49,8 +49,12 @@ const getStoredDemoUser = (): User | null => {
   const raw = window.localStorage.getItem(DEMO_AUTH_KEY);
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as { email?: string };
-    return createDemoUser(parsed.email || "admin@kandahar.edu.af");
+    const parsed = JSON.parse(raw) as { email?: string; uid?: string; displayName?: string };
+    return createDemoUser(
+      parsed.email || "superadmin@ku.edu.af",
+      parsed.uid,
+      parsed.displayName
+    );
   } catch {
     return null;
   }
@@ -63,13 +67,31 @@ const notifyDemoAuthChanged = () => {
 };
 
 export const login = async (email: string, pass: string): Promise<User> => {
-  const cleanEmail = email.trim();
+  const cleanEmail = email.trim().toLowerCase();
 
   if (!isFirebaseConfigured) {
-    const user = createDemoUser(cleanEmail);
+    const matched = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === cleanEmail);
+
+    if (!matched) {
+      const err: any = new Error("auth/user-not-found");
+      err.code = "auth/user-not-found";
+      throw err;
+    }
+
+    if (matched.password !== pass) {
+      const err: any = new Error("auth/wrong-password");
+      err.code = "auth/wrong-password";
+      throw err;
+    }
+
+    const user = createDemoUser(matched.email, matched.uid, matched.name);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({ email: user.email }));
-      getDemoUserProfile(user.email);
+      window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({
+        email: matched.email,
+        uid: matched.uid,
+        displayName: matched.name,
+      }));
+      getDemoUserProfile(matched.email);
       notifyDemoAuthChanged();
     }
     return user;
