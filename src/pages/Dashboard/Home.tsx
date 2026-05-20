@@ -6,20 +6,13 @@ import PageMeta from "../../components/common/PageMeta";
 import { getItems, getRecentTransactions, WarehouseItem, StockTransaction } from "../../firebase/inventory";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
 
-const modules = [
-  { title: "موجودي", desc: "د اجناسو ثبت، لېست، داخل او خارج", to: "/inventory/items" },
-  { title: "غوښتنې", desc: "د اجناسو غوښتنه او تعقیب", to: "/requests" },
-  { title: "تدارکات", desc: "تدارکاتي مراحل او پیشنهادونه", to: "/procurement" },
-  { title: "ترلاسه کول", desc: "رسید، ف س ۵ او تسلیمي", to: "/receiving" },
-  { title: "راپورونه", desc: "موجودي، غوښتنې او وړاندوینې", to: "/reports" },
-  { title: "فورمونه", desc: "رسمي فورمونه او اسناد", to: "/official-forms" },
-];
+const SHAMSI_MONTHS_PS = ["وری", "غویی", "غبرګولی", "چنګاښ", "زمری", "وږی", "تله", "لړم", "لیندۍ", "مرغومی", "سلواغه", "کب"];
+const SHAMSI_MONTHS_DR = ["حمل", "ثور", "جوزا", "سرطان", "اسد", "سنبله", "میزان", "عقرب", "قوس", "جدی", "دلو", "حوت"];
 
-const SHAMSI_MONTHS = ["وری", "غویی", "غبرګولی", "چنګاښ", "زمری", "وږی", "تله", "لړم", "لیندۍ", "مرغومی", "سلواغه", "کب"];
-
-function buildMonthlyStockData(transactions: StockTransaction[]) {
+function buildMonthlyStockData(transactions: StockTransaction[], months: string[]) {
   const now = Date.now();
   const sixMonthsAgo = now - 6 * 30 * 24 * 60 * 60 * 1000;
   const recent = transactions.filter(tx => tx.createdAt >= sixMonthsAgo);
@@ -38,27 +31,30 @@ function buildMonthlyStockData(transactions: StockTransaction[]) {
     const d = new Date(now);
     d.setMonth(d.getMonth() - i);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
-    labels.push(SHAMSI_MONTHS[d.getMonth()]);
+    labels.push(months[d.getMonth()]);
     inData.push(buckets[key]?.in || 0);
     outData.push(buckets[key]?.out || 0);
   }
   return { labels, inData, outData };
 }
 
-function buildRequestStatusData(requests: InventoryRequest[]) {
+function buildRequestStatusData(requests: InventoryRequest[], lang: "ps" | "dr") {
+  const STATUS_PS: Record<string, string> = {
+    Delivered: "تسلیم شوی", Submitted: "ثبت شوی", StockAvailable: "جنس شتون لري",
+    StockNotAvailable: "تدارکاتو ته", PurchaseOrderCreated: "آمر خریداري",
+    WinnerSelected: "اخیستونکی ټاکل شو", TenderCreated: "داوطلبي",
+    ApprovedBySuperAdmin: "سوپر اډمین تایید", ConfirmedByRequestConfirmer: "تاییدوونکی تایید",
+  };
+  const STATUS_DR: Record<string, string> = {
+    Delivered: "تحویل داده شد", Submitted: "ثبت شد", StockAvailable: "موجود است",
+    StockNotAvailable: "به تدارکات", PurchaseOrderCreated: "امر خرید",
+    WinnerSelected: "برنده انتخاب شد", TenderCreated: "مناقصه",
+    ApprovedBySuperAdmin: "تأیید سوپر ادمین", ConfirmedByRequestConfirmer: "تأیید تأییدکننده",
+  };
+  const map = lang === "dr" ? STATUS_DR : STATUS_PS;
   const statusMap: Record<string, number> = {};
   requests.forEach(r => {
-    const label =
-      r.status === "Delivered" ? "تسلیم شوی" :
-      r.status === "Submitted" ? "ثبت شوی" :
-      r.status === "StockAvailable" ? "جنس شتون لري" :
-      r.status === "StockNotAvailable" ? "تدارکاتو ته" :
-      r.status === "PurchaseOrderCreated" ? "آمر خریداري" :
-      r.status === "WinnerSelected" ? "اخیستونکی ټاکل شو" :
-      r.status === "TenderCreated" ? "داوطلبي" :
-      r.status === "ApprovedBySuperAdmin" ? "سوپر اډمین تایید" :
-      r.status === "ConfirmedByRequestConfirmer" ? "تاییدوونکی تایید" :
-      r.status;
+    const label = map[r.status] || r.status;
     statusMap[label] = (statusMap[label] || 0) + 1;
   });
   return { labels: Object.keys(statusMap), series: Object.values(statusMap) };
@@ -79,8 +75,8 @@ export default function Home() {
   const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
+  const { pick, lang } = useLanguage();
   const navigate = useNavigate();
-
   const navigateRef = useRef(navigate);
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
 
@@ -89,9 +85,7 @@ export default function Home() {
     const load = async () => {
       try {
         const [itemData, requestData, transactionData] = await Promise.all([
-          getItems(),
-          getRequests(),
-          getRecentTransactions(60),
+          getItems(), getRequests(), getRecentTransactions(60),
         ]);
         if (!alive) return;
         setItems(itemData);
@@ -117,33 +111,27 @@ export default function Home() {
   ).length;
 
   const cards = [
-    { label: "ټول اجناس", value: loading ? "..." : items.length, to: "/inventory/items", color: "bg-blue-500", icon: "📦" },
-    { label: "د موجودۍ ارزښت", value: loading ? "..." : `${totalValue.toLocaleString()} ؋`, to: "/reports/inventory", color: "bg-green-500", icon: "💰", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
-    { label: "کمه موجودي", value: loading ? "..." : lowStock, to: "/inventory/items?filter=low", color: lowStock > 0 ? "bg-orange-500" : "bg-gray-400", icon: "⚠️" },
-    { label: "ختم شوي اجناس", value: loading ? "..." : outOfStock, to: "/inventory/items?filter=out", color: outOfStock > 0 ? "bg-red-500" : "bg-gray-400", icon: "❌" },
-    { label: "ټولې غوښتنې", value: loading ? "..." : requests.length, to: "/requests", color: "bg-purple-500", icon: "📋" },
-    { label: "پاتې غوښتنې", value: loading ? "..." : pendingRequests, to: "/requests?filter=pending", color: pendingRequests > 0 ? "bg-indigo-500" : "bg-gray-400", icon: "⏳" },
-    { label: "بشپړې غوښتنې", value: loading ? "..." : completedRequests, to: "/requests?filter=completed", color: "bg-teal-500", icon: "✅" },
-    { label: "تدارکاتي غوښتنې", value: loading ? "..." : procurementRequests, to: "/procurement", color: procurementRequests > 0 ? "bg-amber-500" : "bg-gray-400", icon: "🛒", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
+    { label: pick("ټول اجناس", "تمام اجناس"), value: loading ? "..." : items.length, to: "/inventory/items", color: "bg-blue-500", icon: "📦" },
+    { label: pick("د موجودۍ ارزښت", "ارزش موجودی"), value: loading ? "..." : `${totalValue.toLocaleString()} ؋`, to: "/reports/inventory", color: "bg-green-500", icon: "💰", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
+    { label: pick("کمه موجودي", "موجودی کم"), value: loading ? "..." : lowStock, to: "/inventory/items?filter=low", color: lowStock > 0 ? "bg-orange-500" : "bg-gray-400", icon: "⚠️" },
+    { label: pick("ختم شوي اجناس", "اجناس تمام‌شده"), value: loading ? "..." : outOfStock, to: "/inventory/items?filter=out", color: outOfStock > 0 ? "bg-red-500" : "bg-gray-400", icon: "❌" },
+    { label: pick("ټولې غوښتنې", "همه درخواست‌ها"), value: loading ? "..." : requests.length, to: "/requests", color: "bg-purple-500", icon: "📋" },
+    { label: pick("پاتې غوښتنې", "درخواست‌های باقی‌مانده"), value: loading ? "..." : pendingRequests, to: "/requests?filter=pending", color: pendingRequests > 0 ? "bg-indigo-500" : "bg-gray-400", icon: "⏳" },
+    { label: pick("بشپړې غوښتنې", "درخواست‌های تکمیل‌شده"), value: loading ? "..." : completedRequests, to: "/requests?filter=completed", color: "bg-teal-500", icon: "✅" },
+    { label: pick("تدارکاتي غوښتنې", "درخواست‌های تدارکاتی"), value: loading ? "..." : procurementRequests, to: "/procurement", color: procurementRequests > 0 ? "bg-amber-500" : "bg-gray-400", icon: "🛒", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
   ].filter(c => !c.roles || !profile || c.roles.includes(profile.role));
 
-  const { labels: monthLabels, inData, outData } = buildMonthlyStockData(transactions);
-  const { labels: statusLabels, series: statusSeries } = buildRequestStatusData(requests);
+  const months = lang === "dr" ? SHAMSI_MONTHS_DR : SHAMSI_MONTHS_PS;
+  const { labels: monthLabels, inData, outData } = buildMonthlyStockData(transactions, months);
+  const { labels: statusLabels, series: statusSeries } = buildRequestStatusData(requests, lang);
   const { labels: catLabels, series: catSeries } = buildCategoryData(items);
 
   const stockBarOptions: ApexOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      fontFamily: "inherit",
-      background: "transparent",
-      events: {
-        dataPointSelection: (_e, _chart, config) => {
-          const seriesIdx = config.seriesIndex;
-          if (seriesIdx === 0) navigateRef.current("/inventory/ledger?type=IN");
-          else navigateRef.current("/inventory/ledger?type=OUT");
-        },
-      },
+    chart: { type: "bar", toolbar: { show: false }, fontFamily: "inherit", background: "transparent",
+      events: { dataPointSelection: (_e, _chart, config) => {
+        if (config.seriesIndex === 0) navigateRef.current("/inventory/ledger?type=IN");
+        else navigateRef.current("/inventory/ledger?type=OUT");
+      }},
     },
     plotOptions: { bar: { borderRadius: 6, columnWidth: "55%" } },
     dataLabels: { enabled: false },
@@ -156,36 +144,25 @@ export default function Home() {
   };
 
   const stockBarSeries = [
-    { name: "داخل", data: inData },
-    { name: "خارج", data: outData },
+    { name: pick("داخل", "ورودی"), data: inData },
+    { name: pick("خارج", "خروجی"), data: outData },
   ];
 
   const requestDonutOptions: ApexOptions = {
-    chart: {
-      type: "donut",
-      fontFamily: "inherit",
-      background: "transparent",
-      events: {
-        dataPointSelection: () => { navigateRef.current("/requests"); },
-      },
+    chart: { type: "donut", fontFamily: "inherit", background: "transparent",
+      events: { dataPointSelection: () => { navigateRef.current("/requests"); } },
     },
     labels: statusLabels,
     colors: ["#10b981", "#3b82f6", "#8b5cf6", "#f97316", "#ef4444", "#06b6d4", "#f59e0b", "#6366f1", "#ec4899"],
     legend: { position: "bottom", fontFamily: "inherit", labels: { colors: "#6b7280" } },
     dataLabels: { style: { fontFamily: "inherit", fontSize: "11px" } },
-    plotOptions: { pie: { donut: { size: "65%", labels: { show: true, total: { show: true, label: "ټول", fontFamily: "inherit", color: "#374151" } } } } },
+    plotOptions: { pie: { donut: { size: "65%", labels: { show: true, total: { show: true, label: pick("ټول", "مجموع"), fontFamily: "inherit", color: "#374151" } } } } },
     tooltip: { theme: "light", style: { fontFamily: "inherit" } },
   };
 
   const categoryBarOptions: ApexOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      fontFamily: "inherit",
-      background: "transparent",
-      events: {
-        dataPointSelection: () => { navigateRef.current("/inventory/items"); },
-      },
+    chart: { type: "bar", toolbar: { show: false }, fontFamily: "inherit", background: "transparent",
+      events: { dataPointSelection: () => { navigateRef.current("/inventory/items"); } },
     },
     plotOptions: { bar: { borderRadius: 6, horizontal: true } },
     dataLabels: { enabled: true, style: { fontFamily: "inherit", fontSize: "11px" } },
@@ -196,45 +173,45 @@ export default function Home() {
     tooltip: { theme: "light", style: { fontFamily: "inherit" } },
   };
 
-  const categoryBarSeries = [{ name: "مقدار", data: catSeries }];
+  const categoryBarSeries = [{ name: pick("مقدار", "مقدار"), data: catSeries }];
+
+  const modules = [
+    { title: pick("موجودي", "موجودی"), desc: pick("د اجناسو ثبت، لیست، داخل او خارج", "ثبت، لیست، ورودی و خروجی اجناس"), to: "/inventory/items" },
+    { title: pick("غوښتنې", "درخواست‌ها"), desc: pick("د اجناسو غوښتنه او تعقیب", "درخواست و پیگیری اجناس"), to: "/requests" },
+    { title: pick("تدارکات", "تدارکات"), desc: pick("تدارکاتي مراحل او پیشنهادونه", "مراحل تدارکاتی و پیشنهادها"), to: "/procurement" },
+    { title: pick("ترلاسه کول", "تحویل‌گیری"), desc: pick("رسید، ف س ۵ او تسلیمي", "رسید، ف س ۵ و تحویل‌دهی"), to: "/receiving" },
+    { title: pick("راپورونه", "گزارش‌ها"), desc: pick("موجودي، غوښتنې او وړاندوینې", "موجودی، درخواست‌ها و پیش‌بینی"), to: "/reports" },
+    { title: pick("فورمونه", "فرم‌ها"), desc: pick("رسمي فورمونه او اسناد", "فرم‌های رسمی و اسناد"), to: "/official-forms" },
+  ];
 
   return (
     <>
-      <PageMeta
-        title="عمومي پاڼه | Kandahar University WMS"
-        description="د کندهار پوهنتون د ګدام او تدارکاتو سیستم عمومي پاڼه"
-      />
-
+      <PageMeta title={pick("عمومي پاڼه", "داشبورد") + " | Kandahar University WMS"} description="" />
       <div className="space-y-6" dir="rtl">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
           <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">
-            د کندهار پوهنتون د عمومي ګدام او تدارکاتو مدیریت سیستم
+            {pick("د کندهار پوهنتون د عمومي ګدام او تدارکاتو مدیریت سیستم", "سیستم مدیریت انبار و تدارکات پوهنتون کندهار")}
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            د موجودۍ، غوښتنو، تدارکاتو، ترلاسه کولو، تسلیمۍ او راپورونو لپاره یو واحد سیستم.
+            {pick("د موجودۍ، غوښتنو، تدارکاتو، ترلاسه کولو، تسلیمۍ او راپورونو لپاره یو واحد سیستم.", "یک سیستم واحد برای موجودی، درخواست‌ها، تدارکات، تحویل‌گیری و گزارش‌ها.")}
           </p>
           {profile && (
             <p className="mt-2 text-xs text-primary font-medium">
-              ښه راغلاست، {profile.name} — {profile.role}
+              {pick("ښه راغلاست،", "خوش آمدید،")} {profile.name} — {profile.role}
             </p>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {cards.map((card) => (
-            <Link
-              key={card.label}
-              to={card.to}
-              className="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md hover:border-primary/30 transition-all dark:border-gray-800 dark:bg-white/[0.03]"
-            >
+            <Link key={card.label} to={card.to}
+              className="group rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md hover:border-primary/30 transition-all dark:border-gray-800 dark:bg-white/[0.03]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl">{card.icon}</span>
                 <div className={`w-2 h-2 rounded-full ${card.color}`}></div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">{card.label}</p>
-              <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors">
-                {card.value}
-              </p>
+              <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90 group-hover:text-primary transition-colors">{card.value}</p>
             </Link>
           ))}
         </div>
@@ -242,27 +219,27 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">د ګدام داخل / خارج (وروستي ۶ میاشتې)</h2>
-              <Link to="/inventory/ledger" className="text-xs text-primary hover:underline">ټول لیجر ←</Link>
+              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د ګدام داخل / خارج (وروستي ۶ میاشتې)", "ورودی / خروجی انبار (۶ ماه اخیر)")}</h2>
+              <Link to="/inventory/ledger" className="text-xs text-primary hover:underline">{pick("ټول لیجر ←", "همه دفتر کل ←")}</Link>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">بارول...</div>
+              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">{pick("بارول...", "در حال بارگذاری...")}</div>
             ) : (
-              <ReactApexChart options={stockBarOptions} series={stockBarSeries} type="bar" height={280} />
+              <ReactApexChart key={lang} options={stockBarOptions} series={stockBarSeries} type="bar" height={280} />
             )}
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">د غوښتنو وضعیت</h2>
-              <Link to="/requests" className="text-xs text-primary hover:underline">ټولې غوښتنې ←</Link>
+              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د غوښتنو وضعیت", "وضعیت درخواست‌ها")}</h2>
+              <Link to="/requests" className="text-xs text-primary hover:underline">{pick("ټولې غوښتنې ←", "همه درخواست‌ها ←")}</Link>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">بارول...</div>
+              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">{pick("بارول...", "در حال بارگذاری...")}</div>
             ) : requests.length === 0 ? (
-              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">کومه غوښتنه نشته</div>
+              <div className="flex items-center justify-center h-[280px] text-gray-400 text-sm">{pick("کومه غوښتنه نشته", "هیچ درخواستی وجود ندارد")}</div>
             ) : (
-              <ReactApexChart options={requestDonutOptions} series={statusSeries} type="donut" height={280} />
+              <ReactApexChart key={lang + "-donut"} options={requestDonutOptions} series={statusSeries} type="donut" height={280} />
             )}
           </div>
         </div>
@@ -270,27 +247,24 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">د کټګورۍ موجودي</h2>
-              <Link to="/inventory/items" className="text-xs text-primary hover:underline">ټول اجناس ←</Link>
+              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د کټګورۍ موجودي", "موجودی بر اساس دسته‌بندی")}</h2>
+              <Link to="/inventory/items" className="text-xs text-primary hover:underline">{pick("ټول اجناس ←", "همه اجناس ←")}</Link>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">بارول...</div>
+              <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">{pick("بارول...", "در حال بارگذاری...")}</div>
             ) : items.length === 0 ? (
-              <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">کوم جنس نشته</div>
+              <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">{pick("کوم جنس نشته", "هیچ جنسی وجود ندارد")}</div>
             ) : (
-              <ReactApexChart options={categoryBarOptions} series={categoryBarSeries} type="bar" height={240} />
+              <ReactApexChart key={lang + "-cat"} options={categoryBarOptions} series={categoryBarSeries} type="bar" height={240} />
             )}
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 className="mb-4 text-base font-bold text-gray-800 dark:text-white/90">د سیستم اصلي برخې</h2>
+            <h2 className="mb-4 text-base font-bold text-gray-800 dark:text-white/90">{pick("د سیستم اصلي برخې", "بخش‌های اصلی سیستم")}</h2>
             <div className="grid grid-cols-1 gap-2">
               {modules.map((module) => (
-                <Link
-                  key={module.to}
-                  to={module.to}
-                  className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 transition hover:border-primary hover:bg-primary/5 dark:border-gray-800 dark:hover:bg-white/[0.04]"
-                >
+                <Link key={module.to} to={module.to}
+                  className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 transition hover:border-primary hover:bg-primary/5 dark:border-gray-800 dark:hover:bg-white/[0.04]">
                   <h3 className="font-bold text-sm text-gray-800 dark:text-white/90">{module.title}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{module.desc}</p>
                 </Link>
@@ -299,27 +273,24 @@ export default function Home() {
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 className="mb-4 text-base font-bold text-gray-800 dark:text-white/90">وروستي حرکات</h2>
+            <h2 className="mb-4 text-base font-bold text-gray-800 dark:text-white/90">{pick("وروستي حرکات", "آخرین تراکنش‌ها")}</h2>
             <div className="space-y-2">
               {loading ? (
-                <p className="text-sm text-gray-400 text-center py-4">بارول...</p>
+                <p className="text-sm text-gray-400 text-center py-4">{pick("بارول...", "در حال بارگذاری...")}</p>
               ) : transactions.length === 0 ? (
                 <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-white/[0.04] dark:text-gray-400 text-center">
-                  تر اوسه کوم حرکت نه دی ثبت شوی.
+                  {pick("تر اوسه کوم حرکت نه دی ثبت شوی.", "تاکنون هیچ تراکنشی ثبت نشده است.")}
                 </p>
               ) : (
                 transactions.slice(0, 8).map((tx, index) => (
-                  <Link
-                    to="/inventory/ledger"
-                    key={tx.id || index}
-                    className="flex items-center justify-between rounded-xl bg-gray-50 p-3 hover:bg-gray-100 transition dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
-                  >
+                  <Link to="/inventory/ledger" key={tx.id || index}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 p-3 hover:bg-gray-100 transition dark:bg-white/[0.04] dark:hover:bg-white/[0.07]">
                     <div className="text-right">
                       <p className="text-sm font-semibold text-gray-800 dark:text-white/90">{tx.itemName}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{tx.quantity} {tx.unit}</p>
                     </div>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded ${tx.type === "IN" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"}`}>
-                      {tx.type === "IN" ? "داخل" : "خارج"}
+                      {tx.type === "IN" ? pick("داخل", "ورودی") : pick("خارج", "خروجی")}
                     </span>
                   </Link>
                 ))
@@ -327,7 +298,7 @@ export default function Home() {
             </div>
             {transactions.length > 0 && (
               <Link to="/inventory/ledger" className="mt-4 block text-center text-xs text-primary hover:underline">
-                ټول حرکات وګورئ ←
+                {pick("ټول حرکات وګورئ ←", "مشاهده همه تراکنش‌ها ←")}
               </Link>
             )}
           </div>

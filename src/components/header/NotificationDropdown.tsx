@@ -6,22 +6,16 @@ import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
 
 const STATUS_PS: Record<string, string> = {
-  Submitted: "لیږل شوی",
-  ConfirmedByRequestConfirmer: "تایید شوی",
-  ApprovedBySuperAdmin: "منل شوی",
-  StockAvailable: "جنس شتون لري",
-  StockNotAvailable: "جنس نشته",
-  ProcurementPending: "تدارکاتو ته لیږل شو",
+  Submitted: "لیږل شوی", ConfirmedByRequestConfirmer: "تایید شوی",
+  ApprovedBySuperAdmin: "منل شوی", StockAvailable: "جنس شتون لري",
+  StockNotAvailable: "جنس نشته", ProcurementPending: "تدارکاتو ته لیږل شو",
   Delivered: "تسلیم شو",
 };
 
 const STATUS_DR: Record<string, string> = {
-  Submitted: "ارسال شد",
-  ConfirmedByRequestConfirmer: "تأیید شد",
-  ApprovedBySuperAdmin: "تصویب شد",
-  StockAvailable: "موجود است",
-  StockNotAvailable: "موجود نیست",
-  ProcurementPending: "به تدارکات ارسال شد",
+  Submitted: "ارسال شد", ConfirmedByRequestConfirmer: "تأیید شد",
+  ApprovedBySuperAdmin: "تصویب شد", StockAvailable: "موجود است",
+  StockNotAvailable: "موجود نیست", ProcurementPending: "به تدارکات ارسال شد",
   Delivered: "تحویل داده شد",
 };
 
@@ -63,6 +57,7 @@ export default function NotificationDropdown() {
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
   const [seen, setSeen] = useState(false);
   const [query, setQuery] = useState("");
+  const [dropdownPos, setDropdownPos] = useState({ top: 72, right: 16 });
   const { profile } = useAuth();
   const { lang, pick } = useLanguage();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -98,6 +93,11 @@ export default function NotificationDropdown() {
   const unread = !seen && requests.length > 0;
 
   const handleClick = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const right = Math.max(8, window.innerWidth - rect.right);
+      setDropdownPos({ top: rect.bottom + 8, right });
+    }
     setIsOpen(o => !o);
     setSeen(true);
     if (isOpen) setQuery("");
@@ -138,8 +138,13 @@ export default function NotificationDropdown() {
         <div
           ref={panelRef}
           dir="rtl"
-          className="fixed top-[70px] left-4 right-4 sm:left-auto sm:right-4 sm:w-[361px] z-[99999] flex flex-col rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900"
-          style={{ maxHeight: "min(480px, calc(100vh - 80px))" }}
+          className="fixed z-[99999] flex flex-col rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900"
+          style={{
+            top: dropdownPos.top,
+            right: dropdownPos.right,
+            width: "min(361px, calc(100vw - 32px))",
+            maxHeight: "min(500px, calc(100vh - 90px))",
+          }}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2">
@@ -161,12 +166,9 @@ export default function NotificationDropdown() {
 
           <div className="px-3 pt-3 pb-1">
             <div className="relative flex items-center">
-              <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
-                width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
+                width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
               <input
                 ref={searchRef}
@@ -174,14 +176,12 @@ export default function NotificationDropdown() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder={pick("پوهنځی، ډیپارتمنټ یا غوښتونکی...", "پوهنکده، دیپارتمنت یا درخواست‌کننده...")}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-9 pl-8 text-sm text-right text-gray-700 placeholder-gray-400 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 dark:focus:border-brand-600 dark:focus:ring-brand-900/30 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-9 pl-8 text-sm text-right text-gray-700 placeholder-gray-400 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 transition-all"
                 dir="rtl"
               />
               {query && (
-                <button
-                  onClick={() => { setQuery(""); searchRef.current?.focus(); }}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
-                >
+                <button onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6 6 18M6 6l12 12" />
                   </svg>
@@ -196,19 +196,13 @@ export default function NotificationDropdown() {
                 {q ? (
                   <>
                     <span className="text-2xl mb-2">🔍</span>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {pick("پایله ونه موندله", "نتیجه‌ای پیدا نشد")}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      «{query}»
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{pick("پایله ونه موندله", "نتیجه‌ای پیدا نشد")}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">«{query}»</p>
                   </>
                 ) : (
                   <>
                     <span className="text-3xl mb-2">🔔</span>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}</p>
                   </>
                 )}
               </li>
@@ -219,11 +213,8 @@ export default function NotificationDropdown() {
                 const statusCls = STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
                 return (
                   <li key={req.id}>
-                    <Link
-                      to="/requests"
-                      onClick={() => setIsOpen(false)}
-                      className="flex gap-3 rounded-xl border border-gray-100 p-3 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 transition-colors"
-                    >
+                    <Link to="/requests" onClick={() => setIsOpen(false)}
+                      className="flex gap-3 rounded-xl border border-gray-100 p-3 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 transition-colors">
                       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
                         {initials(req.requesterName)}
                       </span>
@@ -249,11 +240,8 @@ export default function NotificationDropdown() {
           </ul>
 
           <div className="p-3 pt-0">
-            <Link
-              to="/notifications"
-              onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm font-medium text-center text-brand-600 bg-brand-50 border border-brand-200 rounded-lg hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/30 transition-colors"
-            >
+            <Link to="/notifications" onClick={() => setIsOpen(false)}
+              className="block px-4 py-2 text-sm font-medium text-center text-brand-600 bg-brand-50 border border-brand-200 rounded-lg hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/30 transition-colors">
               {pick("ټولې خبرتیاوې وګورئ", "مشاهده همه اعلانات")}
             </Link>
           </div>

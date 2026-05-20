@@ -9,6 +9,7 @@ import receivingRoutes from './routes/receiving.routes';
 import deliveryRoutes from './routes/delivery.routes';
 import reportsRoutes from './routes/reports.routes';
 import lookupRoutes from './routes/lookup.routes';
+import emailRoutes from './routes/email.routes';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/receiving', receivingRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/lookup', lookupRoutes);
+app.use('/api/email', emailRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });

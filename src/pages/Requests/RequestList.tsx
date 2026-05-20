@@ -4,28 +4,30 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
 import { safeSortByCreatedAt } from "../../firebase/safeQuery";
 
-const STATUS_LABELS: Record<string, string> = {
-  Draft: "مسوده",
-  Submitted: "لیږل شوی",
-  ConfirmedByRequestConfirmer: "تایید شوی",
-  RejectedByRequestConfirmer: "رد شوی",
-  ApprovedBySuperAdmin: "منل شوی",
-  RejectedBySuperAdmin: "رد شوی",
-  StockAvailable: "جنس شتون لري",
-  StockNotAvailable: "جنس نشته",
-  ProcurementPending: "تدارکاتو ته لیږل شو",
-  TenderCreated: "جګړه پاڼه جوړه شوه",
-  OffersReceived: "قیمتونه راغلل",
-  ComparisonCreated: "مقایسه شوه",
-  WinnerSelected: "ګټونکی ټاکل شو",
-  PurchaseOrderCreated: "آمر خریداري",
-  ReceiptReportCreated: "راپور رسید",
-  ReceivedToInventory: "ګدام ته داخل شو",
-  FS5Created: "ف س ۵ جوړه شوه",
-  Delivered: "تسلیم شو",
+const STATUS_PS: Record<string, string> = {
+  Draft: "مسوده", Submitted: "لیږل شوی", ConfirmedByRequestConfirmer: "تایید شوی",
+  RejectedByRequestConfirmer: "رد شوی", ApprovedBySuperAdmin: "منل شوی",
+  RejectedBySuperAdmin: "رد شوی", StockAvailable: "جنس شتون لري",
+  StockNotAvailable: "جنس نشته", ProcurementPending: "تدارکاتو ته لیږل شو",
+  TenderCreated: "داوطلبي پاڼه جوړه شوه", OffersReceived: "قیمتونه راغلل",
+  ComparisonCreated: "مقایسه شوه", WinnerSelected: "ګټونکی ټاکل شو",
+  PurchaseOrderCreated: "آمر خریداري", ReceiptReportCreated: "راپور رسید",
+  ReceivedToInventory: "ګدام ته داخل شو", FS5Created: "ف س ۵ جوړه شوه", Delivered: "تسلیم شو",
+};
+
+const STATUS_DR: Record<string, string> = {
+  Draft: "پیش‌نویس", Submitted: "ارسال شد", ConfirmedByRequestConfirmer: "تأیید شد",
+  RejectedByRequestConfirmer: "رد شد", ApprovedBySuperAdmin: "تصویب شد",
+  RejectedBySuperAdmin: "رد شد", StockAvailable: "موجود است",
+  StockNotAvailable: "موجود نیست", ProcurementPending: "به تدارکات ارسال شد",
+  TenderCreated: "مناقصه ایجاد شد", OffersReceived: "پیشنهادها دریافت شد",
+  ComparisonCreated: "مقایسه انجام شد", WinnerSelected: "برنده انتخاب شد",
+  PurchaseOrderCreated: "امر خرید", ReceiptReportCreated: "گزارش رسید",
+  ReceivedToInventory: "وارد انبار شد", FS5Created: "ف س ۵ ایجاد شد", Delivered: "تحویل داده شد",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -50,13 +52,12 @@ export default function RequestList() {
   const [search, setSearch] = useState("");
   const [searchParams] = useSearchParams();
   const { user, profile, loading: authLoading } = useAuth();
+  const { pick } = useLanguage();
 
   const filterParam = searchParams.get("filter");
 
   useEffect(() => {
-    if (!authLoading && profile) {
-      loadRequests();
-    }
+    if (!authLoading && profile) loadRequests();
   }, [authLoading, profile, user]);
 
   const loadRequests = async () => {
@@ -73,19 +74,15 @@ export default function RequestList() {
     }
   };
 
+  const statusLabels = (s: string) => (pick(STATUS_PS[s], STATUS_DR[s]) || s);
+
   const filteredRequests = useMemo(() => {
     let list = requests;
-
-    if (filterParam === "pending") {
-      list = list.filter(r => r.progress < 100);
-    } else if (filterParam === "completed") {
-      list = list.filter(r => r.progress >= 100);
-    } else if (filterParam === "procurement") {
-      list = list.filter(r =>
-        ["StockNotAvailable", "ProcurementPending", "TenderCreated", "OffersReceived", "ComparisonCreated", "WinnerSelected", "PurchaseOrderCreated"].includes(r.status)
-      );
-    }
-
+    if (filterParam === "pending") list = list.filter(r => r.progress < 100);
+    else if (filterParam === "completed") list = list.filter(r => r.progress >= 100);
+    else if (filterParam === "procurement") list = list.filter(r =>
+      ["StockNotAvailable", "ProcurementPending", "TenderCreated", "OffersReceived", "ComparisonCreated", "WinnerSelected", "PurchaseOrderCreated"].includes(r.status)
+    );
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
     return list.filter(r =>
@@ -95,7 +92,8 @@ export default function RequestList() {
       (r.requesterName || "").toLowerCase().includes(q) ||
       (r.currentRequestLevel || "").toLowerCase().includes(q) ||
       (r.status || "").toLowerCase().includes(q) ||
-      (STATUS_LABELS[r.status] || "").includes(q) ||
+      (STATUS_PS[r.status] || "").includes(q) ||
+      (STATUS_DR[r.status] || "").includes(q) ||
       (r.reason || "").toLowerCase().includes(q) ||
       (r.items || []).some(i => (i.name || "").toLowerCase().includes(q))
     );
@@ -105,69 +103,61 @@ export default function RequestList() {
 
   return (
     <>
-      <PageMeta title="د غوښتنو لیست | Kandahar University WMS" description="د غوښتنو لیست او لړۍ" />
+      <PageMeta title={pick("د غوښتنو لیست", "لیست درخواست‌ها") + " | Kandahar University WMS"} description="" />
       <Breadcrumb pageTitle="غوښتنې / درخواست‌ها" />
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">د غوښتنو لړۍ</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{pick("د غوښتنو لړۍ", "فهرست درخواست‌ها")}</h3>
           <div className="flex items-center gap-2">
             {filterParam && (
               <Link to="/requests" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 transition">
-                ✕ فلتر لرې کول
+                ✕ {pick("فلتر لرې کول", "حذف فیلتر")}
               </Link>
             )}
             {(profile?.role === ROLES.REQUESTER || profile?.role === ROLES.SUPER_ADMIN) && (
               <Link to="/requests/create" className="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition">
-                + نوې غوښتنه
+                + {pick("نوې غوښتنه", "درخواست جدید")}
               </Link>
             )}
           </div>
         </div>
 
-        {/* Search */}
         <div className="mb-4">
           <div className="relative">
             <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="لټون... (پوهنځی، غوښتونکی، درجه، حالت، اجناس)"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-10 pl-4 text-sm text-right text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
-              dir="rtl"
-            />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder={pick("لټون... (پوهنځی، غوښتونکی، درجه، حالت، اجناس)", "جستجو... (پوهنکده، درخواست‌کننده، درجه، وضعیت، اجناس)")}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-10 pl-4 text-sm text-right text-gray-800 outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" dir="rtl" />
           </div>
-          {search && (
-            <p className="mt-1 text-xs text-gray-400 text-right">{filteredRequests.length} پایله</p>
-          )}
+          {search && <p className="mt-1 text-xs text-gray-400 text-right">{filteredRequests.length} {pick("پایله", "نتیجه")}</p>}
         </div>
 
         <div className="max-w-full overflow-x-auto">
           {isLoading ? (
             <div className="text-center py-20">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-              <p className="mt-4 text-gray-500">بارول...</p>
+              <p className="mt-4 text-gray-500">{pick("بارول...", "در حال بارگذاری...")}</p>
             </div>
           ) : !profile ? (
-            <div className="text-center py-20 text-orange-500">د کاروونکي معلومات ونه موندل شول.</div>
+            <div className="text-center py-20 text-orange-500">{pick("د کاروونکي معلومات ونه موندل شول.", "اطلاعات کاربر یافت نشد.")}</div>
           ) : filteredRequests.length === 0 ? (
             <div className="text-center py-20 text-gray-500">
-              {search ? `"${search}" لپاره هیڅ غوښتنه ونه موندل شوه.` : "تر اوسه کومه غوښتنه نشته."}
+              {search ? `"${search}" ${pick("لپاره هیڅ غوښتنه ونه موندل شوه.", "برای هیچ درخواستی پیدا نشد.")}` : pick("تر اوسه کومه غوښتنه نشته.", "تاکنون هیچ درخواستی وجود ندارد.")}
             </div>
           ) : (
             <table className="w-full table-auto" dir="rtl">
               <thead>
                 <tr className="bg-gray-100 dark:bg-gray-800">
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">نیټه</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">پوهنځی / غوښتونکی</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">درجه</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">اجناس</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">حالت</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">پرمختګ</th>
-                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">عمل</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("نیټه", "تاریخ")}</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("پوهنځی / غوښتونکی", "پوهنکده / درخواست‌کننده")}</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("درجه", "درجه")}</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("اجناس", "اجناس")}</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("حالت", "وضعیت")}</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("پرمختګ", "پیشرفت")}</th>
+                  <th className="px-4 py-3 font-medium text-gray-800 dark:text-white/90 text-right">{pick("عمل", "عملیات")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,17 +165,15 @@ export default function RequestList() {
                   <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{r.createdAtHijriShamsi || "-"}</td>
                     <td className="px-4 py-4 text-right">
-                      <div className="font-bold text-gray-800 dark:text-white/90">{r.faculty || "ناپیژندل"}</div>
+                      <div className="font-bold text-gray-800 dark:text-white/90">{r.faculty || pick("ناپیژندل", "ناشناخته")}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{r.requesterName}</div>
                       {r.departmentOrPerson && <div className="text-xs text-gray-400 dark:text-gray-500">{r.departmentOrPerson}</div>}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right whitespace-nowrap">{r.currentRequestLevel || "عادي"}</td>
-                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right">
-                      {r.items?.length || 0} قلمه
-                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right whitespace-nowrap">{r.currentRequestLevel || pick("عادي", "عادی")}</td>
+                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-400 text-right">{r.items?.length || 0} {pick("قلمه", "قلم")}</td>
                     <td className="px-4 py-4 text-right">
                       <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-600"}`}>
-                        {STATUS_LABELS[r.status] || r.status}
+                        {statusLabels(r.status)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">
@@ -195,7 +183,7 @@ export default function RequestList() {
                       <span className="text-[10px] text-gray-500">{r.progress || 0}%</span>
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <Link to={`/requests/details/${r.id}`} className="text-primary text-sm font-bold hover:underline">جزیات</Link>
+                      <Link to={`/requests/details/${r.id}`} className="text-primary text-sm font-bold hover:underline">{pick("جزیات", "جزئیات")}</Link>
                     </td>
                   </tr>
                 ))}
