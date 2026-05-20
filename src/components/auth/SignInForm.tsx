@@ -23,6 +23,7 @@ export default function SignInForm() {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMsg, setForgotMsg] = useState("");
+  const [foundAccount, setFoundAccount] = useState<typeof DEMO_ACCOUNTS[0] | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,13 +41,15 @@ export default function SignInForm() {
 
   const handleForgot = (e: React.FormEvent) => {
     e.preventDefault();
+    setFoundAccount(null);
     if (!forgotEmail.trim()) {
       setForgotMsg("مهرباني وکړئ خپل ایمیل ولیکئ.");
       return;
     }
     const found = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === forgotEmail.trim().toLowerCase());
     if (found) {
-      setForgotMsg(`ستاسې پټنوم: ${found.password}`);
+      setFoundAccount(found);
+      setForgotMsg("");
     } else {
       setForgotMsg("دا ایمیل پته د سیستم کې نه موندل کېږي. مهرباني وکړئ د سیستم مدیر سره اړیکه ونیسئ.");
     }
@@ -155,41 +158,36 @@ export default function SignInForm() {
                 </div>
 
                 {forgotMsg && (
-                  <div className={`rounded-lg p-3 text-sm font-medium ${
-                    forgotMsg.includes("پټنوم:")
-                      ? "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
-                      : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
-                  }`}>
+                  <div className="rounded-lg p-3 text-sm font-medium bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800">
                     {forgotMsg}
                   </div>
                 )}
 
-                <Button className="w-full" size="sm" type="submit">
-                  پټنوم لټول
-                </Button>
-              </form>
+                {foundAccount && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-green-200 dark:border-green-800">
+                      <p className="text-xs font-semibold text-green-700 dark:text-green-300">✅ اکاونټ وموندل شو</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">{foundAccount.role} — {foundAccount.email}</p>
+                    </div>
+                    <div className="px-4 py-3 flex items-center justify-between gap-3">
+                      <span className="font-mono text-sm font-bold text-green-800 dark:text-green-200 tracking-wider">{foundAccount.password}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setEmail(foundAccount.email); setPassword(foundAccount.password); setShowForgot(false); setFoundAccount(null); }}
+                        className="shrink-0 rounded-lg bg-green-600 hover:bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                      >
+                        ننوتل
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50 dark:bg-white/[0.03] dark:border-gray-700 overflow-hidden">
-                <div className="px-4 py-2.5 bg-gray-100 dark:bg-white/[0.05] border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">د ډیمو اکاونټونه</p>
-                </div>
-                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {DEMO_ACCOUNTS.map(acc => (
-                    <button
-                      key={acc.email}
-                      type="button"
-                      onClick={() => { setEmail(acc.email); setPassword(acc.password); setShowForgot(false); }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-right hover:bg-brand-50 dark:hover:bg-white/[0.04] transition-colors"
-                    >
-                      <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{acc.password}</span>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{acc.role}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{acc.email}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                {!foundAccount && (
+                  <Button className="w-full" size="sm" type="submit">
+                    پټنوم لټول
+                  </Button>
+                )}
+              </form>
 
               <button
                 type="button"
