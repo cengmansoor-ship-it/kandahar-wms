@@ -5,9 +5,11 @@ import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
+import { useLanguage } from "../context/LanguageContext";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const { lang, setLang } = useLanguage();
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
@@ -154,6 +156,14 @@ const AppHeader: React.FC = () => {
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
             
+            <button
+              onClick={() => setLang(lang === "ps" ? "dr" : "ps")}
+              title={lang === "ps" ? "Switch to Dari" : "Switch to Pashto"}
+              className="flex items-center justify-center h-11 w-11 rounded-full border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
+            >
+              {lang === "ps" ? "PS" : "DR"}
+            </button>
+
             <ThemeToggleButton />
             
             <NotificationDropdown />

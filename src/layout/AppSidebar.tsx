@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { BoxCubeIcon, ChevronDownIcon, GridIcon, HorizontaLDots, ListIcon, PageIcon, PieChartIcon, TableIcon, UserCircleIcon } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { canAccessMenu } from "../utils/permissions";
 import { ROLES } from "../constants/roles";
 
@@ -19,6 +20,7 @@ type NavItem = {
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const { profile } = useAuth();
+  const { splitPick, lang } = useLanguage();
   const location = useLocation();
   const [openSubmenu, setOpenSubmenu] = useState<{ type: string; index: number } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
@@ -27,48 +29,48 @@ const AppSidebar: React.FC = () => {
   const isActive = useCallback((path: string) => location.pathname === path || (path !== "/" && location.pathname.startsWith(path)), [location.pathname]);
 
   const mainNavItems: NavItem[] = [
-    { id: "dashboard", icon: <GridIcon />, name: "عمومي پاڼه", path: "/dashboard" },
-    { id: "inventory", icon: <BoxCubeIcon />, name: "موجودي", subItems: [
-      { name: "د موجودۍ عمومي پاڼه", path: "/inventory", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR] },
-      { name: "د اجناسو لیست", path: "/inventory/items", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR] },
-      { name: "جنس اضافه کول", path: "/inventory/add", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-      { name: "د ګدام داخل", path: "/inventory/stock-in", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON] },
-      { name: "د ګدام خارج", path: "/inventory/stock-out", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-      { name: "لېجر", path: "/inventory/ledger", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
+    { id: "dashboard", icon: <GridIcon />, name: "عمومي پاڼه / صفحه اصلی", path: "/dashboard" },
+    { id: "inventory", icon: <BoxCubeIcon />, name: "موجودي / موجودی", subItems: [
+      { name: "د موجودۍ عمومي پاڼه / داشبورد موجودی", path: "/inventory", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR] },
+      { name: "د اجناسو لیست / لیست موجودی", path: "/inventory/items", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR] },
+      { name: "جنس اضافه کول / اضافه کردن جنس", path: "/inventory/add", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+      { name: "د ګدام داخل / ورود به انبار", path: "/inventory/stock-in", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON] },
+      { name: "د ګدام خارج / خروج از انبار", path: "/inventory/stock-out", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+      { name: "لېجر / دفتر کل", path: "/inventory/ledger", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
     ] },
-    { id: "receiving", icon: <ListIcon />, name: "ترلاسه کول", subItems: [
-      { name: "د رسید او ف س ۵ غوښتنې", path: "/receiving", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
+    { id: "receiving", icon: <ListIcon />, name: "ترلاسه کول / تحویل‌گیری", subItems: [
+      { name: "د رسید او ف س ۵ غوښتنې / مدیریت تحویل", path: "/receiving", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
     ] },
-    { id: "procurement", icon: <TableIcon />, name: "تدارکات", subItems: [
-      { name: "تدارکاتي غوښتنې", path: "/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
-      { name: "درې قیمتونه او مقایسه", path: "/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
+    { id: "procurement", icon: <TableIcon />, name: "تدارکات / تدارکات", subItems: [
+      { name: "تدارکاتي غوښتنې / درخواست‌های تدارکاتی", path: "/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
+      { name: "درې قیمتونه او مقایسه / سه قیمت و مقایسه", path: "/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
     ] },
-    { id: "requests", icon: <PageIcon />, name: "غوښتنې", subItems: [
-      { name: "د غوښتنو لیست", path: "/requests", roles: [ROLES.REQUESTER, ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUEST_CONFIRMER] },
-      { name: "نوې غوښتنه", path: "/requests/create", roles: [ROLES.REQUESTER, ROLES.SUPER_ADMIN] },
+    { id: "requests", icon: <PageIcon />, name: "غوښتنې / درخواست‌ها", subItems: [
+      { name: "د غوښتنو لیست / لیست درخواست‌ها", path: "/requests", roles: [ROLES.REQUESTER, ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUEST_CONFIRMER] },
+      { name: "نوې غوښتنه / درخواست جدید", path: "/requests/create", roles: [ROLES.REQUESTER, ROLES.SUPER_ADMIN] },
     ] },
-    { id: "forms", icon: <PageIcon />, name: "فورمونه", path: "/official-forms" },
-    { id: "notifications", icon: <UserCircleIcon />, name: "خبرتیاوې", path: "/notifications" },
-    { id: "reports", icon: <PieChartIcon />, name: "راپورونه", subItems: [
-      { name: "د راپورونو عمومي پاڼه", path: "/reports", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR] },
-      { name: "د موجودۍ راپور", path: "/reports/inventory", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
-      { name: "د غوښتنو راپور", path: "/reports/requests", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-      { name: "د تدارکاتو راپور", path: "/reports/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
-      { name: "کلنۍ اړتیاوې", path: "/reports/needs", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-      { name: "وړاندوینه", path: "/reports/forecast", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-      { name: "د سیستم فعالیتونه", path: "/reports/audit", roles: [ROLES.SUPER_ADMIN] },
+    { id: "forms", icon: <PageIcon />, name: "فورمونه / فرم‌ها", path: "/official-forms" },
+    { id: "notifications", icon: <UserCircleIcon />, name: "خبرتیاوې / اعلانات", path: "/notifications" },
+    { id: "reports", icon: <PieChartIcon />, name: "راپورونه / گزارش‌ها", subItems: [
+      { name: "د راپورونو عمومي پاڼه / داشبورد گزارش", path: "/reports", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR] },
+      { name: "د موجودۍ راپور / گزارش موجودی", path: "/reports/inventory", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
+      { name: "د غوښتنو راپور / گزارش درخواست‌ها", path: "/reports/requests", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+      { name: "د تدارکاتو راپور / گزارش تدارکات", path: "/reports/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
+      { name: "کلنۍ اړتیاوې / نیازمندی‌های سالانه", path: "/reports/needs", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+      { name: "وړاندوینه / پیش‌بینی", path: "/reports/forecast", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+      { name: "د سیستم فعالیتونه / فعالیت‌های سیستم", path: "/reports/audit", roles: [ROLES.SUPER_ADMIN] },
     ] },
-    { id: "settings", icon: <BoxCubeIcon />, name: "تنظیمات", subItems: [
-      { name: "د سیستم تنظیمات", path: "/settings", roles: [ROLES.SUPER_ADMIN] },
-      { name: "حذف شوي معلومات", path: "/maintenance/trash", roles: [ROLES.SUPER_ADMIN] },
-      { name: "بیکپ", path: "/maintenance/backup", roles: [ROLES.SUPER_ADMIN] },
-      { name: "د بیا رغونې تاریخچه", path: "/maintenance/recovery-history", roles: [ROLES.SUPER_ADMIN] },
-      { name: "د سیستم روغتیا", path: "/maintenance/health", roles: [ROLES.SUPER_ADMIN] },
-      { name: "وروستی کتنه", path: "/maintenance/final-qa", roles: [ROLES.SUPER_ADMIN] },
-      { name: "کاروونکي", path: "/user-management", roles: [ROLES.SUPER_ADMIN] },
-      { name: "صلاحیتونه", path: "/role-management", roles: [ROLES.SUPER_ADMIN] },
+    { id: "settings", icon: <BoxCubeIcon />, name: "تنظیمات / تنظیمات", subItems: [
+      { name: "د سیستم تنظیمات / تنظیمات سیستم", path: "/settings", roles: [ROLES.SUPER_ADMIN] },
+      { name: "حذف شوي معلومات / اطلاعات حذف‌شده", path: "/maintenance/trash", roles: [ROLES.SUPER_ADMIN] },
+      { name: "بیکپ / پشتیبان‌گیری", path: "/maintenance/backup", roles: [ROLES.SUPER_ADMIN] },
+      { name: "د بیا رغونې تاریخچه / تاریخچه بازیابی", path: "/maintenance/recovery-history", roles: [ROLES.SUPER_ADMIN] },
+      { name: "د سیستم روغتیا / سلامت سیستم", path: "/maintenance/health", roles: [ROLES.SUPER_ADMIN] },
+      { name: "وروستی کتنه / بررسی نهایی", path: "/maintenance/final-qa", roles: [ROLES.SUPER_ADMIN] },
+      { name: "کاروونکي / کاربران", path: "/user-management", roles: [ROLES.SUPER_ADMIN] },
+      { name: "صلاحیتونه / دسترسی‌ها", path: "/role-management", roles: [ROLES.SUPER_ADMIN] },
     ] },
-    { id: "about_us", icon: <UserCircleIcon />, name: "زموږ په اړه", path: "/about" },
+    { id: "about_us", icon: <UserCircleIcon />, name: "زموږ په اړه / درباره ما", path: "/about" },
   ].filter((item) => canAccessMenu(profile?.role, item.id));
 
   useEffect(() => {
@@ -77,7 +79,7 @@ const AppSidebar: React.FC = () => {
         if (location.pathname === subItem.path) setOpenSubmenu({ type: "main", index });
       });
     });
-  }, [location.pathname]);
+  }, [location.pathname, lang]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -106,7 +108,7 @@ const AppSidebar: React.FC = () => {
                   : "text-white/70 hover:bg-white/10 hover:text-white"}`}
             >
               <span className={`shrink-0 [&_svg]:size-5 ${isOpen(menuType, index) ? "text-white" : "text-white/50 group-hover:text-white"}`}>{nav.icon}</span>
-              {(isExpanded || isHovered || isMobileOpen) && <span className="flex-1 text-right">{nav.name}</span>}
+              {(isExpanded || isHovered || isMobileOpen) && <span className="flex-1 text-right">{splitPick(nav.name)}</span>}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon className={`mr-auto h-4 w-4 transition-transform duration-200 ${isOpen(menuType, index) ? "rotate-180 text-white" : "text-white/40"}`} />
               )}
@@ -121,7 +123,7 @@ const AppSidebar: React.FC = () => {
                     : "text-white/70 hover:bg-white/10 hover:text-white"}`}
               >
                 <span className={`shrink-0 [&_svg]:size-5 ${isActive(nav.path) ? "text-white" : "text-white/50"}`}>{nav.icon}</span>
-                {(isExpanded || isHovered || isMobileOpen) && <span className="flex-1 text-right">{nav.name}</span>}
+                {(isExpanded || isHovered || isMobileOpen) && <span className="flex-1 text-right">{splitPick(nav.name)}</span>}
               </Link>
             )
           )}
@@ -141,7 +143,7 @@ const AppSidebar: React.FC = () => {
                           ? "bg-white/20 text-white font-semibold"
                           : "text-white/60 hover:bg-white/10 hover:text-white font-medium"}`}
                     >
-                      {subItem.name}
+                      {splitPick(subItem.name)}
                     </Link>
                   </li>
                 ))}
@@ -152,6 +154,10 @@ const AppSidebar: React.FC = () => {
       ))}
     </ul>
   );
+
+  const brandName = splitPick("د کندهار پوهنتون / پوهنتون کندهار");
+  const brandSub = splitPick("ګدام او تدارکات / انبار و تدارکات");
+  const menuLabel = splitPick("اصلي مینو / منوی اصلی");
 
   return (
     <aside
@@ -169,17 +175,17 @@ const AppSidebar: React.FC = () => {
           </div>
           {(isExpanded || isHovered || isMobileOpen) && (
             <span className="block text-sm font-bold leading-5 text-white text-right">
-              د کندهار پوهنتون<br />
-              <span className="text-xs font-medium text-white/50">ګدام او تدارکات</span>
+              {brandName}<br />
+              <span className="text-xs font-medium text-white/50">{brandSub}</span>
             </span>
           )}
         </Link>
       </div>
 
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+      <div className="flex flex-col overflow-y-auto duration-300 ease-linear custom-scrollbar [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
         <nav className="mb-6">
           <h2 className={`mb-3 flex text-xs leading-[20px] text-white/30 uppercase tracking-wider ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
-            {isExpanded || isHovered || isMobileOpen ? "اصلي مینو" : <HorizontaLDots className="size-5 text-white/30" />}
+            {isExpanded || isHovered || isMobileOpen ? menuLabel : <HorizontaLDots className="size-5 text-white/30" />}
           </h2>
           {renderMenuItems(mainNavItems, "main")}
         </nav>

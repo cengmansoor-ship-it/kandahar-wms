@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Dropdown } from "../ui/dropdown/Dropdown";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
 
 const STATUS_PS: Record<string, string> = {
@@ -15,6 +15,16 @@ const STATUS_PS: Record<string, string> = {
   Delivered: "تسلیم شو",
 };
 
+const STATUS_DR: Record<string, string> = {
+  Submitted: "ارسال شد",
+  ConfirmedByRequestConfirmer: "تأیید شد",
+  ApprovedBySuperAdmin: "تصویب شد",
+  StockAvailable: "موجود است",
+  StockNotAvailable: "موجود نیست",
+  ProcurementPending: "به تدارکات ارسال شد",
+  Delivered: "تحویل داده شد",
+};
+
 const STATUS_COLOR: Record<string, string> = {
   Submitted: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   ConfirmedByRequestConfirmer: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
@@ -25,8 +35,14 @@ const STATUS_COLOR: Record<string, string> = {
   Delivered: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
 };
 
-function timeAgo(ts: number): string {
+function timeAgo(ts: number, lang: string): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
+  if (lang === "dr") {
+    if (diff < 60) return "همین الان";
+    if (diff < 3600) return `${Math.floor(diff / 60)} دقیقه پیش`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ساعت پیش`;
+    return `${Math.floor(diff / 86400)} روز پیش`;
+  }
   if (diff < 60) return "هم اوس";
   if (diff < 3600) return `${Math.floor(diff / 60)} دقیقې وړاندې`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ساعته وړاندې`;
@@ -47,6 +63,9 @@ export default function NotificationDropdown() {
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
   const [seen, setSeen] = useState(false);
   const { profile } = useAuth();
+  const { lang, pick } = useLanguage();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     getRequests().then(all => {
@@ -59,6 +78,20 @@ export default function NotificationDropdown() {
     });
   }, [profile]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handle = (e: MouseEvent) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [isOpen]);
+
   const unread = !seen && requests.length > 0;
 
   const handleClick = () => {
@@ -66,10 +99,13 @@ export default function NotificationDropdown() {
     setSeen(true);
   };
 
+  const statusMap = lang === "dr" ? STATUS_DR : STATUS_PS;
+
   return (
-    <div className="relative" dir="rtl">
+    <>
       <button
-        className="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full dropdown-toggle hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        ref={btnRef}
+        className="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         onClick={handleClick}
       >
         {unread && (
@@ -82,77 +118,86 @@ export default function NotificationDropdown() {
         </svg>
       </button>
 
-      <Dropdown
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        className="absolute right-0 mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px]"
-      >
-        <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2">
-            <h5 className="text-base font-bold text-gray-800 dark:text-gray-200">خبرتیاوې</h5>
-            {requests.length > 0 && (
-              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
-                {requests.length}
-              </span>
-            )}
-          </div>
-          <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
-            <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" clipRule="evenodd" d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z" fill="currentColor" />
-            </svg>
-          </button>
-        </div>
-
-        <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar gap-1">
-          {requests.length === 0 ? (
-            <li className="flex flex-col items-center justify-center py-10 text-center">
-              <span className="text-3xl mb-2">🔔</span>
-              <p className="text-sm text-gray-500 dark:text-gray-400">هیڅ خبرتیا نشته</p>
-            </li>
-          ) : (
-            requests.map((req, i) => {
-              const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-              const statusLabel = STATUS_PS[req.status] || req.status;
-              const statusCls = STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
-              return (
-                <li key={req.id}>
-                  <Link
-                    to="/requests"
-                    onClick={() => setIsOpen(false)}
-                    className="flex gap-3 rounded-xl border border-gray-100 p-3 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 transition-colors"
-                  >
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
-                      {initials(req.requesterName)}
-                    </span>
-                    <span className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate">{req.requesterName}</span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${statusCls}`}>{statusLabel}</span>
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {req.faculty}{req.departmentOrPerson ? ` — ${req.departmentOrPerson}` : ""}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        <span>{req.currentRequestLevel}</span>
-                        <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                        <span>{timeAgo(req.createdAt)}</span>
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              );
-            })
-          )}
-        </ul>
-
-        <Link
-          to="/notifications"
-          onClick={() => setIsOpen(false)}
-          className="block px-4 py-2 mt-3 text-sm font-medium text-center text-brand-600 bg-brand-50 border border-brand-200 rounded-lg hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/30 transition-colors"
+      {isOpen && (
+        <div
+          ref={panelRef}
+          dir="rtl"
+          className="fixed top-[70px] left-4 right-4 sm:left-auto sm:right-4 sm:w-[361px] z-[99999] flex flex-col rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900"
+          style={{ maxHeight: "min(480px, calc(100vh - 80px))" }}
         >
-          ټولې خبرتیاوې وګورئ
-        </Link>
-      </Dropdown>
-    </div>
+          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <h5 className="text-base font-bold text-gray-800 dark:text-gray-200">
+                {pick("خبرتیاوې", "اعلانات")}
+              </h5>
+              {requests.length > 0 && (
+                <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
+                  {requests.length}
+                </span>
+              )}
+            </div>
+            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+              <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" clipRule="evenodd" d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+
+          <ul className="flex flex-col overflow-y-auto custom-scrollbar gap-1 p-3">
+            {requests.length === 0 ? (
+              <li className="flex flex-col items-center justify-center py-10 text-center">
+                <span className="text-3xl mb-2">🔔</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}
+                </p>
+              </li>
+            ) : (
+              requests.map((req, i) => {
+                const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                const statusLabel = statusMap[req.status] || req.status;
+                const statusCls = STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
+                return (
+                  <li key={req.id}>
+                    <Link
+                      to="/requests"
+                      onClick={() => setIsOpen(false)}
+                      className="flex gap-3 rounded-xl border border-gray-100 p-3 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
+                        {initials(req.requesterName)}
+                      </span>
+                      <span className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate">{req.requesterName}</span>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${statusCls}`}>{statusLabel}</span>
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {req.faculty}{req.departmentOrPerson ? ` — ${req.departmentOrPerson}` : ""}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          <span>{req.currentRequestLevel}</span>
+                          <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                          <span>{timeAgo(req.createdAt, lang)}</span>
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+
+          <div className="p-3 pt-0">
+            <Link
+              to="/notifications"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-2 text-sm font-medium text-center text-brand-600 bg-brand-50 border border-brand-200 rounded-lg hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/30 transition-colors"
+            >
+              {pick("ټولې خبرتیاوې وګورئ", "مشاهده همه اعلانات")}
+            </Link>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
