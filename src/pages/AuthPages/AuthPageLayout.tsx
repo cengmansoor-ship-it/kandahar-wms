@@ -1,6 +1,7 @@
 import React from "react";
 import GridShape from "../../components/common/GridShape";
 import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
+const kuLogo = "/kandahar-university-logo.png";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,8 +12,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="relative z-1 flex items-center justify-center">
             <GridShape />
             <div className="flex max-w-sm flex-col items-center px-6 text-center">
-              <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 text-3xl font-bold text-white">
-                KU
+              <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-2xl bg-white/10 p-2">
+                <img src={kuLogo} alt="Kandahar University Logo" className="h-full w-full object-contain drop-shadow-lg" />
               </div>
               <h2 className="mb-4 text-2xl font-bold text-white">
                 د کندهار پوهنتون WMS
