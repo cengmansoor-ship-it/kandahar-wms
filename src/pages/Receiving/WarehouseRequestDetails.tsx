@@ -23,7 +23,7 @@ export default function WarehouseRequestDetails() {
   const fetchData = async (requestId: string) => {
     setLoading(true);
     const data = await getRequestById(requestId);
-    setRequest(data);
+    setRequest(data ?? null);
     setLoading(false);
   };
 

@@ -34,7 +34,7 @@ export default function WarehouseRequestList() {
     setLoading(true);
     try {
       const all = await getRequests();
-      const filtered = all.filter(r =>
+      const filtered = all.filter((r: InventoryRequest) =>
         ["StockAvailable", "ReceiptReportCreated", "ReceivedToInventory", "FS5Created", "Delivered"].includes(r.status)
       );
       setRequests(safeSortByCreatedAt(filtered));

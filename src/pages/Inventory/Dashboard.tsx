@@ -22,7 +22,7 @@ export default function InventoryDashboard() {
     try {
       const items = await getItems();
       const summary = items.reduce(
-        (acc, item) => {
+        (acc: { totalItems: number; totalQuantity: number; totalValue: number; outOfStock: number; lowStock: number }, item: { currentQuantity: number; minimumStockLevel: number; unitPrice: number }) => {
           acc.totalItems++;
           acc.totalQuantity += Number(item.currentQuantity) || 0;
           acc.totalValue += (Number(item.currentQuantity) || 0) * (Number(item.unitPrice) || 0);

@@ -119,7 +119,7 @@ export default function Home() {
     { label: pick("پاتې غوښتنې", "درخواست‌های باقی‌مانده"), value: loading ? "..." : pendingRequests, to: "/requests?filter=pending", color: pendingRequests > 0 ? "bg-indigo-500" : "bg-gray-400", icon: "⏳" },
     { label: pick("بشپړې غوښتنې", "درخواست‌های تکمیل‌شده"), value: loading ? "..." : completedRequests, to: "/requests?filter=completed", color: "bg-teal-500", icon: "✅" },
     { label: pick("تدارکاتي غوښتنې", "درخواست‌های تدارکاتی"), value: loading ? "..." : procurementRequests, to: "/procurement", color: procurementRequests > 0 ? "bg-amber-500" : "bg-gray-400", icon: "🛒", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
-  ].filter(c => !c.roles || !profile || c.roles.includes(profile.role));
+  ].filter(c => !c.roles || !profile || (c.roles as string[]).includes(profile.role));
 
   const months = lang === "dr" ? SHAMSI_MONTHS_DR : SHAMSI_MONTHS_PS;
   const { labels: monthLabels, inData, outData } = buildMonthlyStockData(transactions, months);

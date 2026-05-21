@@ -34,7 +34,7 @@ export default function ItemList() {
     try {
       const data = await getItems();
       const enriched: PrintItem[] = await Promise.all(
-        data.map(async (item) => {
+        data.map(async (item: WarehouseItem) => {
           try {
             const apiItem = await apiClient.get(`/inventory/items/${item.id}`);
             return { ...item, tracking_code: apiItem?.tracking_code || "" };

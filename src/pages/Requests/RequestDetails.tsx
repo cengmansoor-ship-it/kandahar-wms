@@ -38,7 +38,7 @@ export default function RequestDetails() {
     try {
       const data = await getRequestById(requestId);
       const history = await getPipelineHistory(requestId);
-      setRequest(data);
+      setRequest(data ?? null);
       setPipeline(history);
     } catch (error) {
       console.error("Error fetching request data:", error);

@@ -38,7 +38,7 @@ export default function ProcurementRequestList() {
     setLoading(true);
     try {
       const all = await getRequests();
-      const filtered = all.filter(r =>
+      const filtered = all.filter((r: InventoryRequest) =>
         ["StockNotAvailable", "ProcurementPending", "TenderCreated", "OffersReceived",
          "ComparisonCreated", "WinnerSelected", "PurchaseOrderCreated"].includes(r.status)
       );

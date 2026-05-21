@@ -68,9 +68,9 @@ export default function NotificationDropdown() {
     getRequests().then(all => {
       let filtered = all;
       if (profile?.role === ROLES.REQUESTER) {
-        filtered = all.filter(r => r.requesterId === profile.uid || r.requesterName === profile.name);
+        filtered = all.filter((r: InventoryRequest) => r.requesterId === profile.uid || r.requesterName === profile.name);
       }
-      filtered.sort((a, b) => b.createdAt - a.createdAt);
+      filtered.sort((a: InventoryRequest, b: InventoryRequest) => b.createdAt - a.createdAt);
       setRequests(filtered.slice(0, 20));
     });
   }, [profile]);

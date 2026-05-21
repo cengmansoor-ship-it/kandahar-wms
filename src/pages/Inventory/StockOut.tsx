@@ -31,7 +31,7 @@ export default function StockOut() {
     setFetching(true);
     try {
       const data = await getItemById(itemId);
-      setItem(data);
+      setItem(data ?? null);
     } catch (error) {
       console.error("Error fetching item:", error);
     } finally {
