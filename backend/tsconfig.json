@@ -1,4 +1,7 @@
 {
+  "ts-node": {
+    "cache": false
+  },
   "compilerOptions": {
     "target": "es2022",
     "module": "commonjs",

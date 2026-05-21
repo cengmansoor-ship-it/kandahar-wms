@@ -17,6 +17,7 @@ import AddItem from "./pages/Inventory/AddItem";
 import StockIn from "./pages/Inventory/StockIn";
 import StockOut from "./pages/Inventory/StockOut";
 import InventoryLedger from "./pages/Inventory/Ledger";
+import BarcodeScanner from "./pages/Inventory/BarcodeScanner";
 
 import RequestList from "./pages/Requests/RequestList";
 import CreateRequest from "./pages/Requests/CreateRequest";
@@ -82,6 +83,7 @@ export default function App() {
             <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
             <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><StockOut /></ProtectedRoute>} />
             <Route path="/inventory/ledger" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><InventoryLedger /></ProtectedRoute>} />
+            <Route path="/inventory/barcode-scanner" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><BarcodeScanner /></ProtectedRoute>} />
 
             <Route path="/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><RequestList /></ProtectedRoute>} />
             <Route path="/requests/create" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.REQUESTER]}><CreateRequest /></ProtectedRoute>} />

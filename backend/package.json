@@ -5,8 +5,11 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "node_modules/.bin/nodemon --exec node_modules/.bin/ts-node src/server.ts",
+    "dev": "TS_NODE_CACHE=false node_modules/.bin/nodemon --exec node_modules/.bin/ts-node src/server.ts",
     "build": "tsc"
+  },
+  "ts-node": {
+    "cache": false
   },
   "keywords": [],
   "author": "",

@@ -20,6 +20,7 @@ import { TraceabilityService } from './services/traceability.service';
 import { ManagementService } from './services/management.service';
 import { EmailConfigService } from './services/emailConfig.service';
 import { CustomRolesService } from './services/customRoles.service';
+import { InventoryService } from './services/inventory.service';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 checkDbConnection();
+InventoryService.runBarcodeMigrations().catch(e => console.warn('[WMS] Barcode migrations warning:', e.message));
 TraceabilityService.runMigrations().then(() => console.log('[WMS] Traceability migrations complete.')).catch(e => console.warn('[WMS] Traceability migrations warning:', e.message));
 ManagementService.runMigrations().then(() => console.log('[WMS] Management migrations complete.')).catch(e => console.warn('[WMS] Management migrations warning:', e.message));
 EmailConfigService.runMigrations().then(() => console.log('[WMS] Email config migrations complete.')).catch(e => console.warn('[WMS] Email config migrations warning:', e.message));

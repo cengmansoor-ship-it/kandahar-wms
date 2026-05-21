@@ -56,4 +56,5 @@ wait_for_mysql || exit 1
 init_db
 
 echo "[WMS] Starting backend API server..."
+export TS_NODE_CACHE=false
 exec node_modules/.bin/nodemon --exec node_modules/.bin/ts-node src/server.ts

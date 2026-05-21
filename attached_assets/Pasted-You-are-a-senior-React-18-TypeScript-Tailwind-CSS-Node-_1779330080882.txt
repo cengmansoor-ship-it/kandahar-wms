@@ -1,0 +1,635 @@
+You are a senior React 18 + TypeScript + Tailwind CSS + Node.js/Express + MySQL engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Task:
+Implement and fix ONLY:
+1. Add Item Excel Template Export
+2. Bulk Import Items
+3. Automatic Barcode/QR Code generation for every item
+4. Barcode/QR Code print labels
+5. Barcode/QR Scanner menu for item inspection and traceability
+
+Do NOT rewrite the whole project.
+Do NOT redesign UI.
+Do NOT touch unrelated modules.
+Do NOT break existing Inventory, Requests, Procurement, Receiving, Reports, Official Forms, RBAC, or Dashboard.
+All visible UI text must be Pashto/Dari only.
+
+Current requirement:
+In Add Item / د جنس اضافه کول page, there must be two ways to add inventory items:
+
+1. Manual Add Item form
+2. Bulk Add Items using Excel template
+
+Also:
+When an item is added manually or imported through Excel, the system must automatically generate a unique Barcode or QR Code for that item.
+
+The barcode/QR code must later be printable and physically attached to the item by the warehouse entry person. Super Admin or Admin must be able to scan the code for inspection/audit/traceability and see all related item information.
+
+────────────────────────
+FEATURE 1 — EXPORT EXCEL TEMPLATE
+────────────────────────
+
+In Add Item page, add or fix a button:
+
+Pashto:
+د اکسیل فارمټ ښکته کول
+
+Dari:
+دانلود فورمت اکسیل
+
+Button name can be:
+Export Excel Template
+
+When user clicks this button:
+- Generate and download an Excel or CSV template file.
+- The file must contain proper columns for item registration.
+- Required/important columns must have * symbol in column header.
+
+Required columns:
+
+1. * د جنس نوم / نام جنس
+2. * مشخصات / نوعیت
+3. * کټګوري / کتگوری
+4. * واحد / واحد
+5. * ګدام / گدام
+6. * ابتدایي مقدار / مقدار ابتدایی
+7. * کمترین حد / حد کمترین
+8. باب
+9. فصل
+10. د جنس کود / کد جنس
+11. قیمت دانه / قیمت فی واحد
+12. ټول قیمت / قیمت مجموعی
+13. شرکت / کمپنی
+14. عرضه کوونکی / تهیه‌کننده
+15. یادښت / ملاحظات
+
+Rules:
+- Columns with * are mandatory.
+- Add one example row with sample Pashto/Dari data.
+- Add validation/help row if possible.
+- Do not include fake items in the database when exporting template.
+- The template must be downloadable locally.
+- If xlsx library exists, use Excel .xlsx.
+- If xlsx library does not exist and adding it is safe, install/use it.
+- If not safe, use UTF-8 CSV with BOM so Pashto/Dari opens correctly in Excel.
+
+────────────────────────
+FEATURE 2 — BULK IMPORT ITEMS
+────────────────────────
+
+In Add Item page, add or fix a button:
+
+Pashto:
+د اکسیل له لارې اجناس پورته کول
+
+Dari:
+بارگذاری اجناس از اکسیل
+
+Button name can be:
+Bulk Import Items
+
+When user clicks Bulk Import:
+- User selects Excel/CSV file.
+- System reads all rows.
+- Validate every row before saving.
+- Show preview table before final import.
+- Preview must show:
+  - valid rows
+  - invalid rows
+  - duplicate rows
+  - missing required fields
+  - wrong quantity/number fields
+
+Required validation:
+1. Item name is required.
+2. Specification/type is required.
+3. Category is required.
+4. Unit is required.
+5. Warehouse is required.
+6. Initial quantity must be number and >= 0.
+7. Minimum stock must be number and >= 0.
+8. Unit price must be number and >= 0 if provided.
+9. Total price = quantity × unit price if both exist.
+10. Bab/Fasl validation if Bab/Fasl module exists.
+11. Duplicate item must be blocked.
+
+Duplicate item rule:
+An item is duplicate if normalized fields match:
+- item name
+- specification/type
+- category
+- unit
+- warehouse
+
+Normalize:
+- trim spaces
+- remove repeated spaces
+- lowercase English letters
+- preserve Pashto/Dari text safely
+- handle null/undefined as empty string
+
+Do not import duplicate items.
+Do not create stock transaction for duplicate/invalid rows.
+Do not create fake success messages.
+
+────────────────────────
+FEATURE 3 — AUTOMATIC BARCODE / QR CODE GENERATION
+────────────────────────
+
+When an item is added manually or by bulk import, the system must automatically generate a unique barcode or QR code value.
+
+Required:
+1. Generate a unique item tracking code for every item.
+2. Store the code in MySQL.
+3. The code must be stable and must not change after refresh.
+4. The code must be unique across all items.
+5. The code must be printable.
+6. The code must be scannable later to retrieve the item details.
+
+Suggested fields in items table:
+- barcode_value
+- qr_code_value
+- tracking_code
+- barcode_generated_at
+- barcode_print_count
+
+If fields do not exist, add them safely using ALTER TABLE with checks or migration-safe SQL.
+
+Code format example:
+KDR-WMS-ITEM-000001
+or
+KDR-WMS-{item_id}-{year}
+
+Rules:
+- Do not reuse barcode/QR code for another item.
+- Do not overwrite existing barcode/QR code unless Super Admin explicitly regenerates it.
+- If an old item has no barcode, generate one safely.
+- Bulk import must generate barcode/QR code for every valid imported item.
+- Duplicate/invalid rows must not generate barcode/QR code.
+
+────────────────────────
+FEATURE 4 — BARCODE / QR CODE PRINT LABELS
+────────────────────────
+
+Add print label support.
+
+In Item List / Item Details / Add Item success result, provide:
+
+Pashto:
+د بارکوډ چاپ
+
+Dari:
+چاپ بارکد
+
+or:
+
+Pashto:
+د QR کوډ چاپ
+
+Dari:
+چاپ کد QR
+
+Print label must include:
+- University/System title
+- item name
+- item code
+- specification/type
+- category
+- unit
+- warehouse
+- barcode or QR code image
+- tracking code text
+- print date if project date utility exists
+
+Print layout:
+- Small label size suitable for attaching to items.
+- Printable from browser.
+- Do not damage existing print styles.
+- If multiple items imported, allow printing barcode labels for all imported items.
+
+Warehouse Entry Person workflow:
+- Warehouse Entry Person enters/imports items.
+- System generates barcode/QR code.
+- Warehouse Entry Person prints the barcode/QR code.
+- Warehouse Entry Person physically attaches the printed code to the item.
+
+────────────────────────
+FEATURE 5 — BARCODE / QR SCANNER MENU
+────────────────────────
+
+Add a new menu/page for scanning item barcode/QR code.
+
+Menu name Pashto:
+د بارکوډ سکین
+
+Menu name Dari:
+اسکن بارکد
+
+Route example:
+/inventory/barcode-scanner
+or
+/barcode-scanner
+
+Access:
+Only these roles can access:
+- Super Admin
+- Admin
+
+Optional view-only access if already supported:
+- Warehouse Director
+
+Warehouse Entry Person can print/attach barcode during entry, but barcode scanner inspection menu must be available only for Super Admin and Admin unless current RBAC allows more.
+
+Scanner page must support:
+1. Camera scanning if browser supports it.
+2. Manual code input if camera scanning is not available.
+3. Search by barcode_value / qr_code_value / tracking_code / item_code.
+4. Show clear Pashto/Dari error if camera permission is blocked.
+5. Show clear Pashto/Dari message if item not found.
+6. Do not crash if scanner library fails.
+
+When code is scanned:
+Fetch real item data from MySQL/backend and show:
+
+- item name
+- item code
+- barcode / QR code value
+- specification/type
+- category
+- unit
+- warehouse
+- current stock
+- minimum stock
+- Bab/Fasl if available
+- purchase/source company if available
+- supplier if available
+- stock transactions
+- stock in/out history
+- assigned person/department/faculty if item was delivered/assigned
+- request ID / delivery ID / FS5 reference if available
+- audit/traceability summary
+- status: active / deleted / assigned / out of stock if available
+
+Purpose:
+If someone claims:
+“دا جنس ماته نه دی راکړل شوی”
+or
+“دا جنس زما په نوم نه دی ثبت”
+Super Admin/Admin can scan the item barcode/QR code and immediately see all item registration, assignment, delivery, and traceability information.
+
+────────────────────────
+BACKEND REQUIREMENTS
+────────────────────────
+
+Inspect existing backend Inventory API first.
+
+Use existing tables:
+- items
+- categories
+- units
+- warehouses
+- stock_transactions
+- audit_logs
+- item_assignments
+- requests
+- deliveries
+- delivery_items
+- budget_babs if exists
+- budget_fasls if exists
+
+Add fields safely if missing:
+- items.barcode_value
+- items.qr_code_value
+- items.tracking_code
+- items.barcode_generated_at
+- items.barcode_print_count
+
+Add APIs if missing:
+
+GET /api/inventory/template
+- returns/downloads Excel/CSV template if backend handles export
+
+POST /api/inventory/bulk-import
+- accepts parsed items or uploaded file depending on current project pattern
+- validates rows
+- inserts valid items
+- generates barcode/QR code for each item
+- creates stock_transactions IN for initial quantity > 0
+- creates audit log
+- blocks duplicates
+- returns result summary
+
+GET /api/inventory/:id/barcode
+- returns barcode/QR data for one item
+
+POST /api/inventory/:id/barcode/regenerate
+- Super Admin only if role checking exists
+- regenerate only if explicitly requested
+- do not overwrite accidentally
+
+GET /api/inventory/barcode/:code
+- find item by barcode_value, qr_code_value, tracking_code, or item_code
+- return full item details and traceability summary
+
+POST /api/inventory/barcode/print-log
+- optional
+- increase barcode_print_count
+- create audit log
+
+Response format:
+{
+  "success": true,
+  "data": ...
+}
+
+Bulk import response:
+{
+  "success": true,
+  "data": {
+    "imported": 10,
+    "duplicates": 2,
+    "invalid": 1,
+    "generatedCodes": 10,
+    "errors": []
+  }
+}
+
+Error:
+{
+  "success": false,
+  "message": "Pashto/Dari message",
+  "errors": []
+}
+
+Use MySQL transaction for bulk import:
+- Prefer row-level validation and import only valid rows.
+- Each row insert + barcode generation + stock transaction must be atomic.
+
+Do not drop existing data.
+Do not break manual item creation.
+
+────────────────────────
+FRONTEND REQUIREMENTS
+────────────────────────
+
+Suggested files to inspect:
+- src/pages/Inventory/AddItem.tsx
+- src/pages/Inventory/ItemList.tsx
+- src/pages/Inventory/ItemDetails.tsx if exists
+- src/firebase/inventory.ts
+- src/api/apiClient.ts
+- src/layout/AppSidebar.tsx
+- src/App.tsx
+- backend/src/routes/inventory.routes.ts
+- backend/src/controllers/inventory.controller.ts
+- backend/src/services/inventory.service.ts
+
+UI must include in Add Item page:
+1. Manual Add Item form remains working.
+2. Export Excel Template button.
+3. Bulk Import Items button.
+4. File picker for Excel/CSV.
+5. Preview table before import.
+6. Import confirmation button.
+7. Clear Pashto/Dari validation messages.
+8. Import result summary:
+   - imported count
+   - duplicate count
+   - invalid count
+   - failed rows with reasons
+   - generated barcode/QR count
+
+UI must include in Item List:
+1. Print Barcode / چاپ بارکوډ button.
+2. View Barcode / QR code button if useful.
+3. Scanner menu link only for allowed roles.
+
+UI must include Barcode Scanner page:
+1. Camera scanner area.
+2. Manual input field.
+3. Search/Scan button.
+4. Item detail result panel.
+5. Traceability/assignment result panel.
+6. Print barcode label button.
+7. Pashto/Dari empty/error/loading states.
+
+Do not change page design heavily.
+Use existing Tailwind style.
+Make buttons visible in light and dark mode.
+
+────────────────────────
+BARCODE / QR LIBRARY RULE
+────────────────────────
+
+Use existing libraries if already installed.
+
+If not installed:
+- Prefer a lightweight library for QR generation and scanning.
+- For QR generation, use a safe lightweight package if needed.
+- For barcode/QR scanning, use browser BarcodeDetector API if available, with manual input fallback.
+- Do not add heavy libraries unless necessary.
+- If camera scanning cannot be implemented safely, implement manual scanner input and clearly document camera scanning limitation.
+
+Required:
+The system must still work with manual input even if camera scanning is unavailable.
+
+────────────────────────
+EXCEL / CSV ENCODING
+────────────────────────
+
+Pashto/Dari text must not become corrupted.
+
+If using CSV:
+- Add UTF-8 BOM.
+- Use correct headers.
+- Ensure Excel opens Pashto/Dari correctly.
+
+If using XLSX:
+- Use proper workbook/sheet.
+- Sheet name should be Pashto/Dari:
+  اجناس
+  or
+  موجودی
+
+────────────────────────
+REQUIRED COLUMNS WITH * SYMBOL
+────────────────────────
+
+The exported template column headers must show * for mandatory columns:
+
+* د جنس نوم
+* مشخصات
+* کټګوري
+* واحد
+* ګدام
+* ابتدایي مقدار
+* کمترین حد
+
+Optional columns without *:
+باب
+فصل
+د جنس کود
+قیمت دانه
+ټول قیمت
+شرکت
+عرضه کوونکی
+یادښت
+
+Note:
+Barcode/QR code should NOT be required in the template because the system generates it automatically.
+If a column for item code exists, allow it, but barcode/QR code must still be generated by the system.
+
+────────────────────────
+VALIDATION RULES
+────────────────────────
+
+Required validation:
+1. Item name is required.
+2. Specification/type is required.
+3. Category is required.
+4. Unit is required.
+5. Warehouse is required.
+6. Initial quantity must be number and >= 0.
+7. Minimum stock must be number and >= 0.
+8. Unit price must be number and >= 0 if provided.
+9. Total price = quantity × unit price if both exist.
+10. Bab/Fasl validation if Bab/Fasl module exists.
+11. Duplicate item must be blocked.
+12. Barcode/QR code must be unique.
+
+Duplicate item rule:
+An item is duplicate if normalized fields match:
+- item name
+- specification/type
+- category
+- unit
+- warehouse
+
+Normalize:
+- trim spaces
+- remove repeated spaces
+- lowercase English letters
+- preserve Pashto/Dari text safely
+- handle null/undefined as empty string
+
+Do not import duplicate items.
+Do not create stock transaction for duplicate/invalid rows.
+Do not generate barcode/QR code for duplicate/invalid rows.
+Do not create fake success messages.
+
+────────────────────────
+RBAC RULES
+────────────────────────
+
+Barcode/QR Scanner Menu:
+Allowed:
+- Super Admin
+- Admin
+
+Warehouse Entry Person:
+- Can generate/print barcode during item entry/import if system role allows item entry.
+- Cannot access inspection scanner menu unless explicitly allowed.
+
+Requester:
+- Cannot access scanner menu.
+- Cannot regenerate barcode/QR code.
+- Cannot print item labels unless allowed.
+
+Regenerate barcode/QR code:
+- Super Admin only.
+
+Unauthorized:
+Show Pashto/Dari access denied message.
+Do not show blank page.
+
+────────────────────────
+AUDIT LOG REQUIREMENTS
+────────────────────────
+
+Create audit log for:
+- manual item creation
+- bulk import
+- barcode/QR code generation
+- barcode/QR code print
+- barcode/QR code regeneration
+- barcode/QR scan lookup if useful
+- stock transaction created from initial quantity
+- duplicate/invalid bulk import attempt if project supports it
+
+Audit data should include:
+- user
+- role
+- item id
+- barcode/tracking code
+- action
+- date/time
+- notes
+
+────────────────────────
+TESTING REQUIREMENTS
+────────────────────────
+
+Run:
+npm run build
+
+Backend:
+cd backend
+npm run build
+
+Test:
+1. Open Add Item page.
+2. Manual item add still works.
+3. Manual item automatically gets barcode/QR code.
+4. Click Export Excel Template.
+5. File downloads successfully.
+6. Required columns have * symbol.
+7. Pashto/Dari text displays correctly in Excel.
+8. Fill 3 items in template.
+9. Upload file using Bulk Import.
+10. Preview shows rows.
+11. Invalid row is detected.
+12. Duplicate row is detected.
+13. Valid rows import into MySQL.
+14. Each valid imported item gets barcode/QR code.
+15. Initial quantity creates stock_transactions IN.
+16. items.current_stock is updated.
+17. Duplicate items are not inserted.
+18. Import result summary is shown.
+19. Inventory list shows imported items.
+20. Print barcode/QR label works.
+21. Scanner menu appears only for Super Admin/Admin.
+22. Scan/manual code lookup returns correct item.
+23. Scan result shows item and traceability details.
+24. Unauthorized user cannot access scanner menu.
+25. No UI crash.
+26. No fake success.
+27. Dark/light mode text visible.
+
+────────────────────────
+FINAL REPORT REQUIRED
+────────────────────────
+
+Return concise report:
+1. Files created.
+2. Files modified.
+3. Export Excel Template status.
+4. Bulk Import status.
+5. Required * columns implemented.
+6. Validation rules implemented.
+7. Duplicate prevention status.
+8. MySQL insert status.
+9. Stock transaction status.
+10. Barcode/QR generation status.
+11. Barcode/QR print status.
+12. Scanner menu status.
+13. Scanner RBAC status.
+14. Scan result data status.
+15. Pashto/Dari encoding status.
+16. Build result.
+17. Remaining limitations.
+
+Do not only create a plan.
+Implement the Excel template export, bulk import, automatic barcode/QR generation, barcode/QR printing, and scanner menu now.

@@ -43,9 +43,9 @@ export const createItem = async (req: Request, res: Response): Promise<any> => {
     if (!item_code || !name_ps || !name_fa || !category_id || !unit_id || !warehouse_id) {
       return res.status(400).json({ success: false, message: 'ټول اړین معلومات باید ولیکل شي.' });
     }
-    const userId = 1; // Defaulting to 1 for now until auth is fully integrated
-    const id = await InventoryService.createItem(req.body, userId);
-    res.status(201).json({ success: true, message: 'جنس په بریالیتوب سره ثبت شو.', data: { id } });
+    const userId = 1;
+    const result = await InventoryService.createItem(req.body, userId);
+    res.status(201).json({ success: true, message: 'جنس په بریالیتوب سره ثبت شو.', data: result });
   } catch (error) {
     handleError(res, error);
   }
@@ -130,6 +130,57 @@ export const getWarehouses = async (req: Request, res: Response) => {
   try {
     const warehouses = await InventoryService.getWarehouses();
     res.json({ success: true, data: warehouses });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const bulkImport = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'هیڅ ډیټا نه ده راغلې.' });
+    }
+    if (rows.length > 500) {
+      return res.status(400).json({ success: false, message: 'زیاتره ۵۰۰ کرښې یو ځل واردولی شئ.' });
+    }
+    const userId = 1;
+    const result = await InventoryService.bulkImport(rows, userId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const getItemByBarcode = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const code = String(req.params.code || '');
+    if (!code) return res.status(400).json({ success: false, message: 'کوډ اړین دی.' });
+    const result = await InventoryService.getItemByBarcode(code);
+    if (!result) return res.status(404).json({ success: false, message: 'جنس ونه موندل شو. کوډ سم نه دی.' });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const regenerateBarcode = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = Number(req.params.id);
+    const userId = 1;
+    const trackingCode = await InventoryService.regenerateBarcode(id, userId);
+    res.json({ success: true, message: 'بارکوډ بیا جوړ شو.', data: { tracking_code: trackingCode } });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const logBarcodePrint = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = Number(req.params.id);
+    const userId = 1;
+    await InventoryService.logBarcodePrint(id, userId);
+    res.json({ success: true, message: 'د چاپ ثبت شو.' });
   } catch (error) {
     handleError(res, error);
   }

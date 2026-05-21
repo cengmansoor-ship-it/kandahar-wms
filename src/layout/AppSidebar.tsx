@@ -37,6 +37,7 @@ const AppSidebar: React.FC = () => {
       { name: "د ګدام داخل / ورود به انبار", path: "/inventory/stock-in", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON] },
       { name: "د ګدام خارج / خروج از انبار", path: "/inventory/stock-out", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
       { name: "لېجر / دفتر کل", path: "/inventory/ledger", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
+      { name: "د بارکوډ سکین / اسکن بارکد", path: "/inventory/barcode-scanner", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
     ] },
     { id: "receiving", icon: <ListIcon />, name: "ترلاسه کول / تحویل‌گیری", subItems: [
       { name: "د رسید او ف س ۵ غوښتنې / مدیریت تحویل", path: "/receiving", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR] },
