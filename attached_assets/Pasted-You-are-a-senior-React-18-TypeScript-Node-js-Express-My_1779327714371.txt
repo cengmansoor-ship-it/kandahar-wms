@@ -1,0 +1,308 @@
+You are a senior React 18 + TypeScript + Node.js/Express + MySQL engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+I am uploading a Bab/Fasl reference file now.
+This file contains official budget/accounting classification data:
+- باب
+- فصل
+- related codes/names
+- any category/subcategory structure inside the file
+
+Task:
+Integrate this uploaded Bab/Fasl file into the system safely.
+
+IMPORTANT:
+Do NOT rewrite the whole project.
+Do NOT redesign UI.
+Do NOT touch unrelated modules.
+Do NOT remove working features.
+Do NOT change official forms design.
+Do NOT use fake/template data.
+Use the uploaded Bab/Fasl file as the official source of truth for Bab/Fasl data.
+
+────────────────────────
+GOAL
+────────────────────────
+
+The system must support Bab/Fasl selection, filtering, reporting, and official form mapping.
+
+Bab/Fasl must be available in:
+1. Add Item / د جنس اضافه کول
+2. Inventory item details
+3. Request creation
+4. Procurement forms/data
+5. Receiving and delivery records
+6. Reports
+7. Traceability filters
+8. Forecasting/needs analysis filters
+9. Official forms where Bab/Fasl fields exist
+10. Print and Excel/CSV exports
+
+────────────────────────
+FILE PROCESSING RULES
+────────────────────────
+
+1. Inspect the uploaded Bab/Fasl file.
+2. Detect its structure:
+   - columns
+   - sheets if Excel
+   - headings
+   - Bab code/name
+   - Fasl code/name
+   - parent-child relationship
+3. Do not change the uploaded file itself.
+4. Create a safe parser/importer if needed.
+5. Preserve Pashto/Dari text correctly with UTF-8 / utf8mb4.
+6. Do not corrupt characters.
+7. Do not duplicate Bab/Fasl records on repeated import.
+8. Use unique keys/codes to prevent duplicates.
+
+────────────────────────
+MYSQL REQUIREMENTS
+────────────────────────
+
+Inspect existing MySQL schema first.
+
+If tables do not exist, add safely using IF NOT EXISTS:
+
+1. budget_babs
+Fields:
+- id
+- bab_code
+- name_ps
+- name_fa
+- description
+- created_at
+- updated_at
+- is_deleted
+
+2. budget_fasls
+Fields:
+- id
+- bab_id
+- fasl_code
+- name_ps
+- name_fa
+- description
+- created_at
+- updated_at
+- is_deleted
+
+Add indexes:
+- bab_code
+- fasl_code
+- bab_id
+
+Add unique protection:
+- unique bab_code
+- unique bab_id + fasl_code
+
+Do not drop existing data.
+
+If current project already has Bab/Fasl tables, reuse and extend them safely.
+
+────────────────────────
+BACKEND API REQUIREMENTS
+────────────────────────
+
+Create or fix backend APIs:
+
+GET /api/budget/babs
+GET /api/budget/babs/:id
+GET /api/budget/babs/:id/fasls
+GET /api/budget/fasls
+POST /api/budget/import
+
+Optional if needed:
+GET /api/budget/search?q=
+
+Rules:
+- Return real MySQL data.
+- Support search by Bab/Fasl code and Pashto/Dari name.
+- Support dynamic dropdown usage.
+- Prevent duplicates.
+- Return consistent JSON:
+
+Success:
+{
+  "success": true,
+  "data": ...
+}
+
+Error:
+{
+  "success": false,
+  "message": "Pashto/Dari user message"
+}
+
+────────────────────────
+FRONTEND REQUIREMENTS
+────────────────────────
+
+Create or fix service file:
+
+src/firebase/budget.ts
+or
+src/services/budget.ts
+
+Use existing project pattern.
+
+Connect frontend dropdowns to backend:
+- Bab dropdown
+- Fasl dropdown filtered by selected Bab
+- Searchable dropdowns
+- Keyboard typing must work
+- Empty state must show Pashto/Dari message
+
+Add Bab/Fasl fields where needed:
+1. Add Item page
+2. Edit Item page
+3. Request creation page
+4. Reports filters
+5. Traceability filters
+6. Forecasting filters
+7. Official form data mapping if Bab/Fasl field exists
+
+Do not break existing forms/pages.
+
+────────────────────────
+DYNAMIC SEARCH REQUIREMENT
+────────────────────────
+
+Bab/Fasl search must be dynamic.
+
+Search must work by:
+- Bab code
+- Bab name
+- Fasl code
+- Fasl name
+- Pashto text
+- Dari text
+- numbers
+
+When user selects Bab:
+- Fasl dropdown must show only Fasls related to that Bab.
+
+When Bab changes:
+- clear invalid Fasl selection.
+
+No page refresh required.
+
+────────────────────────
+OFFICIAL FORMS REQUIREMENT
+────────────────────────
+
+If official forms have Bab/Fasl fields:
+- Map selected Bab/Fasl into those fields.
+- Do not change official form design.
+- Do not break print layout.
+- Do not break existing forward-only synchronization.
+- Do not rewrite official forms.
+- Only connect data safely.
+
+Official forms path:
+public/forms/official-forms.html
+
+Do not modify design unless a safe data binding fix is required.
+
+────────────────────────
+REPORTS / TRACEABILITY / FORECASTING
+────────────────────────
+
+Add Bab/Fasl filters to:
+- inventory reports
+- request reports
+- procurement reports
+- receiving/delivery reports
+- stock movement report
+- traceability
+- forecasting/needs analysis
+
+Reports must show:
+- Bab
+- Fasl
+- item
+- quantity
+- unit
+- department/faculty/person if available
+- date
+- request/procurement/delivery source
+
+Print/Excel/CSV exports must include Bab/Fasl columns where relevant.
+
+────────────────────────
+VALIDATION
+────────────────────────
+
+When saving item/request/procurement record:
+- Bab may be required if the workflow needs budget classification.
+- Fasl must belong to selected Bab.
+- Invalid Fasl must be blocked.
+- Show Pashto/Dari validation message.
+
+Do not save inconsistent Bab/Fasl combinations.
+
+────────────────────────
+RBAC
+────────────────────────
+
+Allowed to import/manage Bab/Fasl:
+- Super Admin
+- Admin if allowed
+
+Other roles:
+- Can view/select Bab/Fasl where needed
+- Cannot import/delete/update budget classifications unless allowed
+
+Unauthorized actions must show Pashto/Dari access denied message.
+
+────────────────────────
+TESTING REQUIRED
+────────────────────────
+
+Run:
+npm run build
+
+Backend:
+cd backend
+npm run build
+
+Test:
+1. Uploaded Bab/Fasl file is parsed correctly.
+2. Bab records imported without duplicate.
+3. Fasl records imported without duplicate.
+4. Pashto/Dari text displays correctly.
+5. GET /api/budget/babs works.
+6. GET /api/budget/babs/:id/fasls works.
+7. Add Item page shows Bab dropdown.
+8. Selecting Bab filters Fasl dropdown.
+9. Keyboard search works.
+10. Request creation can use Bab/Fasl.
+11. Reports can filter by Bab/Fasl.
+12. Traceability can filter by Bab/Fasl.
+13. Forecasting can filter by Bab/Fasl.
+14. Print/Excel includes Bab/Fasl where relevant.
+15. Official forms are not visually damaged.
+
+────────────────────────
+FINAL REPORT REQUIRED
+────────────────────────
+
+Return concise report:
+1. Uploaded file structure detected.
+2. Files created.
+3. Files modified.
+4. MySQL tables created/updated.
+5. Backend endpoints created.
+6. Frontend dropdown/search connected.
+7. Bab/Fasl import status.
+8. Duplicate prevention status.
+9. Reports/traceability/forecasting filter status.
+10. Official forms mapping status.
+11. Build result.
+12. Remaining limitations.
+
+Do not only create a plan.
+Implement Bab/Fasl integration safely now.
