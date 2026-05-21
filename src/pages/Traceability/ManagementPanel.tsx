@@ -517,6 +517,25 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
 
   const filtered = people.filter(p => !search || p.full_name.toLowerCase().includes(search.toLowerCase()) || (p.position || "").toLowerCase().includes(search.toLowerCase()) || (p.dept_name_ps || "").toLowerCase().includes(search.toLowerCase()));
 
+  const exportCsv = () => {
+    const rows = filtered.length > 0 ? filtered : people;
+    const headers = ["full_name", "department_id", "dept_name_ps", "position", "phone", "email"];
+    const lines = [
+      headers.join(","),
+      ...rows.map(p =>
+        headers.map(h => {
+          const v = String(p[h] ?? "").replace(/"/g, '""');
+          return v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v}"` : v;
+        }).join(",")
+      ),
+    ];
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `people_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
@@ -532,6 +551,14 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
               ✉️ {pick(`ټول ایمیل (${selectedIds.size})`, `ارسال گروهی (${selectedIds.size})`)}
             </button>
           )}
+          <button onClick={exportCsv} disabled={people.length === 0}
+            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all"
+            title={pick("د اوسني لیست CSV صادرول","صدور CSV لیست فعلی")}>
+            📤 {pick("CSV صادر","صدور CSV")}
+            {filtered.length > 0 && filtered.length < people.length && (
+              <span className="bg-white/20 rounded-full px-1.5 text-xs">{filtered.length}</span>
+            )}
+          </button>
           <button onClick={() => { setShowCsvModal(true); setCsvRows([]); setCsvError(""); setCsvResult(null); }}
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
             📥 {pick("CSV وارد","ورود CSV")}
