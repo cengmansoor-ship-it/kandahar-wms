@@ -2,31 +2,30 @@ import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import { EmailConfigService } from '../services/emailConfig.service';
 
-// Map nodemailer/Gmail SMTP errors to short, actionable error codes
 function classifyEmailError(err: any): { code: string; message: string } {
   const msg = String(err?.message || err?.responseCode || '');
-  if (msg.includes('535') || msg.toLowerCase().includes('badcredentials') || msg.toLowerCase().includes('username and password not accepted')) {
-    return {
-      code: 'GMAIL_BAD_CREDENTIALS',
-      message: 'GMAIL_BAD_CREDENTIALS: د Gmail اپ پاسورډ غلط دی. د عادي پاسورډ پر ځای د Gmail اپ پاسورډ وکاروئ. Google Account → Security → App Passwords (https://myaccount.google.com/apppasswords)',
-    };
-  }
-  if (msg.includes('534') || msg.toLowerCase().includes('less secure') || msg.toLowerCase().includes('application-specific')) {
-    return {
-      code: 'GMAIL_LESS_SECURE',
-      message: 'GMAIL_LESS_SECURE: Gmail دغه ورته لاسرسی ته اجازه نه ورکوي. د اپ پاسورډ وکاروئ.',
-    };
+  if (
+    msg.includes('535') ||
+    msg.toLowerCase().includes('badcredentials') ||
+    msg.toLowerCase().includes('username and password not accepted') ||
+    msg.toLowerCase().includes('invalid login')
+  ) {
+    return { code: 'GMAIL_BAD_CREDENTIALS', message: 'GMAIL_BAD_CREDENTIALS' };
   }
   if (msg.includes('ECONNREFUSED') || msg.includes('ETIMEDOUT') || msg.includes('ENOTFOUND')) {
-    return { code: 'SMTP_CONNECTION_FAILED', message: 'SMTP_CONNECTION_FAILED: ' + msg };
-  }
-  if (msg.includes('Invalid login') || msg.includes('auth') || msg.includes('AUTH')) {
-    return {
-      code: 'GMAIL_BAD_CREDENTIALS',
-      message: 'GMAIL_BAD_CREDENTIALS: د Gmail اپ پاسورډ غلط دی. د عادي پاسورډ پر ځای د Gmail اپ پاسورډ وکاروئ.',
-    };
+    return { code: 'SMTP_CONNECTION_FAILED', message: 'SMTP_CONNECTION_FAILED' };
   }
   return { code: 'SMTP_ERROR', message: msg || 'Failed to send email' };
+}
+
+function createGmailTransport(user: string, pass: string) {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+  });
 }
 
 export const getEmailConfigs = async (req: Request, res: Response) => {
@@ -89,10 +88,10 @@ export const testEmailConfig = async (req: Request, res: Response) => {
     const config = await EmailConfigService.getWithPassword(id);
     if (!config) return res.status(404).json({ success: false, message: 'Not found' });
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: config.email, pass: config.app_password },
-    });
+    const transporter = createGmailTransport(config.email, config.app_password);
+
+    // Verify credentials before sending
+    await transporter.verify();
 
     await transporter.sendMail({
       from: `"کندهار پوهنتون WMS" <${config.email}>`,

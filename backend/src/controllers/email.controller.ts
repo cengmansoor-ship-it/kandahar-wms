@@ -4,19 +4,28 @@ import pool from '../config/db';
 
 function classifyEmailError(err: any): { code: string; message: string } {
   const msg = String(err?.message || err?.responseCode || '');
-  if (msg.includes('535') || msg.toLowerCase().includes('badcredentials') || msg.toLowerCase().includes('username and password not accepted') || (msg.includes('Invalid login') && msg.includes('535'))) {
-    return {
-      code: 'GMAIL_BAD_CREDENTIALS',
-      message: 'GMAIL_BAD_CREDENTIALS',
-    };
-  }
-  if (msg.includes('Invalid login') || msg.includes('auth') || msg.includes('AUTH')) {
+  if (
+    msg.includes('535') ||
+    msg.toLowerCase().includes('badcredentials') ||
+    msg.toLowerCase().includes('username and password not accepted') ||
+    msg.toLowerCase().includes('invalid login')
+  ) {
     return { code: 'GMAIL_BAD_CREDENTIALS', message: 'GMAIL_BAD_CREDENTIALS' };
   }
   if (msg.includes('ECONNREFUSED') || msg.includes('ETIMEDOUT') || msg.includes('ENOTFOUND')) {
     return { code: 'SMTP_CONNECTION_FAILED', message: 'SMTP_CONNECTION_FAILED' };
   }
   return { code: 'SMTP_ERROR', message: msg || 'Failed to send email' };
+}
+
+function createGmailTransport(user: string, pass: string) {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+  });
 }
 
 export const sendEmail = async (req: Request, res: Response) => {
@@ -45,14 +54,11 @@ export const sendEmail = async (req: Request, res: Response) => {
   }
 
   if (!smtpUser || !smtpPass) {
-    return res.status(503).json({ success: false, message: 'SMTP_NOT_CONFIGURED' });
+    return res.status(503).json({ success: false, message: 'SMTP_NOT_CONFIGURED', code: 'SMTP_NOT_CONFIGURED' });
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: smtpUser, pass: smtpPass },
-    });
+    const transporter = createGmailTransport(smtpUser, smtpPass);
 
     await transporter.sendMail({
       from: `"کندهار پوهنتون WMS" <${smtpUser}>`,

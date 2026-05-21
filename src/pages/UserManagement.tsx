@@ -137,7 +137,7 @@ export default function UserManagement() {
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">کاروونکي / کاربران</h3>
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition shadow-md btn-press"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-bold rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition shadow-md btn-press"
             >
               + نوی کاروونکی
             </button>
