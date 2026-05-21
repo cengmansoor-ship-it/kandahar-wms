@@ -7,92 +7,96 @@ interface OfficialFormViewerProps {
   readOnly?: boolean;
 }
 
-const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
-  templateId,
-  initialData,
+const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({ 
+  templateId, 
+  initialData, 
   onSave,
-  readOnly = false,
+  readOnly = false 
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
-  const [src, setSrc] = useState("");
 
   useEffect(() => {
-    const url = `/forms/official-forms.html?embed=1&form=${encodeURIComponent(templateId)}`;
-    setSrc(url);
-    setLoading(true);
+    loadForm();
   }, [templateId]);
 
-  const handleLoad = () => {
-    setLoading(false);
-
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
+  const loadForm = async () => {
+    setLoading(true);
     try {
-      const win = iframe.contentWindow as any;
-      if (!win) return;
+      const response = await fetch("/forms/official-forms.html");
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const template = doc.getElementById(templateId) as HTMLTemplateElement;
 
-      if (readOnly) {
-        setTimeout(() => {
-          try {
-            const doc = iframe.contentDocument || win.document;
-            if (!doc) return;
-            doc.querySelectorAll("input, textarea, select").forEach((el: any) => {
-              el.disabled = true;
-            });
-            doc.querySelectorAll("button").forEach((btn: any) => {
-              const id = btn.id || "";
-              if (!id.includes("print") && !id.includes("Print")) {
-                btn.style.display = "none";
-              }
-            });
-          } catch {}
-        }, 600);
-      }
+      if (template && iframeRef.current) {
+        const iframe = iframeRef.current;
+        const formHtml = template.innerHTML;
+        
+        // Inject script to handle data binding and read-only mode
+        const bridgeScript = `
+          <script>
+            window.getFormData = function() {
+              const data = {};
+              document.querySelectorAll('input, textarea, select').forEach(el => {
+                if (el.id || el.name) {
+                  data[el.id || el.name] = el.type === 'checkbox' ? el.checked : el.value;
+                }
+              });
+              return data;
+            };
 
-      if (initialData && Object.keys(initialData).length > 0) {
-        setTimeout(() => {
-          try {
-            const doc = iframe.contentDocument || win.document;
-            if (!doc) return;
-            Object.entries(initialData).forEach(([key, value]) => {
-              const el = doc.getElementById(key) || doc.querySelector(`[name="${key}"]`);
-              if (!el) return;
-              const element = el as HTMLInputElement;
-              if (element.type === "checkbox") {
-                element.checked = Boolean(value);
-              } else {
-                element.value = String(value ?? "");
-              }
-            });
-          } catch {}
-        }, 800);
+            window.setFormData = function(data) {
+              if (!data) return;
+              Object.keys(data).forEach(key => {
+                const el = document.getElementById(key) || document.querySelector('[name="' + key + '"]');
+                if (el) {
+                  if (el.type === 'checkbox') el.checked = data[key];
+                  else el.value = data[key];
+                }
+              });
+            };
+
+            if (${readOnly}) {
+              document.querySelectorAll('input, textarea, select').forEach(el => {
+                el.disabled = true;
+              });
+              // Hide action buttons in the form if any
+              document.querySelectorAll('button').forEach(btn => {
+                if (!btn.classList.contains('print-btn')) btn.style.display = 'none';
+              });
+            }
+
+            // Sync initial data if provided
+            setTimeout(() => {
+              window.setFormData(${JSON.stringify(initialData)});
+            }, 500);
+          </script>
+        `;
+
+        iframe.srcdoc = formHtml + bridgeScript;
       }
-    } catch {}
+    } catch (error) {
+      console.error("Error loading official form:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = () => {
-    if (!iframeRef.current || !onSave) return;
-    try {
-      const win = iframeRef.current.contentWindow as any;
-      const doc = iframeRef.current.contentDocument || (win && win.document);
-      if (!doc) return;
-      const data: Record<string, any> = {};
-      doc.querySelectorAll("input, textarea, select").forEach((el: any) => {
-        const key = el.id || el.name;
-        if (key) {
-          data[key] = el.type === "checkbox" ? el.checked : el.value;
-        }
-      });
-      onSave(data);
-    } catch {}
+    if (iframeRef.current && onSave) {
+      const iframeWindow = iframeRef.current.contentWindow;
+      if (iframeWindow && (iframeWindow as any).getFormData) {
+        const data = (iframeWindow as any).getFormData();
+        onSave(data);
+      }
+    }
   };
 
   const handlePrint = () => {
-    try {
-      iframeRef.current?.contentWindow?.print();
-    } catch {}
+    if (iframeRef.current) {
+      iframeRef.current.contentWindow?.print();
+    }
   };
 
   return (
@@ -101,14 +105,14 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
         <h3 className="text-sm font-bold text-gray-700">رسمي فورم / فورم رسمی</h3>
         <div className="flex gap-2">
           {!readOnly && (
-            <button
+            <button 
               onClick={handleSave}
               className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition"
             >
               ذخیره کول / ذخیره
             </button>
           )}
-          <button
+          <button 
             onClick={handlePrint}
             className="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-300 transition"
           >
@@ -122,15 +126,12 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
             <span className="text-sm text-gray-500">بارول...</span>
           </div>
         )}
-        {src && (
-          <iframe
-            ref={iframeRef}
-            src={src}
-            className="w-full h-full border-0"
-            title="Official Form"
-            onLoad={handleLoad}
-          />
-        )}
+        <iframe 
+          ref={iframeRef}
+          className="w-full h-full border-0"
+          title="Official Form"
+          onLoad={() => setLoading(false)}
+        />
       </div>
     </div>
   );
