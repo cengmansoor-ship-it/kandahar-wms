@@ -426,8 +426,6 @@ export default function TraceabilityPage() {
 
   // ─── Faculty Departments ──────────────────────────────────────────────────────
   const renderFacultyDepts = () => {
-    // Group by faculty, storing faculty meta + departments separately so we
-    // never crash when a faculty has no departments yet (LEFT JOIN returns null dept)
     const grouped: Record<string, { facultyRow: FacultyDept; departments: FacultyDept[] }> = {};
     filteredFacultyDepts.forEach(d => {
       const key = `${d.faculty_id}-${d.faculty_name_ps}`;
@@ -435,42 +433,68 @@ export default function TraceabilityPage() {
       if (d.department_id) grouped[key].departments.push(d);
     });
     const entries = Object.entries(grouped);
+    const levelMeta = LEVEL_LABELS[selectedLevel] || LEVEL_LABELS.General;
     return (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-8 animate-fade-in">
         {entries.length === 0 ? renderEmpty() :
           entries.map(([key, { facultyRow, departments }], gi) => (
             <div key={key} className="animate-slide-up" style={{ animationDelay: `${gi * 80}ms` }}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">🎓</span>
+              {/* Faculty header card */}
+              <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl ${levelMeta.gradient} border border-gray-200/50 dark:border-gray-700/50`}>
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${levelMeta.color} flex items-center justify-center shadow flex-shrink-0`}>
+                  <span className="text-white text-sm font-bold">🎓</span>
                 </div>
-                <h3 className="font-bold text-gray-700 dark:text-gray-200 text-base">{splitPick(`${facultyRow.faculty_name_ps} / ${facultyRow.faculty_name_fa}`)}</h3>
+                <div className="text-right flex-1">
+                  <h3 className="font-bold text-gray-800 dark:text-white text-sm leading-snug">{splitPick(`${facultyRow.faculty_name_ps} / ${facultyRow.faculty_name_fa}`)}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{departments.length} {pick("اداره","دپارتمان")}</p>
+                </div>
               </div>
+
               {departments.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500 mr-6 py-4 text-center">
+                <p className="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">
                   {pick("هیڅ اداره نشته","هیچ دپارتمانی ثبت نشده")}
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mr-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {departments.map((d, i) => (
                     <button key={d.department_id}
                       onClick={() => {
                         setSelectedDept(d);
                         navigate("persons", [
                           { label: pick("د پوهنځیو برخه","بخش دانشکده‌ها"), onClick: () => { navigate("faculty-levels", []); loadFacultyLevels(); } },
-                          { label: LEVEL_LABELS[selectedLevel]?.ps || selectedLevel, onClick: () => { navigate("faculty-depts", []); loadFacultyDepts(selectedLevel); } },
+                          { label: levelMeta.ps, onClick: () => { navigate("faculty-depts", []); loadFacultyDepts(selectedLevel); } },
                           { label: splitPick(`${d.dept_name_ps} / ${d.dept_name_fa}`), onClick: () => {} },
                         ]);
                         loadPersons(d.department_id);
                       }}
-                      className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 text-right shadow-sm hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300 hover:-translate-y-1 focus:outline-none animate-fade-in"
+                      className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-right shadow-sm hover:shadow-xl hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 focus:outline-none animate-scale-in"
                       style={{ animationDelay: `${i * 50}ms` }}
                     >
-                      <h4 className="font-semibold text-gray-800 dark:text-white text-sm mb-2 leading-snug">{splitPick(`${d.dept_name_ps} / ${d.dept_name_fa}`)}</h4>
-                      <div className="flex gap-3 justify-end text-xs text-gray-500 dark:text-gray-400">
-                        <span>👤 {d.person_count || 0}</span>
-                        <span>📦 {d.item_count || 0}</span>
-                        <span>🔢 {d.total_quantity || 0}</span>
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+                      <div className="relative z-10">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="text-2xl group-hover:scale-110 transition-transform duration-300">🏛️</div>
+                          <div className="text-right">
+                            <h4 className="font-bold text-gray-800 dark:text-white text-sm leading-snug">{splitPick(`${d.dept_name_ps} / ${d.dept_name_fa}`)}</h4>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { icon: "👤", val: d.person_count, label: pick("کسان","افراد") },
+                            { icon: "📦", val: d.item_count, label: pick("اجناس","اجناس") },
+                            { icon: "🔢", val: d.total_quantity, label: pick("مقدار","مقدار") },
+                          ].map(s => (
+                            <div key={s.label} className="flex flex-col items-center bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                              <span className="text-xs">{s.icon}</span>
+                              <span className="font-bold text-gray-800 dark:text-white text-sm"><AnimatedNumber value={s.val || 0} /></span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">{s.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex items-center justify-end gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <span>{pick("لیدل","مشاهده")}</span>
+                          <span>←</span>
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -483,54 +507,67 @@ export default function TraceabilityPage() {
     );
   };
 
-  // ─── Persons List ─────────────────────────────────────────────────────────────
+  // ─── Persons Grid ─────────────────────────────────────────────────────────────
   const renderPersons = () => (
-    <div className="space-y-3 animate-fade-in">
-      {filteredPersons.length === 0 ? renderEmpty() : filteredPersons.map((p, i) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+      {filteredPersons.length === 0 ? (
+        <div className="col-span-full">{renderEmpty()}</div>
+      ) : filteredPersons.map((p, i) => (
         <div key={p.id}
-          className="group flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-brand-300 dark:hover:border-brand-600 transition-all duration-300 hover:-translate-y-0.5 animate-slide-up cursor-pointer"
+          className="group relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-xl hover:border-brand-300 dark:hover:border-brand-600 transition-all duration-300 hover:-translate-y-1 animate-scale-in cursor-pointer flex flex-col"
           style={{ animationDelay: `${i * 40}ms` }}
-          onClick={() => {
-            setSelectedPerson(p);
-            loadLedger(p.id);
-            setShowLedger(true);
-            setSearch("");
-          }}
+          onClick={() => { setSelectedPerson(p); loadLedger(p.id); setShowLedger(true); setSearch(""); }}
         >
-          <div className="flex items-center gap-3">
-            {/* Photo avatar */}
-            <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md flex-shrink-0 border-2 border-white dark:border-gray-700">
-              {p.photo
-                ? <img src={p.photo} alt={p.full_name} className="w-full h-full object-cover" />
-                : <span className="text-white font-bold text-sm">{p.full_name?.[0] || "؟"}</span>
-              }
+          {/* Decorative circle */}
+          <div className="absolute -top-6 -left-6 w-20 h-20 bg-brand-50 dark:bg-brand-900/20 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+
+          <div className="relative z-10 p-5 flex flex-col flex-1">
+            {/* Avatar + name */}
+            <div className="flex items-center gap-3 mb-4 justify-end">
+              <div className="text-right flex-1 min-w-0">
+                <p className="font-bold text-gray-800 dark:text-white text-sm truncate">{p.full_name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{p.position || pick("بست نه دی ثبت","موقف ثبت نشده")}</p>
+                {p.email && <p className="text-xs text-sky-500 dark:text-sky-400 mt-0.5 truncate" dir="ltr">{p.email}</p>}
+              </div>
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md flex-shrink-0 border-2 border-white dark:border-gray-700 group-hover:scale-105 transition-transform duration-300">
+                {p.photo
+                  ? <img src={p.photo} alt={p.full_name} className="w-full h-full object-cover" />
+                  : <span className="text-white font-bold text-sm">{p.full_name?.[0] || "؟"}</span>
+                }
+              </div>
             </div>
-            <div className="text-right">
-              <p className="font-bold text-gray-800 dark:text-white text-sm">{p.full_name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{p.position || pick("بست نه دی ثبت","موقف ثبت نشده")}</p>
-              {p.email && <p className="text-xs text-sky-500 dark:text-sky-400 mt-0.5" dir="ltr">{p.email}</p>}
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {[
+                { icon: "📦", val: p.item_count, label: pick("اجناس","اجناس") },
+                { icon: "🔢", val: p.total_quantity, label: pick("مقدار","مقدار") },
+              ].map(s => (
+                <div key={s.label} className="flex flex-col items-center bg-gray-50 dark:bg-gray-700/50 rounded-xl p-2.5">
+                  <span className="text-base">{s.icon}</span>
+                  <span className="font-bold text-gray-800 dark:text-white text-sm mt-0.5"><AnimatedNumber value={s.val || 0} /></span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{s.label}</span>
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex gap-4 text-xs text-gray-500 dark:text-gray-400">
-              <span className="flex flex-col items-center"><span className="font-bold text-gray-700 dark:text-gray-200">{p.item_count || 0}</span><span>{pick("اجناس","اجناس")}</span></span>
-              <span className="flex flex-col items-center"><span className="font-bold text-gray-700 dark:text-gray-200">{p.total_quantity || 0}</span><span>{pick("مقدار","مقدار")}</span></span>
-            </div>
-            {p.email && (
+
+            {/* Action buttons */}
+            <div className="flex gap-2 mt-auto">
+              {p.email && (
+                <button
+                  onClick={e => { e.stopPropagation(); setEmailPerson(p); setEmailForm({ subject: "", body: "" }); setEmailResult(""); }}
+                  className="flex items-center justify-center gap-1 bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-600 dark:text-sky-400 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200"
+                >
+                  ✉️ {pick("ایمیل","ایمیل")}
+                </button>
+              )}
               <button
-                onClick={e => { e.stopPropagation(); setEmailPerson(p); setEmailForm({ subject: "", body: "" }); setEmailResult(""); }}
-                className="flex items-center gap-1 bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-600 dark:text-sky-400 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all duration-200"
-                title={pick("ایمیل لیږل","ارسال ایمیل")}
+                onClick={e => { e.stopPropagation(); setSelectedPerson(p); loadLedger(p.id); setShowLedger(true); setSearch(""); }}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 text-brand-700 dark:text-brand-300 rounded-xl py-2 text-xs font-semibold transition-all duration-200"
               >
-                ✉️
+                📋 {pick("لیجر","دفتر")}
               </button>
-            )}
-            <button
-              onClick={e => { e.stopPropagation(); setSelectedPerson(p); loadLedger(p.id); setShowLedger(true); setSearch(""); }}
-              className="flex items-center gap-1.5 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 text-brand-700 dark:text-brand-300 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 group-hover:shadow-sm"
-            >
-              📋 {pick("لیجر","دفتر")}
-            </button>
+            </div>
           </div>
         </div>
       ))}
