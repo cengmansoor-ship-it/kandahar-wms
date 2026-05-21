@@ -44,6 +44,13 @@ export const getPersonsByDepartment = async (req: Request, res: Response) => {
   } catch (e) { handleError(res, e); }
 };
 
+export const getPersonsByFaculty = async (req: Request, res: Response) => {
+  try {
+    const data = await TraceabilityService.getPersonsByFaculty(Number(req.params.facultyId));
+    res.json({ success: true, data });
+  } catch (e) { handleError(res, e); }
+};
+
 export const getPersonLedger = async (req: Request, res: Response) => {
   try {
     const data = await TraceabilityService.getPersonLedger(Number(req.params.personId));

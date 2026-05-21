@@ -65,33 +65,36 @@ export default function SettingsPage() {
     if (!emailForm.email.includes("@")) {
       return flashEmailMsg(pick("ایمیل سمه نه ده.", "ایمیل معتبر نیست."), "error");
     }
-    if (!editingId && emailForm.app_password.length !== 16) {
+    // Strip spaces — Google shows App Passwords as "xxxx xxxx xxxx xxxx"
+    const cleanedPass = emailForm.app_password.replace(/\s/g, "");
+    if (!editingId && cleanedPass.length !== 16) {
       return flashEmailMsg(
-        pick("د اپ پاسورډ باید دقیقاً ۱۶ حروف وي.", "رمز برنامه باید دقیقاً ۱۶ کاراکتر باشد."),
+        pick("د اپ پاسورډ باید دقیقاً ۱۶ حروف وي (د فضا پرته).", "رمز برنامه باید دقیقاً ۱۶ کاراکتر باشد (بدون فاصله)."),
         "error"
       );
     }
-    if (editingId && emailForm.app_password.trim() !== "" && emailForm.app_password.length !== 16) {
+    if (editingId && cleanedPass !== "" && cleanedPass.length !== 16) {
       return flashEmailMsg(
-        pick("د اپ پاسورډ باید دقیقاً ۱۶ حروف وي.", "رمز برنامه باید دقیقاً ۱۶ کاراکتر باشد."),
+        pick("د اپ پاسورډ باید دقیقاً ۱۶ حروف وي (د فضا پرته).", "رمز برنامه باید دقیقاً ۱۶ کاراکتر باشد (بدون فاصله)."),
         "error"
       );
     }
 
     setEmailLoading(true);
     try {
+      const payload = { ...emailForm, app_password: cleanedPass };
       let res: Response;
       if (editingId) {
         res = await fetch(`/api/email-config/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(emailForm),
+          body: JSON.stringify(payload),
         });
       } else {
         res = await fetch("/api/email-config", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(emailForm),
+          body: JSON.stringify(payload),
         });
       }
       const data = await res.json();
@@ -443,22 +446,22 @@ export default function SettingsPage() {
                   </label>
                   <div className="relative">
                     <input
-                      type="password"
+                      type="text"
                       dir="ltr"
                       value={emailForm.app_password}
                       onChange={(e) => setEmailForm({ ...emailForm, app_password: e.target.value })}
-                      maxLength={16}
-                      placeholder="xxxxxxxxxxxxxxxx"
+                      maxLength={19}
+                      placeholder="xxxx xxxx xxxx xxxx"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-left tracking-widest placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-white/5 dark:text-white dark:placeholder-gray-500"
                     />
                     <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono ${
-                      emailForm.app_password.length === 16
+                      emailForm.app_password.replace(/\s/g, "").length === 16
                         ? "text-green-500"
-                        : emailForm.app_password.length > 0
+                        : emailForm.app_password.replace(/\s/g, "").length > 0
                         ? "text-orange-500"
                         : "text-gray-400"
                     }`}>
-                      {emailForm.app_password.length}/16
+                      {emailForm.app_password.replace(/\s/g, "").length}/16
                     </span>
                   </div>
                   <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-3 py-2.5 text-xs text-amber-800 dark:text-amber-300">

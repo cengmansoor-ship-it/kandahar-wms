@@ -439,16 +439,36 @@ export default function TraceabilityPage() {
         {entries.length === 0 ? renderEmpty() :
           entries.map(([key, { facultyRow, departments }], gi) => (
             <div key={key} className="animate-slide-up" style={{ animationDelay: `${gi * 80}ms` }}>
-              {/* Faculty header card */}
-              <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl ${levelMeta.gradient} border border-gray-200/50 dark:border-gray-700/50`}>
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${levelMeta.color} flex items-center justify-center shadow flex-shrink-0`}>
-                  <span className="text-white text-sm font-bold">🎓</span>
+              {/* Faculty header — clickable to show all persons in this faculty */}
+              <button
+                onClick={() => {
+                  setSelectedDept({ ...facultyRow, id: facultyRow.faculty_id, name_ps: facultyRow.faculty_name_ps, name_fa: facultyRow.faculty_name_fa } as any);
+                  navigate("persons", [
+                    { label: pick("د پوهنځیو برخه","بخش دانشکده‌ها"), onClick: () => { navigate("faculty-levels", []); loadFacultyLevels(); } },
+                    { label: levelMeta.ps, onClick: () => { navigate("faculty-depts", []); loadFacultyDepts(selectedLevel); } },
+                    { label: splitPick(`${facultyRow.faculty_name_ps} / ${facultyRow.faculty_name_fa}`), onClick: () => {} },
+                  ]);
+                  setLoading(true);
+                  setPersons([]);
+                  traceabilityService.getPersonsByFaculty(facultyRow.faculty_id)
+                    .then(d => setPersons(d))
+                    .catch(() => setError(pick("د پوهنځي کسان پورته نشول.", "بارگذاری افراد دانشکده ناموفق بود.")))
+                    .finally(() => setLoading(false));
+                }}
+                className={`group w-full flex items-center gap-3 mb-4 p-3 rounded-xl ${levelMeta.gradient} border border-gray-200/50 dark:border-gray-700/50 text-right hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 focus:outline-none`}
+              >
+                <div className="flex items-center justify-end gap-1 text-xs font-medium opacity-0 group-hover:opacity-70 transition-opacity text-gray-600 dark:text-gray-400 ml-auto order-first">
+                  <span>{pick("ټول کسان","همه افراد")}</span>
+                  <span>←</span>
                 </div>
                 <div className="text-right flex-1">
                   <h3 className="font-bold text-gray-800 dark:text-white text-sm leading-snug">{splitPick(`${facultyRow.faculty_name_ps} / ${facultyRow.faculty_name_fa}`)}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{departments.length} {pick("اداره","دپارتمان")}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{departments.length} {pick("اداره","دپارتمان")} — {pick("کلیک وکړئ د ټولو کسانو لیدو لپاره","کلیک کنید برای مشاهده همه افراد")}</p>
                 </div>
-              </div>
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${levelMeta.color} flex items-center justify-center shadow flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                  <span className="text-white text-sm font-bold">🎓</span>
+                </div>
+              </button>
 
               {departments.length === 0 ? (
                 <p className="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">

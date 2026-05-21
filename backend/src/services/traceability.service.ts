@@ -124,6 +124,27 @@ export class TraceabilityService {
     return rows;
   }
 
+  static async getPersonsByFaculty(facultyId: number) {
+    const [rows] = await db.query<RowDataPacket[]>(`
+      SELECT
+        p.id, p.full_name, p.position, p.phone, p.email, p.photo,
+        d.name_ps as dept_name_ps, d.name_fa as dept_name_fa,
+        f.name_ps as faculty_name_ps, f.name_fa as faculty_name_fa, f.level,
+        COUNT(DISTINCT ia.item_id) as item_count,
+        COALESCE(SUM(ia.quantity), 0) as total_quantity,
+        MAX(ia.assigned_at) as latest_assignment_date
+      FROM people p
+      LEFT JOIN departments d ON p.department_id = d.id
+      LEFT JOIN faculties f ON d.faculty_id = f.id
+      LEFT JOIN item_assignments ia ON ia.person_id = p.id AND ia.is_deleted = FALSE
+      WHERE f.id = ? AND p.is_deleted = FALSE
+      GROUP BY p.id, p.full_name, p.position, p.phone, p.email,
+               d.name_ps, d.name_fa, f.name_ps, f.name_fa, f.level
+      ORDER BY p.full_name
+    `, [facultyId]);
+    return rows;
+  }
+
   static async getPersonsByDepartment(departmentId: number) {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT

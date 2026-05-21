@@ -6,6 +6,7 @@ export const traceabilityService = {
   getFacultyLevels: () => apiClient.get('/traceability/faculties/levels'),
   getDepartmentsByLevel: (level: string) => apiClient.get(`/traceability/faculties/levels/${encodeURIComponent(level)}`),
   getPersonsByDepartment: (deptId: number) => apiClient.get(`/traceability/departments/${deptId}/persons`),
+  getPersonsByFaculty: (facultyId: number) => apiClient.get(`/traceability/faculties/${facultyId}/persons`),
   getPersonLedger: (personId: number) => apiClient.get(`/traceability/person/${personId}/ledger`),
   getExportData: (filters?: Record<string, string>) => {
     const q = filters ? '?' + new URLSearchParams(filters).toString() : '';
