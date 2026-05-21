@@ -119,12 +119,36 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
     try { await managementService.deleteFaculty(id); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
   };
 
+  const exportCsv = () => {
+    const headers = ["id", "name_ps", "name_fa", "level"];
+    const lines = [
+      headers.join(","),
+      ...faculties.map(f =>
+        headers.map(h => {
+          const v = String(f[h] ?? "").replace(/"/g, '""');
+          return v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v}"` : v;
+        }).join(",")
+      ),
+    ];
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `faculties_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
-          ➕ {pick("پوهنځی اضافه کول","افزودن دانشکده")}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={exportCsv} disabled={faculties.length === 0}
+            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
+            📤 {pick("CSV صادر","صدور CSV")}
+          </button>
+          <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
+            ➕ {pick("پوهنځی اضافه کول","افزودن دانشکده")}
+          </button>
+        </div>
         <h3 className="font-bold text-gray-700 dark:text-gray-200 text-base">{pick("پوهنځیانه","دانشکده‌ها")} ({faculties.length})</h3>
       </div>
 
@@ -249,12 +273,39 @@ function DepartmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
 
   const filtered = filter === "ALL" ? departments : departments.filter(d => d.department_type === filter);
 
+  const exportCsv = () => {
+    const rows = filtered;
+    const headers = ["id", "name_ps", "name_fa", "department_type", "faculty_id", "faculty_name_ps", "faculty_level"];
+    const lines = [
+      headers.join(","),
+      ...rows.map(d =>
+        headers.map(h => {
+          const v = String(d[h] ?? "").replace(/"/g, '""');
+          return v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v}"` : v;
+        }).join(",")
+      ),
+    ];
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const suffix = filter === "ALL" ? "all" : filter.toLowerCase();
+    a.href = url; a.download = `departments_${suffix}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
-          ➕ {pick("اداره اضافه کول","افزودن دپارتمان")}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={exportCsv} disabled={filtered.length === 0}
+            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
+            📤 {pick("CSV صادر","صدور CSV")}
+            {filter !== "ALL" && <span className="bg-white/20 rounded-full px-1.5 text-xs">{filtered.length}</span>}
+          </button>
+          <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
+            ➕ {pick("اداره اضافه کول","افزودن دپارتمان")}
+          </button>
+        </div>
         <div className="flex gap-1">
           {["ALL", "ADMIN", "FACULTY"].map(t => (
             <button key={t} onClick={() => setFilter(t)}
