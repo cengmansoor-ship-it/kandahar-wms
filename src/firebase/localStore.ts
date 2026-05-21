@@ -83,9 +83,28 @@ export function setLocalItem<T>(key: string, value: T): void {
   window.localStorage.setItem(PREFIX + key, JSON.stringify(value));
 }
 
+// ── Demo auth key (must match auth.ts) ──
+const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
+
+// ── Auto-restore demo auth session if missing ──
+// Ensures first-time visitors and users whose session was cleared are
+// automatically logged in as Super Admin (demo/local mode only).
+function restoreDemoAuth(): void {
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(DEMO_AUTH_KEY)) return; // already logged in
+  const sa = DEMO_SEED_USERS[0]; // superadmin@ku.edu.af
+  window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({
+    email: sa.email,
+    uid: sa.uid,
+    displayName: sa.name,
+  }));
+}
+
 // ── Version gate: clears all seed keys when DATA_VERSION changes ──
 export function ensureSeedVersion(): void {
   if (typeof window === "undefined") return;
+  // Always ensure auth session exists (safe – only sets if missing)
+  restoreDemoAuth();
   const stored = getLocalItem<string>("data_version", "");
   if (stored === DATA_VERSION) return;
   const seedKeys = [
