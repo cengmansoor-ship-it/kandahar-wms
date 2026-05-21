@@ -230,7 +230,7 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
 }
 
 // ─── Department Management ────────────────────────────────────────────────────
-function DepartmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) {
+function DepartmentsTab({ pick, defaultFacultyId }: { pick: (ps: string, dr: string) => string; defaultFacultyId?: number }) {
   const [departments, setDepartments] = useState<any[]>([]);
   const [faculties, setFaculties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,6 +241,7 @@ function DepartmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState<number | null>(null);
   const [filter, setFilter] = useState("ALL");
+  const autoOpenedRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -252,6 +253,18 @@ function DepartmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-open add modal pre-filled for a specific faculty
+  useEffect(() => {
+    if (defaultFacultyId && !autoOpenedRef.current && !loading) {
+      autoOpenedRef.current = true;
+      setEditing(null);
+      setForm({ name_ps: "", name_fa: "", department_type: "FACULTY", faculty_id: String(defaultFacultyId) });
+      setError("");
+      setFilter("FACULTY");
+      setShowModal(true);
+    }
+  }, [defaultFacultyId, loading]);
 
   const openAdd = () => { setEditing(null); setForm({ name_ps: "", name_fa: "", department_type: "ADMIN", faculty_id: "" }); setError(""); setShowModal(true); };
   const openEdit = (d: any) => { setEditing(d); setForm({ name_ps: d.name_ps, name_fa: d.name_fa, department_type: d.department_type, faculty_id: d.faculty_id ? String(d.faculty_id) : "" }); setError(""); setShowModal(true); };
@@ -1000,8 +1013,18 @@ function AssignmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
 }
 
 // ─── Main Management Panel ────────────────────────────────────────────────────
-export default function ManagementPanel({ onClose, pick }: { onClose: () => void; pick: (ps: string, dr: string) => string }) {
-  const [tab, setTab] = useState<Tab>("faculties");
+export default function ManagementPanel({
+  onClose,
+  pick,
+  defaultTab,
+  addDeptForFacultyId,
+}: {
+  onClose: () => void;
+  pick: (ps: string, dr: string) => string;
+  defaultTab?: Tab;
+  addDeptForFacultyId?: number;
+}) {
+  const [tab, setTab] = useState<Tab>(defaultTab || "faculties");
   const [exporting, setExporting] = useState(false);
 
   const TABS: { key: Tab; label: string; icon: string }[] = [
@@ -1086,7 +1109,7 @@ export default function ManagementPanel({ onClose, pick }: { onClose: () => void
         {/* Content */}
         <div className="flex-1 overflow-auto p-4 sm:p-5">
           {tab === "faculties"   && <FacultiesTab pick={pick} />}
-          {tab === "departments" && <DepartmentsTab pick={pick} />}
+          {tab === "departments" && <DepartmentsTab pick={pick} defaultFacultyId={addDeptForFacultyId} />}
           {tab === "people"      && <PeopleTab pick={pick} />}
           {tab === "assignments" && <AssignmentsTab pick={pick} />}
         </div>

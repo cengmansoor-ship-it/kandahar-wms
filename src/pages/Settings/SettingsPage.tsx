@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import Button from "../../components/ui/button/Button";
@@ -24,6 +24,35 @@ interface EmailForm {
 
 const emptyForm: EmailForm = { email: "", app_password: "", label: "" };
 
+interface CustomRole {
+  id: number;
+  name: string;
+  name_ps: string;
+  name_dr: string;
+  permissions: string[];
+  created_at: string;
+}
+
+const ALL_PERMISSIONS = Object.entries(PERMISSIONS);
+
+const PERM_LABEL_PS: Record<string, string> = {
+  [PERMISSIONS.MANAGE_USERS]: "کاربران مدیریت",
+  [PERMISSIONS.MANAGE_ROLES]: "رولونه مدیریت",
+  [PERMISSIONS.VIEW_AUDIT_LOGS]: "آډیټ لاګونه",
+  [PERMISSIONS.VIEW_TRASH]: "ژبدار ولیدل",
+  [PERMISSIONS.MANAGE_SETTINGS]: "تنظیمات",
+  [PERMISSIONS.VIEW_INVENTORY]: "موجودي ولیدل",
+  [PERMISSIONS.EDIT_INVENTORY]: "موجودي سمول",
+  [PERMISSIONS.VIEW_PROCUREMENT]: "تدارکات ولیدل",
+  [PERMISSIONS.MANAGE_PROCUREMENT]: "تدارکات مدیریت",
+  [PERMISSIONS.VIEW_RECEIVING]: "تسلیمي ولیدل",
+  [PERMISSIONS.MANAGE_RECEIVING]: "تسلیمي مدیریت",
+  [PERMISSIONS.CREATE_REQUESTS]: "غوښتنه جوړول",
+  [PERMISSIONS.CONFIRM_REQUESTS]: "غوښتنه تاییدول",
+  [PERMISSIONS.VIEW_ALL_REQUESTS]: "ټولې غوښتنې",
+  [PERMISSIONS.VIEW_REPORTS]: "راپورونه",
+};
+
 export default function SettingsPage() {
   const saved = getLocalItem("request_limits", { dailyLimit: 10, updatedAtHijriShamsi: "" });
   const [dailyLimit, setDailyLimit] = useState<number>(Number((saved as any).dailyLimit) || 10);
@@ -39,6 +68,17 @@ export default function SettingsPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [testingId, setTestingId] = useState<number | null>(null);
 
+  // Custom Roles state
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  const [customRolesLoading, setCustomRolesLoading] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
+  const [roleForm, setRoleForm] = useState({ name: "", name_ps: "", name_dr: "", permissions: [] as string[] });
+  const [roleSaving, setRoleSaving] = useState(false);
+  const [roleMsg, setRoleMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [deletingRoleId, setDeletingRoleId] = useState<number | null>(null);
+  const [confirmDeleteRole, setConfirmDeleteRole] = useState<CustomRole | null>(null);
+
   const loadEmailConfigs = async () => {
     try {
       const res = await fetch("/api/email-config");
@@ -49,9 +89,106 @@ export default function SettingsPage() {
     }
   };
 
+  const loadCustomRoles = useCallback(async () => {
+    setCustomRolesLoading(true);
+    try {
+      const res = await fetch("/api/custom-roles");
+      const data = await res.json();
+      if (data.success) setCustomRoles(data.data);
+    } catch {
+      // silently ignore
+    } finally {
+      setCustomRolesLoading(false);
+    }
+  }, []);
+
+  const flashRoleMsg = (text: string, type: "success" | "error") => {
+    setRoleMsg({ text, type });
+    setTimeout(() => setRoleMsg(null), 4000);
+  };
+
+  const openAddRole = () => {
+    setEditingRole(null);
+    setRoleForm({ name: "", name_ps: "", name_dr: "", permissions: [] });
+    setShowRoleModal(true);
+  };
+
+  const openEditRole = (role: CustomRole) => {
+    setEditingRole(role);
+    setRoleForm({ name: role.name, name_ps: role.name_ps, name_dr: role.name_dr, permissions: [...role.permissions] });
+    setShowRoleModal(true);
+  };
+
+  const handleSaveRole = async () => {
+    if (!roleForm.name.trim() || !roleForm.name_ps.trim()) {
+      return flashRoleMsg(pick("نوم اړین دی", "نام الزامی است"), "error");
+    }
+    setRoleSaving(true);
+    try {
+      let res: Response;
+      if (editingRole) {
+        res = await fetch(`/api/custom-roles/${editingRole.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(roleForm),
+        });
+      } else {
+        res = await fetch("/api/custom-roles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(roleForm),
+        });
+      }
+      const data = await res.json();
+      if (data.success) {
+        flashRoleMsg(
+          editingRole ? pick("رول تازه شو.", "نقش بروزرسانی شد.") : pick("رول اضافه شو.", "نقش اضافه شد."),
+          "success"
+        );
+        setShowRoleModal(false);
+        loadCustomRoles();
+      } else {
+        flashRoleMsg(data.message || pick("ستونزه پیښه شوه.", "خطا رخ داد."), "error");
+      }
+    } catch {
+      flashRoleMsg(pick("د سرور سره اتصال نشو.", "اتصال به سرور برقرار نشد."), "error");
+    } finally {
+      setRoleSaving(false);
+    }
+  };
+
+  const handleDeleteRole = async (id: number) => {
+    setDeletingRoleId(id);
+    try {
+      const res = await fetch(`/api/custom-roles/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        flashRoleMsg(pick("رول ړنګ شو.", "نقش حذف شد."), "success");
+        setConfirmDeleteRole(null);
+        loadCustomRoles();
+      } else {
+        flashRoleMsg(data.message || pick("ستونزه پیښه شوه.", "خطا رخ داد."), "error");
+      }
+    } catch {
+      flashRoleMsg(pick("د سرور سره اتصال نشو.", "اتصال به سرور برقرار نشد."), "error");
+    } finally {
+      setDeletingRoleId(null);
+    }
+  };
+
+  const togglePermission = (perm: string) => {
+    setRoleForm(f => ({
+      ...f,
+      permissions: f.permissions.includes(perm)
+        ? f.permissions.filter(p => p !== perm)
+        : [...f.permissions, perm],
+    }));
+  };
+
   useEffect(() => {
     loadEmailConfigs();
-  }, []);
+    loadCustomRoles();
+  }, [loadCustomRoles]);
 
   const flashEmailMsg = (text: string, type: "success" | "error") => {
     setEmailMsg({ text, type });
@@ -294,30 +431,62 @@ export default function SettingsPage() {
 
         {/* ─── Permissions Management Section ─── */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up" style={{ animationDelay: "260ms" }}>
-          <div className="flex items-center gap-3 mb-5">
-            <span className="text-2xl">🛡️</span>
-            <div>
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">
-                {pick("د صلاحیتونو مدیریت", "مدیریت صلاحیت‌ها")}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                {pick("د هر رول لپاره د لاسرسي سطح او اجازه‌ناوې", "سطح دسترسی و مجوزها برای هر نقش")}
-              </p>
+          <div className="flex items-center justify-between mb-5">
+            <button
+              onClick={openAddRole}
+              className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
+            >
+              <span className="text-base leading-none">+</span>
+              {pick("نوی رول", "نقش جدید")}
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🛡️</span>
+              <div className="text-right">
+                <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">
+                  {pick("د صلاحیتونو مدیریت", "مدیریت صلاحیت‌ها")}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                  {pick("د هر رول لپاره د لاسرسي سطح او اجازه‌ناوې", "سطح دسترسی و مجوزها برای هر نقش")}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Role permission matrix */}
-          <div className="space-y-4">
+          {/* Feedback message */}
+          {roleMsg && (
+            <div className={`mb-4 rounded-lg px-4 py-3 text-sm font-medium ${
+              roleMsg.type === "success"
+                ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+            }`}>
+              {roleMsg.type === "success" ? "✓ " : "✗ "}{roleMsg.text}
+            </div>
+          )}
+
+          {/* System roles matrix */}
+          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 text-right">
+            {pick("د سیستم رولونه (لوستلو وړ)", "نقش‌های سیستم (فقط نمایش)")}
+          </p>
+          <div className="space-y-3 mb-6">
             {(Object.values(ROLES) as string[]).map((role) => {
               const perms = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [];
               const roleColors: Record<string, string> = {
-                [ROLES.SUPER_ADMIN]: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800/40",
-                [ROLES.ADMIN]: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800/40",
-                [ROLES.PROCUREMENT_DIRECTOR]: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800/40",
-                [ROLES.WAREHOUSE_DIRECTOR]: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800/40",
-                [ROLES.WAREHOUSE_ENTRY_PERSON]: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 border-sky-200 dark:border-sky-800/40",
-                [ROLES.REQUESTER]: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800/40",
-                [ROLES.REQUEST_CONFIRMER]: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border-teal-200 dark:border-teal-800/40",
+                [ROLES.SUPER_ADMIN]: "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800/40",
+                [ROLES.ADMIN]: "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800/40",
+                [ROLES.PROCUREMENT_DIRECTOR]: "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800/40",
+                [ROLES.WAREHOUSE_DIRECTOR]: "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/40",
+                [ROLES.WAREHOUSE_ENTRY_PERSON]: "bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-800/40",
+                [ROLES.REQUESTER]: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800/40",
+                [ROLES.REQUEST_CONFIRMER]: "bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800/40",
+              };
+              const badgeColors: Record<string, string> = {
+                [ROLES.SUPER_ADMIN]: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+                [ROLES.ADMIN]: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+                [ROLES.PROCUREMENT_DIRECTOR]: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+                [ROLES.WAREHOUSE_DIRECTOR]: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+                [ROLES.WAREHOUSE_ENTRY_PERSON]: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+                [ROLES.REQUESTER]: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+                [ROLES.REQUEST_CONFIRMER]: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
               };
               const roleNamePs: Record<string, string> = {
                 [ROLES.SUPER_ADMIN]: "سوپر اډمین",
@@ -328,39 +497,22 @@ export default function SettingsPage() {
                 [ROLES.REQUESTER]: "غوښتونکی",
                 [ROLES.REQUEST_CONFIRMER]: "د غوښتنې تاییدوونکی",
               };
-              const permLabelPs: Record<string, string> = {
-                [PERMISSIONS.MANAGE_USERS]: "کاربران مدیریت",
-                [PERMISSIONS.MANAGE_ROLES]: "رولونه مدیریت",
-                [PERMISSIONS.VIEW_AUDIT_LOGS]: "آډیټ لاګونه",
-                [PERMISSIONS.VIEW_TRASH]: "ژبدار ولیدل",
-                [PERMISSIONS.MANAGE_SETTINGS]: "تنظیمات",
-                [PERMISSIONS.VIEW_INVENTORY]: "موجودي ولیدل",
-                [PERMISSIONS.EDIT_INVENTORY]: "موجودي سمول",
-                [PERMISSIONS.VIEW_PROCUREMENT]: "تدارکات ولیدل",
-                [PERMISSIONS.MANAGE_PROCUREMENT]: "تدارکات مدیریت",
-                [PERMISSIONS.VIEW_RECEIVING]: "تسلیمي ولیدل",
-                [PERMISSIONS.MANAGE_RECEIVING]: "تسلیمي مدیریت",
-                [PERMISSIONS.CREATE_REQUESTS]: "غوښتنه جوړول",
-                [PERMISSIONS.CONFIRM_REQUESTS]: "غوښتنه تاییدول",
-                [PERMISSIONS.VIEW_ALL_REQUESTS]: "ټولې غوښتنې",
-                [PERMISSIONS.VIEW_REPORTS]: "راپورونه",
-              };
               return (
-                <div key={role} className={`rounded-xl border p-4 ${roleColors[role] || "bg-gray-50 text-gray-700 border-gray-200"}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold opacity-70">{perms.length} {pick("اجازه","مجوز")}</span>
+                <div key={role} className={`rounded-xl border p-4 ${roleColors[role] || "bg-gray-50 border-gray-200"}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-xs font-semibold opacity-60 bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-full">{perms.length} {pick("اجازه","مجوز")}</span>
                     <div className="text-right">
-                      <p className="font-bold text-sm">{roleNamePs[role] || role}</p>
-                      <p className="text-xs opacity-70 font-normal mt-0.5">{role}</p>
+                      <p className="font-bold text-sm text-gray-800 dark:text-white">{roleNamePs[role] || role}</p>
+                      <p className="text-xs text-gray-400 font-normal mt-0.5">{role}</p>
                     </div>
                   </div>
                   {perms.length === 0 ? (
-                    <p className="text-xs opacity-50 text-center">{pick("هیڅ ځانګړي اجازه نشته","هیچ مجوز خاصی ندارد")}</p>
+                    <p className="text-xs opacity-50 text-center mt-2">{pick("هیڅ ځانګړي اجازه نشته","هیچ مجوز خاصی ندارد")}</p>
                   ) : (
-                    <div className="flex flex-wrap gap-1.5 justify-end">
+                    <div className="flex flex-wrap gap-1.5 justify-end mt-2">
                       {perms.map((perm) => (
-                        <span key={perm} className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/20 font-medium">
-                          {permLabelPs[perm] || perm}
+                        <span key={perm} className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeColors[role] || "bg-gray-100 text-gray-600"}`}>
+                          {PERM_LABEL_PS[perm] || perm}
                         </span>
                       ))}
                     </div>
@@ -369,10 +521,165 @@ export default function SettingsPage() {
               );
             })}
           </div>
-          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
-            {pick("د رولونو اجازه‌ناوې د سیستم کوډ کې ټاکل کیږي.","مجوزهای نقش‌ها در کد سیستم تعریف شده‌اند.")}
-          </p>
+
+          {/* Custom Roles section */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 text-right">
+              {pick("ځانګړي رولونه (د سمون او ړنګولو وړ)", "نقش‌های سفارشی (قابل ویرایش و حذف)")}
+            </p>
+
+            {customRolesLoading ? (
+              <div className="space-y-2">
+                {[1,2].map(i => <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+              </div>
+            ) : customRoles.length === 0 ? (
+              <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-8 text-center">
+                <div className="text-2xl mb-2">🔐</div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {pick("هیڅ ځانګړی رول نشته. د «نوی رول» تڼۍ فشار کړئ.", "هیچ نقش سفارشی موجود نیست. دکمه «نقش جدید» را بزنید.")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {customRoles.map((role) => (
+                  <div key={role.id} className="rounded-xl border border-indigo-200 bg-indigo-50 dark:border-indigo-800/40 dark:bg-indigo-900/20 p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setConfirmDeleteRole(role)}
+                          disabled={deletingRoleId === role.id}
+                          className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400 disabled:opacity-50 transition-colors"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          {pick("حذف کول", "حذف")}
+                        </button>
+                        <button
+                          onClick={() => openEditRole(role)}
+                          className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400 transition-colors"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          {pick("سمون", "ویرایش")}
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm text-indigo-800 dark:text-indigo-200">{role.name_ps || role.name}</p>
+                        {role.name_dr && <p className="text-xs text-indigo-500 dark:text-indigo-400">{role.name_dr}</p>}
+                        <p className="text-xs text-gray-400 font-mono">{role.name}</p>
+                      </div>
+                    </div>
+                    {role.permissions.length === 0 ? (
+                      <p className="text-xs text-indigo-400 text-center mt-2">{pick("هیڅ اجازه ندارد","هیچ مجوزی ندارد")}</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 justify-end mt-2">
+                        {role.permissions.map((perm) => (
+                          <span key={perm} className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium">
+                            {PERM_LABEL_PS[perm] || perm}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* ─── Custom Role Modal ─── */}
+        {showRoleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowRoleModal(false)} />
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-lg w-full animate-scale-in max-h-[90vh] overflow-y-auto" dir="rtl">
+              <div className="flex items-center justify-between mb-5">
+                <button onClick={() => setShowRoleModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+                <h3 className="font-bold text-gray-800 dark:text-white text-base">
+                  {editingRole ? `✏️ ${pick("رول سمول","ویرایش نقش")}` : `➕ ${pick("نوی رول","نقش جدید")}`}
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{pick("د رول نوم (سیستمي) *","نام سیستمی نقش *")}</label>
+                  <input
+                    value={roleForm.name} onChange={e => setRoleForm(f => ({...f, name: e.target.value}))}
+                    placeholder="e.g. Department Head"
+                    dir="ltr"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-left text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{pick("د رول نوم (پښتو) *","نام نقش (پشتو) *")}</label>
+                  <input
+                    value={roleForm.name_ps} onChange={e => setRoleForm(f => ({...f, name_ps: e.target.value}))}
+                    placeholder="د پوهنځي مشر"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{pick("د رول نوم (دري)","نام نقش (دری)")}</label>
+                  <input
+                    value={roleForm.name_dr} onChange={e => setRoleForm(f => ({...f, name_dr: e.target.value}))}
+                    placeholder="رئیس دانشکده"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">{pick("اجازه‌ناوې","مجوزها")} ({roleForm.permissions.length} {pick("ټاکل شوي","انتخاب‌شده")})</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-800/50">
+                    {ALL_PERMISSIONS.map(([, permValue]) => (
+                      <label key={permValue} className="flex items-center gap-2 cursor-pointer group justify-end">
+                        <span className="text-xs text-gray-700 dark:text-gray-300 text-right">{PERM_LABEL_PS[permValue] || permValue}</span>
+                        <input
+                          type="checkbox"
+                          checked={roleForm.permissions.includes(permValue)}
+                          onChange={() => togglePermission(permValue)}
+                          className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 flex-shrink-0"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => setShowRoleModal(false)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">
+                  {pick("لغوه","لغو")}
+                </button>
+                <button onClick={handleSaveRole} disabled={roleSaving} className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold transition-all">
+                  {roleSaving ? "..." : pick("ذخیره","ذخیره")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Confirm Delete Role Dialog ─── */}
+        {confirmDeleteRole && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDeleteRole(null)} />
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full" dir="rtl">
+              <div className="text-center mb-5">
+                <div className="text-5xl mb-3">⚠️</div>
+                <p className="font-semibold text-gray-800 dark:text-white">{pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")}</p>
+                <p className="text-sm text-gray-500 mt-1">«{confirmDeleteRole.name_ps || confirmDeleteRole.name}»</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmDeleteRole(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">
+                  {pick("لغوه","لغو")}
+                </button>
+                <button
+                  onClick={() => handleDeleteRole(confirmDeleteRole.id)}
+                  disabled={deletingRoleId === confirmDeleteRole.id}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-bold transition-all disabled:opacity-60"
+                >
+                  {deletingRoleId === confirmDeleteRole.id ? "..." : pick("حذف کول","حذف")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─── Email Configuration Section ─── */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up" style={{ animationDelay: "280ms" }}>
@@ -580,7 +887,7 @@ export default function SettingsPage() {
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                      {pick("سمول", "ویرایش")}
+                      {pick("سمون", "ویرایش")}
                     </button>
                     {/* Delete button */}
                     <button
@@ -598,7 +905,7 @@ export default function SettingsPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       )}
-                      {pick("ړنګول", "حذف")}
+                      {pick("حذف کول", "حذف")}
                     </button>
                   </div>
                 </div>

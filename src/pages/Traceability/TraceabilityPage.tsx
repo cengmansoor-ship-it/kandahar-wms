@@ -87,6 +87,8 @@ export default function TraceabilityPage() {
   // Management panel
   const [showManagement, setShowManagement] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [mgmtDefaultTab, setMgmtDefaultTab] = useState<"faculties" | "departments" | "people" | "assignments">("faculties");
+  const [mgmtFacultyId, setMgmtFacultyId] = useState<number | undefined>(undefined);
 
   // Email modal
   const [emailPerson, setEmailPerson] = useState<Person | null>(null);
@@ -471,9 +473,23 @@ export default function TraceabilityPage() {
               </button>
 
               {departments.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500 py-6 text-center">
-                  {pick("هیڅ اداره نشته","هیچ دپارتمانی ثبت نشده")}
-                </p>
+                <div className="py-6 text-center">
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">
+                    {pick("هیڅ اداره نشته — د اضافه کولو لپاره لاندې تڼۍ فشار کړئ","هیچ دپارتمانی ثبت نشده — برای افزودن دکمه زیر را بزنید")}
+                  </p>
+                  {canManage && (
+                    <button
+                      onClick={() => {
+                        setMgmtDefaultTab("departments");
+                        setMgmtFacultyId(facultyRow.faculty_id);
+                        setShowManagement(true);
+                      }}
+                      className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                    >
+                      🏢 {pick("اداره اضافه کول","افزودن دپارتمان")}
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {departments.map((d, i) => (
@@ -915,10 +931,14 @@ export default function TraceabilityPage() {
         <ManagementPanel
           onClose={() => {
             setShowManagement(false);
+            setMgmtDefaultTab("faculties");
+            setMgmtFacultyId(undefined);
             // Refresh all traceability data so new faculties/departments/people appear immediately
             setRefreshKey(k => k + 1);
           }}
           pick={pick}
+          defaultTab={mgmtDefaultTab}
+          addDeptForFacultyId={mgmtFacultyId}
         />
       )}
 
