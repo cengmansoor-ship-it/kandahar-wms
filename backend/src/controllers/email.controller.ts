@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
+import pool from '../config/db';
 
 export const sendEmail = async (req: Request, res: Response) => {
   const { to, subject, body } = req.body;
@@ -8,8 +9,23 @@ export const sendEmail = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: 'Missing required fields: to, subject, body' });
   }
 
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  let smtpUser = process.env.SMTP_USER;
+  let smtpPass = process.env.SMTP_PASS;
+
+  // Fall back to first configured email from email_configs table
+  if (!smtpUser || !smtpPass) {
+    try {
+      const [rows]: any = await pool.query(
+        'SELECT email, app_password FROM email_configs ORDER BY created_at ASC LIMIT 1'
+      );
+      if (rows && rows.length > 0) {
+        smtpUser = rows[0].email;
+        smtpPass = rows[0].app_password;
+      }
+    } catch (dbErr: any) {
+      console.error('[Email] DB fallback error:', dbErr.message);
+    }
+  }
 
   if (!smtpUser || !smtpPass) {
     return res.status(503).json({

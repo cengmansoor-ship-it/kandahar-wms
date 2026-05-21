@@ -19,6 +19,7 @@ router.delete('/departments/:id', M.deleteDepartment);
 router.get('/people', M.getPeople);
 router.get('/people/:id', M.getPersonById);
 router.post('/people', M.createPerson);
+router.post('/people/import', M.importPeople);
 router.put('/people/:id', M.updatePerson);
 router.delete('/people/:id', M.deletePerson);
 

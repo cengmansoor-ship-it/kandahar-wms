@@ -121,6 +121,17 @@ export const deletePerson = async (req: Request, res: Response) => {
   } catch (e) { handleError(res, e); }
 };
 
+export const importPeople = async (req: Request, res: Response) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'No rows provided' });
+    }
+    const result = await ManagementService.importPeople(rows);
+    res.json({ success: true, data: result });
+  } catch (e) { handleError(res, e); }
+};
+
 // ─── Assignments ──────────────────────────────────────────────────────────────
 
 export const getAssignments = async (req: Request, res: Response) => {

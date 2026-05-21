@@ -5,6 +5,7 @@ import Button from "../../components/ui/button/Button";
 import { getLocalItem, setLocalItem } from "../../firebase/localStore";
 import { getCurrentHijriDates } from "../../utils/dateUtils";
 import { useLanguage } from "../../context/LanguageContext";
+import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from "../../constants/roles";
 
 const limitOptions = [0, 5, 10, 20, 30];
 
@@ -278,6 +279,88 @@ export default function SettingsPage() {
               )}
             </p>
           </div>
+        </div>
+
+        {/* ─── Permissions Management Section ─── */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up" style={{ animationDelay: "260ms" }}>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="text-2xl">🛡️</span>
+            <div>
+              <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">
+                {pick("د صلاحیتونو مدیریت", "مدیریت صلاحیت‌ها")}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {pick("د هر رول لپاره د لاسرسي سطح او اجازه‌ناوې", "سطح دسترسی و مجوزها برای هر نقش")}
+              </p>
+            </div>
+          </div>
+
+          {/* Role permission matrix */}
+          <div className="space-y-4">
+            {(Object.values(ROLES) as string[]).map((role) => {
+              const perms = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [];
+              const roleColors: Record<string, string> = {
+                [ROLES.SUPER_ADMIN]: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800/40",
+                [ROLES.ADMIN]: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800/40",
+                [ROLES.PROCUREMENT_DIRECTOR]: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800/40",
+                [ROLES.WAREHOUSE_DIRECTOR]: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800/40",
+                [ROLES.WAREHOUSE_ENTRY_PERSON]: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 border-sky-200 dark:border-sky-800/40",
+                [ROLES.REQUESTER]: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800/40",
+                [ROLES.REQUEST_CONFIRMER]: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border-teal-200 dark:border-teal-800/40",
+              };
+              const roleNamePs: Record<string, string> = {
+                [ROLES.SUPER_ADMIN]: "سوپر اډمین",
+                [ROLES.ADMIN]: "اډمین",
+                [ROLES.PROCUREMENT_DIRECTOR]: "د تدارکاتو مدیر",
+                [ROLES.WAREHOUSE_DIRECTOR]: "د ګدام مدیر",
+                [ROLES.WAREHOUSE_ENTRY_PERSON]: "د ګدام داخلوونکی",
+                [ROLES.REQUESTER]: "غوښتونکی",
+                [ROLES.REQUEST_CONFIRMER]: "د غوښتنې تاییدوونکی",
+              };
+              const permLabelPs: Record<string, string> = {
+                [PERMISSIONS.MANAGE_USERS]: "کاربران مدیریت",
+                [PERMISSIONS.MANAGE_ROLES]: "رولونه مدیریت",
+                [PERMISSIONS.VIEW_AUDIT_LOGS]: "آډیټ لاګونه",
+                [PERMISSIONS.VIEW_TRASH]: "ژبدار ولیدل",
+                [PERMISSIONS.MANAGE_SETTINGS]: "تنظیمات",
+                [PERMISSIONS.VIEW_INVENTORY]: "موجودي ولیدل",
+                [PERMISSIONS.EDIT_INVENTORY]: "موجودي سمول",
+                [PERMISSIONS.VIEW_PROCUREMENT]: "تدارکات ولیدل",
+                [PERMISSIONS.MANAGE_PROCUREMENT]: "تدارکات مدیریت",
+                [PERMISSIONS.VIEW_RECEIVING]: "تسلیمي ولیدل",
+                [PERMISSIONS.MANAGE_RECEIVING]: "تسلیمي مدیریت",
+                [PERMISSIONS.CREATE_REQUESTS]: "غوښتنه جوړول",
+                [PERMISSIONS.CONFIRM_REQUESTS]: "غوښتنه تاییدول",
+                [PERMISSIONS.VIEW_ALL_REQUESTS]: "ټولې غوښتنې",
+                [PERMISSIONS.VIEW_REPORTS]: "راپورونه",
+              };
+              return (
+                <div key={role} className={`rounded-xl border p-4 ${roleColors[role] || "bg-gray-50 text-gray-700 border-gray-200"}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold opacity-70">{perms.length} {pick("اجازه","مجوز")}</span>
+                    <div className="text-right">
+                      <p className="font-bold text-sm">{roleNamePs[role] || role}</p>
+                      <p className="text-xs opacity-70 font-normal mt-0.5">{role}</p>
+                    </div>
+                  </div>
+                  {perms.length === 0 ? (
+                    <p className="text-xs opacity-50 text-center">{pick("هیڅ ځانګړي اجازه نشته","هیچ مجوز خاصی ندارد")}</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5 justify-end">
+                      {perms.map((perm) => (
+                        <span key={perm} className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/20 font-medium">
+                          {permLabelPs[perm] || perm}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
+            {pick("د رولونو اجازه‌ناوې د سیستم کوډ کې ټاکل کیږي.","مجوزهای نقش‌ها در کد سیستم تعریف شده‌اند.")}
+          </p>
         </div>
 
         {/* ─── Email Configuration Section ─── */}

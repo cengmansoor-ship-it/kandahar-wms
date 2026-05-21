@@ -22,6 +22,7 @@ export const managementService = {
   createPerson: (data: any) => apiClient.post('/management/people', data),
   updatePerson: (id: number, data: any) => apiClient.put(`/management/people/${id}`, data),
   deletePerson: (id: number) => apiClient.delete(`/management/people/${id}`),
+  importPeople: (rows: any[]) => apiClient.post('/management/people/import', { rows }),
 
   // Assignments
   getAssignments: (filters?: { person_id?: number; department_id?: number; faculty_id?: number }) => {

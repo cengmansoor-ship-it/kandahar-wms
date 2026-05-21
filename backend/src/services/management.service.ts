@@ -65,11 +65,12 @@ export class ManagementService {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT d.id, d.name_ps, d.name_fa, d.department_type, d.faculty_id,
              f.name_ps as faculty_name_ps, f.name_fa as faculty_name_fa,
+             f.level as faculty_level,
              d.created_at, d.updated_at
       FROM departments d
       LEFT JOIN faculties f ON d.faculty_id = f.id AND f.is_deleted = FALSE
       WHERE d.is_deleted = FALSE
-      ORDER BY d.department_type ASC, d.name_ps ASC
+      ORDER BY d.department_type ASC, f.level ASC, d.name_ps ASC
     `);
     return rows;
   }
@@ -172,6 +173,23 @@ export class ManagementService {
   static async deletePerson(id: number) {
     await db.query(`UPDATE people SET is_deleted = TRUE, updated_at = NOW() WHERE id = ?`, [id]);
     return true;
+  }
+
+  static async importPeople(rows: { full_name: string; department_id: number; position?: string; phone?: string; email?: string }[]) {
+    let inserted = 0;
+    const errors: string[] = [];
+    for (const row of rows) {
+      try {
+        await db.query(
+          `INSERT INTO people (full_name, department_id, position, phone, email) VALUES (?, ?, ?, ?, ?)`,
+          [row.full_name, row.department_id, row.position || null, row.phone || null, row.email || null]
+        );
+        inserted++;
+      } catch (e: any) {
+        errors.push(`${row.full_name}: ${e.message}`);
+      }
+    }
+    return { inserted, errors };
   }
 
   // ─── Item Assignments ──────────────────────────────────────────────────────
