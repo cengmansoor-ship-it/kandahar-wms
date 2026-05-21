@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { managementService } from "../../services/management";
+import JSZip from "jszip";
 
 type Tab = "faculties" | "departments" | "people" | "assignments";
 
@@ -1001,6 +1002,7 @@ function AssignmentsTab({ pick }: { pick: (ps: string, dr: string) => string }) 
 // ─── Main Management Panel ────────────────────────────────────────────────────
 export default function ManagementPanel({ onClose, pick }: { onClose: () => void; pick: (ps: string, dr: string) => string }) {
   const [tab, setTab] = useState<Tab>("faculties");
+  const [exporting, setExporting] = useState(false);
 
   const TABS: { key: Tab; label: string; icon: string }[] = [
     { key: "faculties",   label: pick("پوهنځیانه","دانشکده‌ها"), icon: "🎓" },
@@ -1009,13 +1011,61 @@ export default function ManagementPanel({ onClose, pick }: { onClose: () => void
     { key: "assignments", label: pick("ټاکنې","تخصیص‌ها"), icon: "📦" },
   ];
 
+  const toCsv = (headers: string[], rows: any[]) => {
+    const lines = [
+      headers.join(","),
+      ...rows.map(r =>
+        headers.map(h => {
+          const v = String(r[h] ?? "").replace(/"/g, '""');
+          return v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v}"` : v;
+        }).join(",")
+      ),
+    ];
+    return "\uFEFF" + lines.join("\n");
+  };
+
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      const [faculties, departments, people] = await Promise.all([
+        managementService.getFaculties(),
+        managementService.getDepartments(),
+        managementService.getPeople(),
+      ]);
+
+      const zip = new JSZip();
+      const date = new Date().toISOString().slice(0, 10);
+
+      zip.file(`faculties_${date}.csv`,    toCsv(["id","name_ps","name_fa","level"], faculties));
+      zip.file(`departments_${date}.csv`,  toCsv(["id","name_ps","name_fa","department_type","faculty_id","faculty_name_ps","faculty_level"], departments));
+      zip.file(`people_${date}.csv`,       toCsv(["id","full_name","dept_name_ps","department_id","position","phone","email"], people));
+
+      const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `wms_org_export_${date}.zip`; a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* silently ignore */ }
+    finally { setExporting(false); }
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-gray-50 dark:bg-gray-900 w-full sm:max-w-3xl sm:rounded-2xl shadow-2xl max-h-[96vh] flex flex-col animate-slide-up" dir="rtl">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-brand-700 p-5 flex items-center justify-between flex-shrink-0 sm:rounded-t-2xl">
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white text-lg">✕</button>
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white text-lg">✕</button>
+            <button onClick={exportAll} disabled={exporting}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 disabled:opacity-50 text-white rounded-xl px-3 py-1.5 text-xs font-semibold transition-all"
+              title={pick("ټول ډاټا د ZIP فایل کې صادر کړئ","صدور تمام داده‌ها در فایل ZIP")}>
+              {exporting ? (
+                <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : "📦"}
+              {pick(exporting ? "صادریږي..." : "ټول صادر", exporting ? "در حال صدور..." : "صدور همه")}
+            </button>
+          </div>
           <div className="text-right">
             <h2 className="text-lg font-bold text-white">⚙️ {pick("د ترسیم مدیریت","مدیریت ردیابی")}</h2>
             <p className="text-white/70 text-sm">{pick("پوهنځیانه، ادارې، کسان، ټاکنې","دانشکده‌ها، دپارتمان‌ها، افراد، تخصیص‌ها")}</p>
