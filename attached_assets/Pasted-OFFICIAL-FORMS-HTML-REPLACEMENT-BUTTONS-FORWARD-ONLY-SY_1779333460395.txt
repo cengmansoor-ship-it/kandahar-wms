@@ -1,0 +1,189 @@
+OFFICIAL FORMS HTML REPLACEMENT + BUTTONS + FORWARD-ONLY SYNC
+────────────────────────────
+
+I will provide a new official HTML file for the seven official forms.
+
+When the new file is provided:
+Replace only:
+public/forms/official-forms.html
+
+Do NOT change:
+• visual design
+• print layout
+• table borders
+• margins
+• fonts
+• official government structure
+• CSS layout
+• form width
+• official graphics
+• existing internal form synchronization logic unless broken
+• internal form connections unless needed to restore them
+
+The seven official forms:
+1. Proposal / پیشنهاد
+2. Tender / جګړه پاڼه
+3. Comparison Form / فورم مقایسوي
+4. Purchase Order / امر خریداری
+5. Receipt Report / راپور رسید
+6. SI9 / سی ۹
+7. FS5 / ف س ۵
+
+Important:
+Some buttons inside official forms currently do not work.
+Fix buttons safely without redesigning forms.
+
+Fix:
+1. Save buttons
+2. Print buttons
+3. Reset/Clear buttons
+4. Add row buttons
+5. Delete row buttons
+6. Ribbon hide/show button
+7. Font/toolbar buttons if present
+8. Any top-left ribbon button
+9. Any navigation/form-switch button
+10. Any existing official-form action button
+
+The ribbon hide/show button must work in all seven forms.
+Event listeners must not duplicate after switching forms.
+The iframe/template isolation must remain safe.
+
+Official form viewer:
+Keep or fix safely:
+src/components/OfficialFormViewer.tsx
+
+Do not convert official forms into React forms.
+Do not merge all form CSS/JS globally.
+Keep iframe/template isolation.
+
+────────────────────────────
+OFFICIAL FORMS FORWARD-ONLY CASCADING SYNCHRONIZATION
+────────────────────────────
+
+Restore and preserve forward-only synchronization.
+
+Workflow order:
+
+const formOrder = [
+"proposal",
+"tender",
+"comparison",
+"purchaseOrder",
+"receiptReport",
+"si9",
+"fs5"
+];
+
+If the project uses pc5 instead of fs5, support both safely:
+const formKeyAliases = {
+pc5: "fs5",
+fs5: "fs5"
+};
+
+Core rule:
+Data moves only forward.
+Data must never move backward.
+
+When a form is saved:
+• that form saves its own data
+• shared data goes only to downstream forms
+• previous/upstream forms must not change
+
+Mandatory protection:
+Before syncing to any target form:
+
+if (targetIndex <= sourceIndex) {
+return;
+}
+
+Required behavior:
+1. Saving Proposal updates Tender, Comparison, Purchase Order, Receipt Report, SI9, FS5.
+2. Saving Tender updates Comparison, Purchase Order, Receipt Report, SI9, FS5, but never Proposal.
+3. Saving Comparison updates Purchase Order, Receipt Report, SI9, FS5, but never Proposal or Tender.
+4. Saving Purchase Order updates Receipt Report, SI9, FS5, but never Proposal, Tender, or Comparison.
+5. Saving Receipt Report updates SI9 and FS5 only.
+6. Saving SI9 updates FS5 only.
+7. Saving FS5 saves itself only and never updates previous forms.
+
+Example:
+Proposal quantity = 4 and save:
+• Proposal remains 4
+• all downstream forms become 4
+
+Tender changes quantity to 3 and save:
+• Proposal remains 4
+• Tender becomes 3
+• Comparison, Purchase Order, Receipt Report, SI9, FS5 become 3
+
+Comparison changes quantity to 1 and save:
+• Proposal remains 4
+• Tender remains 3
+• Comparison becomes 1
+• Purchase Order, Receipt Report, SI9, FS5 become 1
+
+Shared fields to sync forward:
+• serial number / شمار
+• item name / اسم جنس
+• item type/specification / اسم نوعیت / مشخصات
+• quantity / مقدار
+• unit price / قیمت دانه
+• unit / واحد
+• total price / قیمت مجموعي
+• grand total
+• subject
+• requester information
+• faculty
+• department
+• person/receiver information
+• request ID / tracking ID where applicable
+
+Calculation:
+قیمت مجموعي = مقدار × قیمت دانه
+
+When quantity or unit price changes:
+1. total price updates automatically
+2. grand total updates automatically if present
+3. calculation must support empty values as 0
+4. Pashto/Dari digits must not crash
+5. decimal numbers must work
+6. Comparison Form calculation must work correctly
+
+Private fields must NOT be overwritten:
+• signatures
+• approval notes
+• decision fields
+• comments
+• dates that belong only to that form
+• stamps
+• officer comments
+• director comments
+• confirmation notes
+• handwritten notes
+• local status
+• form-specific fields
+
+Each form must have its own saved data object.
+
+Do not wipe existing localStorage form data unless replacing only the correct form key.
+If old keys exist, support them safely.
+
+Required central functions if not already present:
+• getFormOrder()
+• getFormIndex(formName)
+• normalizeFormKey(formName)
+• getStorageKey(formName)
+• collectFormData(formName)
+• collectSharedSyncData(formName)
+• collectSharedItemRows(formName)
+• calculateRowTotal(row)
+• calculateGrandTotal(rows)
+• saveFormData(formName, data)
+• loadFormData(formName)
+• getDownstreamForms(formName)
+• preventBackwardSync(sourceFormName, targetFormName)
+• syncForwardOnly(sourceFormName, sharedData)
+• applySharedDataToForm(sourceFormName, targetFormName, sharedData)
+
+Do not rewrite official forms if a safe existing sync controller already exists.
+Repair it minimally.
