@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { ensureSeedVersion } from "./firebase/localStore";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+
+ensureSeedVersion();
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./layout/AppLayout";
