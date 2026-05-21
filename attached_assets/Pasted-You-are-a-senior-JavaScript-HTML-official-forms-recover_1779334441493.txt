@@ -1,0 +1,435 @@
+You are a senior JavaScript/HTML official-forms recovery engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Task:
+Restore all internal operations of the 7 official procurement forms.
+
+Important:
+The official forms are inside:
+
+public/forms/official-forms.html
+
+These forms previously had working internal operations such as:
+- save
+- load saved data
+- print
+- reset/clear
+- add row
+- delete row
+- ribbon hide/show
+- toolbar buttons
+- form switching
+- forward-only synchronization between forms
+- quantity × unit price = total price
+- grand total calculation
+- localStorage persistence
+- request data injection into forms
+
+After recent changes, some of these operations no longer work. Restore them carefully.
+
+────────────────────────
+ABSOLUTE RULES
+────────────────────────
+
+1. Do NOT redesign the forms.
+2. Do NOT change the visual layout.
+3. Do NOT change print layout.
+4. Do NOT change table borders, margins, fonts, official structure, or form width.
+5. Do NOT convert forms into React components.
+6. Do NOT merge form CSS/JS globally.
+7. Do NOT break iframe/srcdoc/template isolation.
+8. Do NOT rewrite the whole project.
+9. Do NOT touch unrelated modules.
+10. Do NOT remove existing form data.
+11. Do NOT remove existing localStorage keys unless adding safe compatibility aliases.
+12. Do NOT break existing form-to-form synchronization.
+13. Only repair JavaScript behavior, event binding, data persistence, and safe data mapping.
+
+────────────────────────
+OFFICIAL FORMS LIST
+────────────────────────
+
+The 7 official forms are:
+
+1. Proposal / پیشنهاد
+2. Tender / جګړه پاڼه
+3. Comparison Form / فورم مقایسوي
+4. Purchase Order / امر خریداری
+5. Receipt Report / راپور رسید
+6. SI9 / سی ۹
+7. FS5 / ف س ۵
+
+Use this workflow order:
+
+const formOrder = [
+  "proposal",
+  "tender",
+  "comparison",
+  "purchaseOrder",
+  "receiptReport",
+  "si9",
+  "fs5"
+];
+
+If the project uses pc5 anywhere, map it safely:
+
+const formKeyAliases = {
+  pc5: "fs5",
+  fs5: "fs5"
+};
+
+────────────────────────
+REQUIRED OPERATIONS TO RESTORE
+────────────────────────
+
+For every official form, restore these operations:
+
+1. Save button
+- Save current form data.
+- Save to its own form storage key.
+- Do not overwrite other form-specific private data.
+- After save, trigger forward-only sync to downstream forms only.
+
+2. Load operation
+- When form opens, load its saved data.
+- If no saved data exists, show blank/default form.
+- Do not crash.
+- Support old localStorage keys if they exist.
+
+3. Print button
+- Print only the official form area.
+- Preserve official print layout.
+- Do not print sidebar/app layout.
+- Do not break print styles.
+
+4. Reset/Clear button
+- Clear current form fields only after confirmation.
+- Do not clear all other forms.
+- Do not clear upstream/downstream data accidentally.
+
+5. Add row button
+- Add a new item row to the current form table.
+- Keep event listeners working on new row.
+- New row must support quantity, unit price, total price calculation.
+
+6. Delete row button
+- Delete only the selected row.
+- Recalculate grand total.
+- Do not break table structure.
+
+7. Ribbon hide/show button
+- The top-left ribbon or toolbar toggle button must work in all 7 forms.
+- It must work after switching forms.
+- It must work inside iframe/srcdoc if used.
+- It must not duplicate event listeners after repeated form loads.
+
+8. Toolbar buttons
+- Font, alignment, undo/redo, or existing tools must keep working if they existed before.
+- Do not remove toolbar controls.
+
+9. Form switching/navigation
+- Opening one form must not break another form.
+- Each form must keep its own saved data object.
+- Switching forms must not duplicate listeners.
+
+10. Data injection from system request
+- If request data exists, map it into the current form safely.
+- Request ID, requester, faculty, department, person, item rows, quantity, unit, unit price, total price should populate where matching fields exist.
+- If a field does not exist, skip safely.
+
+────────────────────────
+FORWARD-ONLY SYNCHRONIZATION RULE
+────────────────────────
+
+Restore forward-only cascading sync exactly.
+
+Core rule:
+Data moves only forward.
+Data must never move backward.
+
+When a form is saved:
+- current form saves its own data
+- shared fields move only to forms after it
+- previous forms must never change
+
+Mandatory guard:
+
+if (targetIndex <= sourceIndex) {
+  return;
+}
+
+Expected behavior:
+
+Saving Proposal:
+- updates Tender, Comparison, Purchase Order, Receipt Report, SI9, FS5
+- does not damage Proposal
+
+Saving Tender:
+- updates Comparison, Purchase Order, Receipt Report, SI9, FS5
+- never updates Proposal
+
+Saving Comparison:
+- updates Purchase Order, Receipt Report, SI9, FS5
+- never updates Proposal or Tender
+
+Saving Purchase Order:
+- updates Receipt Report, SI9, FS5
+- never updates Proposal, Tender, Comparison
+
+Saving Receipt Report:
+- updates SI9 and FS5 only
+
+Saving SI9:
+- updates FS5 only
+
+Saving FS5:
+- saves itself only
+- updates no previous form
+
+Example:
+Proposal quantity = 4, save:
+Proposal remains 4
+Tender, Comparison, Purchase Order, Receipt Report, SI9, FS5 become 4
+
+Tender quantity = 3, save:
+Proposal remains 4
+Tender becomes 3
+Comparison, Purchase Order, Receipt Report, SI9, FS5 become 3
+
+Comparison quantity = 1, save:
+Proposal remains 4
+Tender remains 3
+Comparison becomes 1
+Purchase Order, Receipt Report, SI9, FS5 become 1
+
+────────────────────────
+SHARED FIELDS TO SYNC FORWARD
+────────────────────────
+
+Only these shared fields should sync forward:
+
+- serial number / شمار
+- item name / اسم جنس
+- item type / اسم نوعیت
+- specification / مشخصات
+- quantity / مقدار
+- unit price / قیمت دانه
+- unit / واحد
+- total price / قیمت مجموعي
+- grand total
+- subject
+- requester information
+- faculty
+- department
+- person / receiver
+- request ID / tracking ID
+- Bab/Fasl if fields exist
+
+Private form-specific fields must NOT be overwritten:
+
+- signatures
+- stamps
+- approval notes
+- decision fields
+- comments
+- dates belonging only to that form
+- officer comments
+- director comments
+- confirmation notes
+- handwritten notes
+- local status
+- form-specific remarks
+
+────────────────────────
+PRICE CALCULATION
+────────────────────────
+
+Restore automatic calculation in all official forms where these fields exist:
+
+قیمت مجموعي = مقدار × قیمت دانه
+
+Rules:
+1. When quantity changes, total price updates.
+2. When unit price changes, total price updates.
+3. Grand total updates automatically.
+4. Empty value counts as 0.
+5. Decimal numbers must work.
+6. Pashto/Dari digits must not crash.
+7. Comparison Form calculation must work correctly.
+8. Newly added rows must also calculate correctly.
+
+────────────────────────
+CENTRAL FUNCTIONS TO REPAIR OR ADD
+────────────────────────
+
+If similar functions already exist, repair them instead of duplicating.
+
+Required functions:
+
+getFormOrder()
+normalizeFormKey(formName)
+getFormIndex(formName)
+getStorageKey(formName)
+loadFormData(formName)
+saveFormData(formName, data)
+collectFormData(formName)
+collectSharedSyncData(formName)
+collectSharedItemRows(formName)
+calculateRowTotal(row)
+calculateGrandTotal(rows)
+preventBackwardSync(sourceFormName, targetFormName)
+getDownstreamForms(formName)
+syncForwardOnly(sourceFormName, sharedData)
+applySharedDataToForm(sourceFormName, targetFormName, sharedData)
+bindFormButtonsOnce(formRoot)
+bindRibbonToggleOnce(formRoot)
+bindCalculationEventsOnce(formRoot)
+restoreFormFromStorage(formName)
+injectRequestDataIntoForm(formName, requestData)
+
+Important:
+Use idempotent event binding.
+Do not attach the same listener multiple times.
+Use data attributes or listener registry if needed.
+
+────────────────────────
+SAFE EVENT BINDING
+────────────────────────
+
+Fix event binding carefully.
+
+Requirements:
+1. Buttons must work after initial page load.
+2. Buttons must work after switching forms.
+3. Buttons must work after iframe/srcdoc reload.
+4. Buttons must work after adding new rows.
+5. Event listeners must not duplicate.
+6. Console must not show button handler errors.
+7. Missing buttons/fields should be skipped safely.
+
+Use safe checks like:
+
+if (!button) return;
+if (button.dataset.bound === "true") return;
+button.dataset.bound = "true";
+
+────────────────────────
+LOCALSTORAGE COMPATIBILITY
+────────────────────────
+
+Do not destroy old saved form data.
+
+Support keys like:
+
+procurement_form_proposal
+procurement_form_tender
+procurement_form_comparison
+procurement_form_purchaseOrder
+procurement_form_receiptReport
+procurement_form_si9
+procurement_form_fs5
+procurement_form_pc5
+
+If old custom keys exist in the file, keep support for them.
+If both fs5 and pc5 exist, prefer fs5 but do not lose pc5 data.
+Do not clear all localStorage.
+
+────────────────────────
+OFFICIALFORMVIEWER INTEGRATION
+────────────────────────
+
+Inspect and fix if needed:
+
+src/components/OfficialFormViewer.tsx
+
+But do not redesign it.
+
+Required:
+1. It must load the correct official form.
+2. It must preserve iframe/template isolation.
+3. It must pass request/form data safely if already designed.
+4. It must not strip form scripts needed for internal operations.
+5. It must not break internal form buttons.
+6. It must not inject duplicate scripts on every render.
+7. It must not sanitize away required local form JavaScript unless security requires a safe alternative.
+
+If the official form scripts cannot run due to iframe/srcdoc issue, inject a safe restoration script once.
+
+────────────────────────
+TESTING REQUIRED
+────────────────────────
+
+Run:
+npm run build
+
+Then test manually:
+
+1. Open Proposal.
+2. Enter item name, quantity 4, unit price 10.
+3. Save Proposal.
+4. Open Tender, Comparison, Purchase Order, Receipt Report, SI9, FS5.
+Expected:
+All downstream forms show quantity 4, unit price 10, total 40.
+
+5. In Tender, change quantity to 3 and save.
+Expected:
+Proposal remains 4.
+Tender becomes 3.
+Comparison, Purchase Order, Receipt Report, SI9, FS5 become 3.
+
+6. In Comparison, change quantity to 1 and save.
+Expected:
+Proposal remains 4.
+Tender remains 3.
+Comparison becomes 1.
+Purchase Order, Receipt Report, SI9, FS5 become 1.
+
+7. Add a row in each form.
+Expected:
+Row added and calculation works.
+
+8. Delete row in each form.
+Expected:
+Row deleted and grand total recalculates.
+
+9. Click ribbon hide/show button in all 7 forms.
+Expected:
+Works without console error.
+
+10. Print each form.
+Expected:
+Official print layout preserved.
+
+11. Refresh browser.
+Expected:
+Saved form data remains.
+
+12. Open another request if request-based forms exist.
+Expected:
+Data does not mix between requests.
+
+────────────────────────
+FINAL REPORT REQUIRED
+────────────────────────
+
+Return a concise report:
+
+1. Files changed.
+2. Which official form operations were restored.
+3. Save/load status.
+4. Print status.
+5. Add/delete row status.
+6. Ribbon hide/show status.
+7. Price calculation status.
+8. Forward-only sync status.
+9. Backward sync protection status.
+10. localStorage compatibility status.
+11. OfficialFormViewer status.
+12. Build result.
+13. Test result.
+14. Remaining limitations, if any.
+
+Do not only create a plan.
+Implement the restoration now.

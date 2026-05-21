@@ -67865,6 +67865,33 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     };
     window.__loadProcurementForm = loadForm;
+
+    // Support embed mode and URL param auto-selection
+    var params = new URLSearchParams(location.search);
+    var embedMode = params.get('embed') === '1' || params.get('noNav') === '1';
+    var targetForm = params.get('form') || params.get('template');
+
+    if (embedMode) {
+      var topbar = document.querySelector('.topbar');
+      if (topbar) topbar.style.display = 'none';
+      var viewerWrap = document.querySelector('.viewer-wrap');
+      if (viewerWrap) {
+        viewerWrap.style.padding = '0';
+        viewerWrap.style.height = '100vh';
+      }
+      var viewerCard = document.querySelector('.viewer-card');
+      if (viewerCard) {
+        viewerCard.style.height = '100vh';
+        viewerCard.style.borderRadius = '0';
+        viewerCard.style.border = 'none';
+        viewerCard.style.boxShadow = 'none';
+      }
+    }
+
+    if (targetForm && document.getElementById(targetForm)) {
+      var targetBtn = document.querySelector('.nav-btn[data-template="' + targetForm + '"]');
+      loadForm(targetForm, targetBtn ? (targetBtn.dataset.title || targetBtn.textContent.trim()) : targetForm);
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
@@ -69330,6 +69357,16 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!win || !doc || !doc.body) return;
     if (win.__KU_FORWARD_ONLY_SYNC_VERSION__ === VERSION) return;
     win.__KU_FORWARD_ONLY_SYNC_VERSION__ = VERSION;
+
+    // Restore saved area HTML from parent localStorage into the iframe
+    try {
+      var _restoreTemplateId = currentTemplateIdFromFrame(win, doc);
+      var _savedHtml = loadAreaHtml(_restoreTemplateId);
+      var _rootArea = getArea(doc);
+      if (_rootArea && _savedHtml) {
+        _rootArea.innerHTML = _savedHtml;
+      }
+    } catch (_errRestore) {}
 
     function interceptSave(event) {
       var target = event.target;
