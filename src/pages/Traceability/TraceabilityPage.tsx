@@ -738,8 +738,12 @@ export default function TraceabilityPage() {
       setEmailForm({ subject: "", body: "" });
     } catch (e: any) {
       const msg = e?.message || "";
-      if (msg.includes("SMTP_NOT_CONFIGURED")) setEmailResult(pick("⚠️ SMTP تنظیم نه دی. مهرباني وکړئ د ایمیل اعتبارات وتنظیم کړئ.","⚠️ SMTP پیکربندی نشده. لطفاً اعتبارات ایمیل را تنظیم کنید."));
-      else setEmailResult(pick("❌ ایمیل ونه لیږل شو: ","❌ ارسال ناموفق: ") + msg);
+      if (msg.includes("SMTP_NOT_CONFIGURED"))
+        setEmailResult(pick("⚠️ SMTP تنظیم نه دی. مهرباني وکړئ د تنظیماتو برخه کې د ایمیل اپ پاسورډ وتنظیم کړئ.","⚠️ SMTP پیکربندی نشده. لطفاً در بخش تنظیمات App Password ایمیل را تنظیم کنید."));
+      else if (msg.includes("GMAIL_BAD_CREDENTIALS") || msg.includes("535") || msg.toLowerCase().includes("username and password not accepted"))
+        setEmailResult(pick("❌ د Gmail اپ پاسورډ غلط دی — د تنظیماتو برخه ته لاړ شئ او د Gmail اپ پاسورډ سم کړئ (myaccount.google.com/apppasswords).","❌ App Password Gmail نادرست است — به تنظیمات بروید و App Password را اصلاح کنید (myaccount.google.com/apppasswords)."));
+      else
+        setEmailResult(pick("❌ ایمیل ونه لیږل شو: ","❌ ارسال ناموفق: ") + msg);
     }
     finally { setEmailSending(false); }
   };

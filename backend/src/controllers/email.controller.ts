@@ -2,6 +2,23 @@ import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import pool from '../config/db';
 
+function classifyEmailError(err: any): { code: string; message: string } {
+  const msg = String(err?.message || err?.responseCode || '');
+  if (msg.includes('535') || msg.toLowerCase().includes('badcredentials') || msg.toLowerCase().includes('username and password not accepted') || (msg.includes('Invalid login') && msg.includes('535'))) {
+    return {
+      code: 'GMAIL_BAD_CREDENTIALS',
+      message: 'GMAIL_BAD_CREDENTIALS',
+    };
+  }
+  if (msg.includes('Invalid login') || msg.includes('auth') || msg.includes('AUTH')) {
+    return { code: 'GMAIL_BAD_CREDENTIALS', message: 'GMAIL_BAD_CREDENTIALS' };
+  }
+  if (msg.includes('ECONNREFUSED') || msg.includes('ETIMEDOUT') || msg.includes('ENOTFOUND')) {
+    return { code: 'SMTP_CONNECTION_FAILED', message: 'SMTP_CONNECTION_FAILED' };
+  }
+  return { code: 'SMTP_ERROR', message: msg || 'Failed to send email' };
+}
+
 export const sendEmail = async (req: Request, res: Response) => {
   const { to, subject, body } = req.body;
 
@@ -28,10 +45,7 @@ export const sendEmail = async (req: Request, res: Response) => {
   }
 
   if (!smtpUser || !smtpPass) {
-    return res.status(503).json({
-      success: false,
-      message: 'SMTP_NOT_CONFIGURED',
-    });
+    return res.status(503).json({ success: false, message: 'SMTP_NOT_CONFIGURED' });
   }
 
   try {
@@ -57,9 +71,7 @@ export const sendEmail = async (req: Request, res: Response) => {
     return res.json({ success: true, message: 'Email sent successfully' });
   } catch (error: any) {
     console.error('Email send error:', error.message);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to send email',
-    });
+    const classified = classifyEmailError(error);
+    return res.status(500).json({ success: false, message: classified.message, code: classified.code });
   }
 };

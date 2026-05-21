@@ -2,6 +2,33 @@ import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import { EmailConfigService } from '../services/emailConfig.service';
 
+// Map nodemailer/Gmail SMTP errors to short, actionable error codes
+function classifyEmailError(err: any): { code: string; message: string } {
+  const msg = String(err?.message || err?.responseCode || '');
+  if (msg.includes('535') || msg.toLowerCase().includes('badcredentials') || msg.toLowerCase().includes('username and password not accepted')) {
+    return {
+      code: 'GMAIL_BAD_CREDENTIALS',
+      message: 'GMAIL_BAD_CREDENTIALS: د Gmail اپ پاسورډ غلط دی. د عادي پاسورډ پر ځای د Gmail اپ پاسورډ وکاروئ. Google Account → Security → App Passwords (https://myaccount.google.com/apppasswords)',
+    };
+  }
+  if (msg.includes('534') || msg.toLowerCase().includes('less secure') || msg.toLowerCase().includes('application-specific')) {
+    return {
+      code: 'GMAIL_LESS_SECURE',
+      message: 'GMAIL_LESS_SECURE: Gmail دغه ورته لاسرسی ته اجازه نه ورکوي. د اپ پاسورډ وکاروئ.',
+    };
+  }
+  if (msg.includes('ECONNREFUSED') || msg.includes('ETIMEDOUT') || msg.includes('ENOTFOUND')) {
+    return { code: 'SMTP_CONNECTION_FAILED', message: 'SMTP_CONNECTION_FAILED: ' + msg };
+  }
+  if (msg.includes('Invalid login') || msg.includes('auth') || msg.includes('AUTH')) {
+    return {
+      code: 'GMAIL_BAD_CREDENTIALS',
+      message: 'GMAIL_BAD_CREDENTIALS: د Gmail اپ پاسورډ غلط دی. د عادي پاسورډ پر ځای د Gmail اپ پاسورډ وکاروئ.',
+    };
+  }
+  return { code: 'SMTP_ERROR', message: msg || 'Failed to send email' };
+}
+
 export const getEmailConfigs = async (req: Request, res: Response) => {
   try {
     const configs = await EmailConfigService.getAll();
@@ -82,6 +109,7 @@ export const testEmailConfig = async (req: Request, res: Response) => {
 
     return res.json({ success: true, message: 'Test email sent successfully' });
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message || 'Failed to send test email' });
+    const classified = classifyEmailError(err);
+    return res.status(500).json({ success: false, message: classified.message, code: classified.code });
   }
 };

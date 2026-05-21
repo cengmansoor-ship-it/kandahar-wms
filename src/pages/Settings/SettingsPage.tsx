@@ -148,8 +148,16 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         flashEmailMsg(pick("✅ د ازموینې ایمیل بریالیتوب سره ولیږل شو! خپل inbox وګورئ.", "✅ ایمیل آزمایشی با موفقیت ارسال شد! صندوق ورودی را بررسی کنید."), "success");
+      } else if (data.code === "GMAIL_BAD_CREDENTIALS" || (data.message || "").includes("GMAIL_BAD_CREDENTIALS")) {
+        flashEmailMsg(
+          pick(
+            "❌ د Gmail اپ پاسورډ غلط دی — د عادي پاسورډ پر ځای باید د Gmail اپ پاسورډ (App Password) وکاروئ. myaccount.google.com/apppasswords ته لاړ شئ.",
+            "❌ رمز برنامه Gmail نادرست است — به جای رمز عادی، باید App Password استفاده کنید. به myaccount.google.com/apppasswords بروید."
+          ),
+          "error"
+        );
       } else {
-        flashEmailMsg(pick("❌ ازموینه ناکامه شوه: ", "❌ آزمایش ناموفق: ") + data.message, "error");
+        flashEmailMsg(pick("❌ ازموینه ناکامه شوه: ", "❌ آزمایش ناموفق: ") + (data.message || ""), "error");
       }
     } catch {
       flashEmailMsg(pick("د سرور سره اتصال نشو.", "اتصال به سرور برقرار نشد."), "error");
@@ -453,14 +461,25 @@ export default function SettingsPage() {
                       {emailForm.app_password.length}/16
                     </span>
                   </div>
-                  {!editingId && (
-                    <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      {pick(
-                        "Google → د حساب تنظیمات → امنیت → د اپ پاسورډ جوړول",
-                        "Google → تنظیمات حساب → امنیت → رمزهای برنامه"
-                      )}
+                  <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-3 py-2.5 text-xs text-amber-800 dark:text-amber-300">
+                    <p className="font-semibold mb-1">
+                      {pick("⚠️ د عادي پاسورډ پر ځای باید د Gmail اپ پاسورډ وکاروئ:", "⚠️ باید از App Password Gmail استفاده کنید، نه رمز عادی:")}
                     </p>
-                  )}
+                    <ol className="list-decimal list-inside space-y-0.5 text-amber-700 dark:text-amber-400">
+                      <li>{pick("myaccount.google.com ته لاړ شئ", "وارد myaccount.google.com شوید")}</li>
+                      <li>{pick("Security → 2-Step Verification (فعال وي)", "Security → 2-Step Verification (باید فعال باشد)")}</li>
+                      <li>{pick("App Passwords ته لاړ شئ", "به App Passwords بروید")}</li>
+                      <li>{pick("نوی اپ پاسورډ جوړ کړئ (۱۶ حروف)", "یک App Password جدید بسازید (۱۶ کاراکتر)")}</li>
+                    </ol>
+                    <a
+                      href="https://myaccount.google.com/apppasswords"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-1.5 font-semibold underline text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-200"
+                    >
+                      {pick("→ د اپ پاسورډ جوړولو لینک", "→ لینک ساخت App Password")}
+                    </a>
+                  </div>
                 </div>
               </div>
               {/* Form actions */}
