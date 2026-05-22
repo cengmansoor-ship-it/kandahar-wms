@@ -69389,6 +69389,27 @@ document.addEventListener("DOMContentLoaded", function () {
         keys: formOrder.map(function (formName) { return procurementKey(formName); })
       };
     };
+
+    window.__KU_SYNC_API__ = {
+      applySharedDataToForm: applySharedDataToForm,
+      syncForwardOnly: syncForwardOnly,
+      saveProcurementJson: saveProcurementJson,
+      loadAreaHtml: loadAreaHtml,
+      saveAreaHtml: saveAreaHtml,
+      collectSharedData: collectSharedData,
+      applyItemsToRoot: applyItemsToRoot,
+      applyItemsToComparisonRoot: applyItemsToComparisonRoot,
+      applySharedFields: applySharedFields,
+      calculateTotalsInRoot: calculateTotalsInRoot,
+      formOrder: formOrder,
+      templateToForm: templateToForm,
+      formToTemplate: formToTemplate,
+      configs: configs,
+      storage: storage,
+      finalKey: finalKey,
+      runtimeKey: runtimeKey,
+      procurementKey: procurementKey
+    };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
@@ -69397,5 +69418,285 @@ document.addEventListener("DOMContentLoaded", function () {
 
 </script>
 <!-- ====================== FORWARD-ONLY CASCADING SYNC FIX END ====================== -->
+
+<!-- ====================== REACT POSTMESSAGE BRIDGE START ====================== -->
+<script>
+(function () {
+  'use strict';
+
+  var KU_REQUEST_SCOPE = '';
+  var STORAGE_PREFIX = '';
+
+  function api() { return window.__KU_SYNC_API__ || null; }
+
+  function viewer() { return document.getElementById('formViewer'); }
+
+  function getStorage() {
+    try {
+      var s = window.localStorage;
+      s.setItem('__ku_bridge_test__', '1');
+      s.removeItem('__ku_bridge_test__');
+      return s;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function scopedKey(key) {
+    return STORAGE_PREFIX ? STORAGE_PREFIX + key : key;
+  }
+
+  function backupCurrentData(requestId) {
+    var s = getStorage();
+    if (!s || !requestId) return;
+    var prefix = 'ku_req_' + String(requestId).replace(/[^a-zA-Z0-9_-]/g, '_') + '_';
+    var toBackup = [];
+    try {
+      for (var i = 0; i < s.length; i++) {
+        var k = s.key(i);
+        if (k && (
+          k.indexOf('ku-final-saved-html-') === 0 ||
+          k.indexOf('ku_procurement_single_file_') === 0 ||
+          k.indexOf('procurement_form_') === 0
+        )) {
+          toBackup.push(k);
+        }
+      }
+    } catch (e) {}
+    toBackup.forEach(function (k) {
+      try { s.setItem(prefix + k, s.getItem(k)); } catch (e2) {}
+    });
+  }
+
+  function restoreDataForRequest(requestId) {
+    var s = getStorage();
+    if (!s || !requestId) return;
+    var prefix = 'ku_req_' + String(requestId).replace(/[^a-zA-Z0-9_-]/g, '_') + '_';
+    var toRestore = [];
+    try {
+      for (var i = 0; i < s.length; i++) {
+        var k = s.key(i);
+        if (k && k.indexOf(prefix) === 0) toRestore.push(k);
+      }
+    } catch (e) {}
+    if (toRestore.length > 0) {
+      toRestore.forEach(function (scopedK) {
+        var origK = scopedK.slice(prefix.length);
+        try { s.setItem(origK, s.getItem(scopedK)); } catch (e2) {}
+      });
+    }
+  }
+
+  function showFormByTemplateId(templateId) {
+    var btn = document.querySelector('.nav-btn[data-template="' + templateId + '"]');
+    if (btn) { btn.click(); return true; }
+    return false;
+  }
+
+  function injectDataIntoViewer(templateId, sharedData) {
+    var a = api();
+    var vwr = viewer();
+    if (!a || !vwr) return false;
+    try {
+      var win = vwr.contentWindow;
+      var doc = vwr.contentDocument || (win && win.document);
+      if (!doc || !doc.body) return false;
+
+      a.applySharedFields(doc, sharedData.sharedFields || {});
+      a.applyItemsToRoot(doc, templateId, sharedData);
+      if (templateId === 'formTemplate2') {
+        a.applyItemsToComparisonRoot(doc, sharedData);
+      }
+      a.calculateTotalsInRoot(doc, templateId);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function processInjectForTemplate(templateId, sharedData, noNavigate) {
+    var a = api();
+    if (!a) {
+      setTimeout(function () { processInjectForTemplate(templateId, sharedData, noNavigate); }, 250);
+      return;
+    }
+
+    var formName = a.templateToForm[templateId];
+    if (formName) {
+      a.saveProcurementJson(formName, sharedData);
+
+      var holder = document.createElement('div');
+      holder.innerHTML = a.loadAreaHtml(templateId) || '';
+      if (holder.innerHTML.trim()) {
+        a.applySharedFields(holder, sharedData.sharedFields || {});
+        a.applyItemsToRoot(holder, templateId, sharedData);
+        if (templateId === 'formTemplate2') {
+          a.applyItemsToComparisonRoot(holder, sharedData);
+        }
+        a.calculateTotalsInRoot(holder, templateId);
+        a.saveAreaHtml(templateId, holder.innerHTML);
+      }
+    }
+
+    if (noNavigate) return;
+
+    var currentBtn = document.querySelector('.nav-btn.active');
+    var currentTemplateId = currentBtn ? currentBtn.getAttribute('data-template') : null;
+
+    if (currentTemplateId === templateId) {
+      [150, 400, 800].forEach(function (delay) {
+        setTimeout(function () { injectDataIntoViewer(templateId, sharedData); }, delay);
+      });
+    } else {
+      showFormByTemplateId(templateId);
+      [350, 700, 1200].forEach(function (delay) {
+        setTimeout(function () { injectDataIntoViewer(templateId, sharedData); }, delay);
+      });
+    }
+  }
+
+  function getFormData() {
+    var vwr = viewer();
+    if (!vwr) return {};
+    try {
+      var win = vwr.contentWindow;
+      var doc = vwr.contentDocument || (win && win.document);
+      if (!doc || !doc.body) return {};
+      var data = {};
+
+      [].forEach.call(doc.querySelectorAll('input, textarea, select'), function (el) {
+        if (el.id || el.name) {
+          data[el.id || el.name] = el.type === 'checkbox' ? el.checked : el.value;
+        }
+      });
+
+      [
+        'v7RequesterName', 'v7RequesterEmail', 'v7ProposalSubject',
+        'v7RequesterSection', 'v7FacultyLevel', 'v7FacultySelect',
+        'v7FacultyDepartment', 'v7FacultyPerson', 'v7AdminVice',
+        'v7AdminDepartment', 'v7AdminPerson'
+      ].forEach(function (id) {
+        var el = doc.getElementById(id);
+        if (el && !('value' in el)) data[id] = el.textContent || '';
+      });
+
+      var area = (
+        doc.getElementById('documentArea') ||
+        doc.querySelector('.document-area') ||
+        doc.querySelector('.page') ||
+        doc.querySelector('main') ||
+        doc.body
+      );
+      if (area) data['__documentArea__'] = area.innerHTML;
+
+      return data;
+    } catch (e) { return {}; }
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg !== 'object') return;
+    if (msg.namespace !== 'KU_FORMS') return;
+
+    switch (msg.type) {
+      case 'HIDE_TOPBAR': {
+        var topbar = document.querySelector('.topbar');
+        if (topbar) topbar.style.cssText = 'display:none!important;';
+        var vwrWrap = document.querySelector('.viewer-wrap');
+        if (vwrWrap) vwrWrap.style.cssText = 'flex:1;min-height:0;padding:0;';
+        var vwrCard = document.querySelector('.viewer-card');
+        if (vwrCard) vwrCard.style.cssText = 'width:100%;height:100%;min-height:0;border-radius:0;border:0;box-shadow:none;overflow:hidden;';
+        var vwr = viewer();
+        if (vwr) vwr.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+        break;
+      }
+
+      case 'SET_REQUEST_SCOPE': {
+        var newRequestId = msg.requestId || '';
+        if (newRequestId !== KU_REQUEST_SCOPE) {
+          if (KU_REQUEST_SCOPE) backupCurrentData(KU_REQUEST_SCOPE);
+          KU_REQUEST_SCOPE = newRequestId;
+          STORAGE_PREFIX = newRequestId
+            ? 'ku_req_' + String(newRequestId).replace(/[^a-zA-Z0-9_-]/g, '_') + '_'
+            : '';
+          restoreDataForRequest(newRequestId);
+        }
+        break;
+      }
+
+      case 'SHOW_FORM':
+        showFormByTemplateId(msg.templateId);
+        break;
+
+      case 'INJECT_DATA':
+        if (msg.templateId && msg.sharedData) {
+          processInjectForTemplate(msg.templateId, msg.sharedData);
+        }
+        break;
+
+      case 'INJECT_ALL_FORMS':
+        if (msg.allData && typeof msg.allData === 'object') {
+          var a = api();
+          var activeBtn = document.querySelector('.nav-btn.active');
+          var activeId = activeBtn ? activeBtn.getAttribute('data-template') : null;
+          Object.keys(msg.allData).forEach(function (templateId) {
+            var sharedData = msg.allData[templateId];
+            if (sharedData) {
+              var isActive = templateId === activeId;
+              processInjectForTemplate(templateId, sharedData, !isActive);
+              if (a) {
+                var formName = a.templateToForm[templateId];
+                if (formName) a.syncForwardOnly(formName, sharedData);
+              }
+            }
+          });
+        }
+        break;
+
+      case 'GET_DATA': {
+        var formData = getFormData();
+        try {
+          event.source.postMessage({
+            namespace: 'KU_FORMS',
+            type: 'DATA_RESPONSE',
+            data: formData,
+            msgId: msg.msgId || ''
+          }, '*');
+        } catch (e2) {}
+        break;
+      }
+
+      case 'PRINT': {
+        var vwr2 = viewer();
+        if (vwr2 && vwr2.contentWindow) vwr2.contentWindow.print();
+        break;
+      }
+
+      case 'SET_READONLY': {
+        var vwr3 = viewer();
+        if (!vwr3) break;
+        try {
+          var doc3 = vwr3.contentDocument || vwr3.contentWindow.document;
+          if (!doc3 || !doc3.body) break;
+          [].forEach.call(doc3.querySelectorAll('input, textarea, select'), function (el) {
+            el.disabled = true;
+          });
+          [].forEach.call(doc3.querySelectorAll('[contenteditable]'), function (el) {
+            el.setAttribute('contenteditable', 'false');
+          });
+          [].forEach.call(doc3.querySelectorAll('button'), function (btn) {
+            if (!btn.classList.contains('print-btn') &&
+                btn.id !== 'printBtn') {
+              btn.style.display = 'none';
+            }
+          });
+        } catch (e3) {}
+        break;
+      }
+    }
+  });
+})();
+</script>
+<!-- ====================== REACT POSTMESSAGE BRIDGE END ====================== -->
 </body>
 </html>
