@@ -542,8 +542,7 @@ export default function OfficialFormsPage() {
         </div>
 
         {/* ── Form viewer ─────────────────────────────────────────────────── */}
-        {/* Height: fills available viewport space, removing empty white space */}
-        <div className="min-h-[calc(100vh-22rem)] flex flex-col">
+        <div>
           <OfficialFormViewer
             templateId={activeTemplateId}
             requestId={requestId || undefined}

@@ -58,6 +58,29 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
     } catch (_) {}
   }, []);
 
+  // ── Height chain fix ────────────────────────────────────────────────────────
+  // official-forms.html uses `min-height: 100vh` on html/body/.app-shell instead
+  // of `height: 100vh`. This means `.viewer-wrap { flex:1 }` and
+  // `.viewer-card { height:100% }` never resolve to a concrete value, so
+  // overflow:hidden clips the inner form iframe to near-zero.
+  // Injecting height:100% directly into the outer iframe's DOM (same-origin) fixes
+  // the entire chain without touching official-forms.html.
+  const injectHeightFix = useCallback(() => {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc?.head) return;
+      if (doc.getElementById("ku-wms-height-fix")) return;
+      const style = doc.createElement("style");
+      style.id = "ku-wms-height-fix";
+      style.textContent =
+        "html,body,.app-shell{height:100%!important;min-height:0!important;}" +
+        ".viewer-wrap{display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important;overflow:hidden!important;}" +
+        ".viewer-card{flex:1!important;min-height:0!important;overflow:hidden!important;}" +
+        "#formViewer{width:100%!important;height:100%!important;border:0!important;display:block!important;}";
+      doc.head.appendChild(style);
+    } catch (_) {}
+  }, []);
+
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const msg = event.data as Record<string, unknown>;
@@ -73,6 +96,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
 
   const setupIframe = useCallback(
     (tid: string, rid: string | undefined) => {
+      injectHeightFix();
       sendMsg({ type: "HIDE_TOPBAR" });
 
       if (rid) sendMsg({ type: "SET_REQUEST_SCOPE", requestId: rid });
@@ -87,7 +111,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
         setTimeout(() => sendMsg({ type: "SET_READONLY" }), 900);
       }
     },
-    [allFormsData, initialData, readOnly, sendMsg]
+    [allFormsData, initialData, readOnly, sendMsg, injectHeightFix]
   );
 
   const handleIframeLoad = useCallback(() => {
@@ -138,7 +162,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
   const handlePrint = () => sendMsg({ type: "PRINT" });
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+    <div className="flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between p-3 border-b bg-gray-50">
         <h3 className="text-sm font-bold text-gray-700">رسمي فورم / فورم رسمی</h3>
         <div className="flex gap-2">
@@ -158,9 +182,12 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
           </button>
         </div>
       </div>
-      <div className="flex-1 relative min-h-0">
+      <div className="relative">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-white/80 z-10"
+            style={{ height: "max(820px, calc(100vh - 160px))" }}
+          >
             <span className="text-sm text-gray-500">بارول...</span>
           </div>
         )}
@@ -168,7 +195,8 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
           key={requestId || "no-request"}
           ref={iframeRef}
           src="/forms/official-forms.html"
-          className="w-full h-full border-0"
+          className="w-full border-0 block"
+          style={{ height: "max(820px, calc(100vh - 160px))" }}
           title="Official Form"
           onLoad={handleIframeLoad}
         />
