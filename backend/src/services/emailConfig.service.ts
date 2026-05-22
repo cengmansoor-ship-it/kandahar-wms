@@ -10,9 +10,10 @@ export interface EmailConfig {
 
 export class EmailConfigService {
   static async runMigrations() {
+    const { withRetry } = await import('../utils/migrationHelper');
     const conn = await pool.getConnection();
     try {
-      await conn.query(`
+      await withRetry(() => conn.query(`
         CREATE TABLE IF NOT EXISTS email_configs (
           id INT AUTO_INCREMENT PRIMARY KEY,
           email VARCHAR(255) NOT NULL,
@@ -20,7 +21,7 @@ export class EmailConfigService {
           label VARCHAR(255) DEFAULT '',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB
-      `);
+      `));
     } finally {
       conn.release();
     }

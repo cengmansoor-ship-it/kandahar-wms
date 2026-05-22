@@ -11,9 +11,10 @@ export interface CustomRole {
 
 export class CustomRolesService {
   static async runMigrations() {
+    const { withRetry } = await import('../utils/migrationHelper');
     const conn = await pool.getConnection();
     try {
-      await conn.query(`
+      await withRetry(() => conn.query(`
         CREATE TABLE IF NOT EXISTS custom_roles (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(100) NOT NULL UNIQUE,
@@ -23,7 +24,7 @@ export class CustomRolesService {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB
-      `);
+      `));
     } finally {
       conn.release();
     }

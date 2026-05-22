@@ -1,24 +1,17 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import db from '../config/db';
+import { runColumnMigration } from '../utils/migrationHelper';
 
 export class ManagementService {
 
   static async runMigrations() {
     const cols = [
-      { table: 'people', col: 'photo', def: `MEDIUMTEXT DEFAULT NULL` },
+      { table: 'people',    col: 'photo', def: `MEDIUMTEXT DEFAULT NULL` },
       { table: 'faculties', col: 'level', def: `VARCHAR(20) DEFAULT NULL` },
     ];
     for (const c of cols) {
       try {
-        const [rows] = await db.query<RowDataPacket[]>(
-          `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS
-           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-          [c.table, c.col]
-        );
-        if ((rows[0] as any).cnt === 0) {
-          await db.query(`ALTER TABLE \`${c.table}\` ADD COLUMN \`${c.col}\` ${c.def}`);
-          console.log(`[Management] Added column ${c.table}.${c.col}`);
-        }
+        await runColumnMigration(c.table, c.col, c.def, 'Management');
       } catch (e: any) {
         console.warn(`[Management] Migration warning for ${c.table}.${c.col}:`, e.message);
       }

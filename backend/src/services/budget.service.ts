@@ -1,10 +1,11 @@
 import pool from '../config/db';
+import { withRetry } from '../utils/migrationHelper';
 
 export class BudgetService {
   static async runMigrations() {
     const conn = await pool.getConnection();
     try {
-      await conn.query(`
+      await withRetry(() => conn.query(`
         CREATE TABLE IF NOT EXISTS budget_babs (
           id INT AUTO_INCREMENT PRIMARY KEY,
           bab_code VARCHAR(20) NOT NULL,
@@ -17,8 +18,8 @@ export class BudgetService {
           UNIQUE KEY uq_bab_code (bab_code),
           INDEX idx_bab_code (bab_code)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
-      await conn.query(`
+      `));
+      await withRetry(() => conn.query(`
         CREATE TABLE IF NOT EXISTS budget_fasls (
           id INT AUTO_INCREMENT PRIMARY KEY,
           bab_id INT NOT NULL,
@@ -34,7 +35,7 @@ export class BudgetService {
           INDEX idx_bab_id (bab_id),
           FOREIGN KEY (bab_id) REFERENCES budget_babs(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+      `));
       // ── Seed standard Afghan government budget bab/fasl codes ─────────────
       const seedBabs = [
         { bab_code: '21', name_ps: 'معاشات او مزدونه',           name_fa: 'معاشات و مزدها',            description: 'د کارمندانو معاشات' },
@@ -90,18 +91,24 @@ export class BudgetService {
       // ────────────────────────────────────────────────────────────────────
 
       const cols = [
-        { table: 'items', col: 'bab_id', def: 'INT DEFAULT NULL' },
-        { table: 'items', col: 'fasl_id', def: 'INT DEFAULT NULL' },
-        { table: 'request_items', col: 'bab_id', def: 'INT DEFAULT NULL' },
+        { table: 'items',         col: 'bab_id',  def: 'INT DEFAULT NULL' },
+        { table: 'items',         col: 'fasl_id', def: 'INT DEFAULT NULL' },
+        { table: 'request_items', col: 'bab_id',  def: 'INT DEFAULT NULL' },
         { table: 'request_items', col: 'fasl_id', def: 'INT DEFAULT NULL' },
       ];
       for (const c of cols) {
-        const [rows]: any = await conn.query(
-          `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-          [c.table, c.col]
-        );
-        if (rows[0].cnt === 0) {
-          await conn.query(`ALTER TABLE \`${c.table}\` ADD COLUMN \`${c.col}\` ${c.def}`);
+        try {
+          await withRetry(async () => {
+            const [rows]: any = await conn.query(
+              `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+              [c.table, c.col]
+            );
+            if (rows[0].cnt === 0) {
+              await conn.query(`ALTER TABLE \`${c.table}\` ADD COLUMN \`${c.col}\` ${c.def}`);
+            }
+          });
+        } catch (e: any) {
+          console.warn(`[Budget] Migration warning for ${c.table}.${c.col}:`, e.message);
         }
       }
     } finally {

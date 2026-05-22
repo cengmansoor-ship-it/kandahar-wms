@@ -1,28 +1,22 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import db from '../config/db';
+import { runColumnMigration } from '../utils/migrationHelper';
 
 export class TraceabilityService {
 
   static async runMigrations() {
     const cols = [
-      { table: 'faculties', col: 'level', def: `VARCHAR(20) DEFAULT NULL` },
-      { table: 'item_assignments', col: 'notes', def: `TEXT` },
-      { table: 'item_assignments', col: 'assigned_by', def: `INT DEFAULT NULL` },
-      { table: 'item_assignments', col: 'unit_id', def: `INT DEFAULT NULL` },
-      { table: 'item_assignments', col: 'tracking_id', def: `VARCHAR(100) DEFAULT NULL` },
-      { table: 'item_assignments', col: 'delivery_id', def: `INT DEFAULT NULL` },
+      { table: 'faculties',        col: 'level',         def: `VARCHAR(20) DEFAULT NULL` },
+      { table: 'item_assignments', col: 'notes',         def: `TEXT` },
+      { table: 'item_assignments', col: 'assigned_by',   def: `INT DEFAULT NULL` },
+      { table: 'item_assignments', col: 'unit_id',       def: `INT DEFAULT NULL` },
+      { table: 'item_assignments', col: 'tracking_id',   def: `VARCHAR(100) DEFAULT NULL` },
+      { table: 'item_assignments', col: 'delivery_id',   def: `INT DEFAULT NULL` },
       { table: 'item_assignments', col: 'fs5_reference', def: `VARCHAR(100) DEFAULT NULL` },
     ];
     for (const c of cols) {
       try {
-        const [rows] = await db.query<RowDataPacket[]>(
-          `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS
-           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-          [c.table, c.col]
-        );
-        if ((rows[0] as any).cnt === 0) {
-          await db.query(`ALTER TABLE \`${c.table}\` ADD COLUMN \`${c.col}\` ${c.def}`);
-        }
+        await runColumnMigration(c.table, c.col, c.def, 'Traceability');
       } catch (_) {}
     }
   }

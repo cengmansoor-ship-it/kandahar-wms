@@ -37,30 +37,25 @@ const STAGE_MAP: Record<string, {
 
 export class RequestService {
   static async runMigrations() {
-    // Widen status column to accept all stage string values
-    await db.query(`ALTER TABLE requests MODIFY COLUMN status VARCHAR(100) DEFAULT 'Submitted'`).catch(() => {});
+    const { withRetry } = await import('../utils/migrationHelper');
 
-    // Add workflow-tracking columns if missing
-    await db.query(`ALTER TABLE requests ADD COLUMN current_stage VARCHAR(100) NULL`).catch(() => {});
-    await db.query(`ALTER TABLE requests ADD COLUMN assigned_role VARCHAR(100) NULL`).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE requests MODIFY COLUMN status VARCHAR(100) DEFAULT 'Submitted'`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN current_stage VARCHAR(100) NULL`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN assigned_role VARCHAR(100) NULL`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN faculty_name_text VARCHAR(255) NULL`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN department_name_text VARCHAR(255) NULL`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN requester_name_text VARCHAR(150) NULL`)).catch(() => {});
 
-    // Add free-text columns for faculty/department (frontend sends free text, not FK IDs)
-    await db.query(`ALTER TABLE requests ADD COLUMN faculty_name_text VARCHAR(255) NULL`).catch(() => {});
-    await db.query(`ALTER TABLE requests ADD COLUMN department_name_text VARCHAR(255) NULL`).catch(() => {});
-    await db.query(`ALTER TABLE requests ADD COLUMN requester_name_text VARCHAR(150) NULL`).catch(() => {});
-
-    // Backfill existing rows that have no current_stage/assigned_role
-    await db.query(`
+    await withRetry(() => db.query(`
       UPDATE requests
       SET current_stage = 'REQUEST_CONFIRMER',
           assigned_role = 'REQUEST_CONFIRMER'
       WHERE (current_stage IS NULL OR current_stage = '')
         AND status IN ('Submitted','PENDING','submitted')
         AND is_deleted = FALSE
-    `).catch(() => {});
+    `)).catch(() => {});
 
-    // Create pipeline table if not present
-    await db.query(`
+    await withRetry(() => db.query(`
       CREATE TABLE IF NOT EXISTS request_pipeline (
         id             INT AUTO_INCREMENT PRIMARY KEY,
         request_id     INT NOT NULL,
@@ -77,7 +72,7 @@ export class RequestService {
         created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_pipeline_request (request_id)
       ) ENGINE=InnoDB
-    `).catch(() => {});
+    `)).catch(() => {});
   }
 
   static async getRequests() {
