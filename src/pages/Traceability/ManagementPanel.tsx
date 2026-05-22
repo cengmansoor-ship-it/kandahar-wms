@@ -142,10 +142,6 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2">
-          <button onClick={exportCsv} disabled={faculties.length === 0}
-            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
-            📤 {pick("CSV صادر","صدور CSV")}
-          </button>
           <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
             ➕ {pick("پوهنځی اضافه کول","افزودن دانشکده")}
           </button>
@@ -311,11 +307,6 @@ function DepartmentsTab({ pick, defaultFacultyId }: { pick: (ps: string, dr: str
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2">
-          <button onClick={exportCsv} disabled={filtered.length === 0}
-            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
-            📤 {pick("CSV صادر","صدور CSV")}
-            {filter !== "ALL" && <span className="bg-white/20 rounded-full px-1.5 text-xs">{filtered.length}</span>}
-          </button>
           <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
             ➕ {pick("اداره اضافه کول","افزودن دپارتمان")}
           </button>
@@ -616,14 +607,6 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
               ✉️ {pick(`ټول ایمیل (${selectedIds.size})`, `ارسال گروهی (${selectedIds.size})`)}
             </button>
           )}
-          <button onClick={exportCsv} disabled={people.length === 0}
-            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all"
-            title={pick("د اوسني لیست CSV صادرول","صدور CSV لیست فعلی")}>
-            📤 {pick("CSV صادر","صدور CSV")}
-            {filtered.length > 0 && filtered.length < people.length && (
-              <span className="bg-white/20 rounded-full px-1.5 text-xs">{filtered.length}</span>
-            )}
-          </button>
           <button onClick={() => { setShowCsvModal(true); setCsvRows([]); setCsvError(""); setCsvResult(null); }}
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-4 py-2 text-sm font-semibold shadow transition-all">
             📥 {pick("CSV وارد","ورود CSV")}
