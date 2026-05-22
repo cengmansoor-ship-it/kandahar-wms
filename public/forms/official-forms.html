@@ -1096,7 +1096,7 @@ body {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -2395,6 +2395,141 @@ th.line-spacing-target * {
     max-height: 17px !important;
     font-size: 6.4px !important;
     line-height: 15px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -3291,7 +3426,7 @@ body {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -4590,6 +4725,141 @@ th.line-spacing-target * {
     max-height: 17px !important;
     font-size: 6.4px !important;
     line-height: 15px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style></head>
@@ -14968,7 +15238,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -15292,6 +15562,141 @@ th.line-spacing-target * {
   select[id*="LineHeight"] {
     min-width: 58px !important;
     font-size: 9px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -16298,7 +16703,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -16622,6 +17027,141 @@ th.line-spacing-target * {
   select[id*="LineHeight"] {
     min-width: 58px !important;
     font-size: 9px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style></head>
@@ -22123,7 +22663,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -22447,6 +22987,141 @@ th.line-spacing-target * {
   select[id*="LineHeight"] {
     min-width: 58px !important;
     font-size: 9px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -23815,7 +24490,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -24139,6 +24814,141 @@ th.line-spacing-target * {
   select[id*="LineHeight"] {
     min-width: 58px !important;
     font-size: 9px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style></head>
@@ -29876,7 +30686,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -30200,6 +31010,141 @@ th.line-spacing-target * {
   select[id*="LineHeight"] {
     min-width: 58px !important;
     font-size: 9px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -31540,7 +32485,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -31864,6 +32809,141 @@ th.line-spacing-target * {
   select[id*="LineHeight"] {
     min-width: 58px !important;
     font-size: 9px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style></head>
@@ -38199,7 +39279,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -38781,6 +39861,141 @@ th.line-spacing-target * {
     height: auto !important;
     overflow: visible !important;
     white-space: pre-wrap !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -40461,7 +41676,7 @@ th.line-spacing-target * {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -41043,6 +42258,141 @@ th.line-spacing-target * {
     height: auto !important;
     overflow: visible !important;
     white-space: pre-wrap !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style></head>
@@ -49240,7 +50590,7 @@ body {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -49717,6 +51067,141 @@ select[id*="listStyle"] {
     min-height: 29px !important;
     font-size: 8.7px !important;
     padding: 2px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -53080,7 +54565,7 @@ body {
 .ribbon-shell {
   width: calc(100vw - 18px) !important;
   max-width: 1320px !important;
-  min-width: 1020px !important;
+  min-width: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   overflow: visible !important;
@@ -53557,6 +55042,141 @@ select[id*="listStyle"] {
     min-height: 29px !important;
     font-size: 8.7px !important;
     padding: 2px !important;
+  }
+}
+
+/* ===== Mobile Responsive Ribbon ===== */
+@media (max-width: 768px) {
+  .ribbon-shell {
+    min-width: 0 !important;
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    margin: 4px auto 0 !important;
+    border-radius: 10px !important;
+    top: 4px !important;
+  }
+  .ribbon-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .ribbon-shell.collapsed .ribbon-topbar {
+    border-radius: 10px !important;
+  }
+  .ribbon-title {
+    font-size: 12px !important;
+    flex: 1 !important;
+  }
+  .ribbon-toggle {
+    font-size: 11px !important;
+    height: 30px !important;
+    padding: 2px 10px !important;
+    white-space: nowrap !important;
+  }
+  .ribbon-content {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  .ribbon-content.is-hidden {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .black-divider {
+    display: none !important;
+  }
+  .ribbon-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 26px 8px 8px !important;
+    box-sizing: border-box !important;
+  }
+  .main-group,
+  .paragraph-group,
+  .font-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .group-label,
+  .ribbon-group-title {
+    font-size: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+    grid-auto-rows: 40px !important;
+  }
+  .paragraph-group .controls-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 5px !important;
+  }
+  .ribbon-group button,
+  .ribbon-group select,
+  .font-picker-btn,
+  .font-size-btn,
+  .color-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    padding: 4px 5px !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+  .font-picker {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  .font-picker-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .size-picker {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-size-btn {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .font-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 999999 !important;
+  }
+  .size-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .list-style-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .line-height-select {
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 </style></head>
