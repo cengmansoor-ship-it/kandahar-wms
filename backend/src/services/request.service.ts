@@ -348,7 +348,7 @@ export class RequestService {
 
   static async deleteRequest(id: number, userId: number | null) {
     const [result] = await db.query<ResultSetHeader>(
-      `UPDATE requests SET is_deleted = TRUE WHERE id = ?`, [id]);
+      `UPDATE requests SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ?`, [id]);
     if (result.affectedRows === 0) throw new Error('not_found');
 
     await db.query(`

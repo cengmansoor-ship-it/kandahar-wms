@@ -48,7 +48,7 @@ export class ManagementService {
   }
 
   static async deleteFaculty(id: number) {
-    await db.query(`UPDATE faculties SET is_deleted = TRUE, updated_at = NOW() WHERE id = ?`, [id]);
+    await db.query(`UPDATE faculties SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW() WHERE id = ?`, [id]);
     return true;
   }
 
@@ -90,7 +90,7 @@ export class ManagementService {
   }
 
   static async deleteDepartment(id: number) {
-    await db.query(`UPDATE departments SET is_deleted = TRUE, updated_at = NOW() WHERE id = ?`, [id]);
+    await db.query(`UPDATE departments SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW() WHERE id = ?`, [id]);
     return true;
   }
 
@@ -164,7 +164,7 @@ export class ManagementService {
   }
 
   static async deletePerson(id: number) {
-    await db.query(`UPDATE people SET is_deleted = TRUE, updated_at = NOW() WHERE id = ?`, [id]);
+    await db.query(`UPDATE people SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW() WHERE id = ?`, [id]);
     return true;
   }
 

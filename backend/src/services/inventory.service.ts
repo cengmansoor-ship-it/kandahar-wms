@@ -472,7 +472,7 @@ export class InventoryService {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
-      const [result] = await connection.query<ResultSetHeader>(`UPDATE items SET is_deleted = TRUE WHERE id = ?`, [id]);
+      const [result] = await connection.query<ResultSetHeader>(`UPDATE items SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ?`, [id]);
       if (result.affectedRows === 0) throw new Error('not_found');
 
       await connection.query(`
