@@ -36,6 +36,11 @@ interface OfficialFormViewerProps {
   readOnly?: boolean;
 }
 
+const ZOOM_MIN = 40;
+const ZOOM_MAX = 200;
+const ZOOM_STEP = 10;
+const ZOOM_DEFAULT = 100;
+
 const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
   templateId,
   requestId,
@@ -47,6 +52,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
   const [iframeReady, setIframeReady] = useState(false);
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT);
   const pendingSaveCb = useRef<((data: Record<string, unknown>) => void) | null>(null);
   const lastTemplateId = useRef<string>("");
   const lastRequestId = useRef<string>("");
@@ -58,13 +64,29 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
     } catch (_) {}
   }, []);
 
-  // ── Height chain fix ────────────────────────────────────────────────────────
-  // official-forms.html uses `min-height: 100vh` on html/body/.app-shell instead
-  // of `height: 100vh`. This means `.viewer-wrap { flex:1 }` and
-  // `.viewer-card { height:100% }` never resolve to a concrete value, so
-  // overflow:hidden clips the inner form iframe to near-zero.
-  // Injecting height:100% directly into the outer iframe's DOM (same-origin) fixes
-  // the entire chain without touching official-forms.html.
+  // ── Apply zoom to the inner #formViewer inside official-forms.html ──────────
+  const applyZoom = useCallback((zoomPct: number) => {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) return;
+      const viewer = doc.getElementById("formViewer") as HTMLIFrameElement | null;
+      if (viewer) {
+        viewer.style.zoom = `${zoomPct}%`;
+        // Expand wrapper height so the zoomed content isn't clipped
+        const card = doc.querySelector(".viewer-card") as HTMLElement | null;
+        if (card) {
+          if (zoomPct >= 100) {
+            card.style.height = "";
+            card.style.overflow = "hidden";
+          } else {
+            card.style.overflow = "hidden";
+          }
+        }
+      }
+    } catch (_) {}
+  }, []);
+
+  // ── Height chain fix ─────────────────────────────────────────────────────────
   const injectHeightFix = useCallback(() => {
     try {
       const doc = iframeRef.current?.contentDocument;
@@ -98,6 +120,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
     (tid: string, rid: string | undefined) => {
       injectHeightFix();
       sendMsg({ type: "HIDE_TOPBAR" });
+      setTimeout(() => applyZoom(zoom), 200);
 
       if (rid) sendMsg({ type: "SET_REQUEST_SCOPE", requestId: rid });
 
@@ -111,7 +134,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
         setTimeout(() => sendMsg({ type: "SET_READONLY" }), 900);
       }
     },
-    [allFormsData, initialData, readOnly, sendMsg, injectHeightFix]
+    [allFormsData, initialData, readOnly, sendMsg, injectHeightFix, applyZoom, zoom]
   );
 
   const handleIframeLoad = useCallback(() => {
@@ -147,6 +170,18 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
     }, 200);
   }, [allFormsData, iframeReady, templateId, sendMsg]);
 
+  // Re-apply zoom whenever it changes (after iframe is ready)
+  useEffect(() => {
+    if (!iframeReady) return;
+    applyZoom(zoom);
+  }, [zoom, iframeReady, applyZoom]);
+
+  const handleZoomIn = () =>
+    setZoom((z) => Math.min(ZOOM_MAX, Math.round((z + ZOOM_STEP) / ZOOM_STEP) * ZOOM_STEP));
+  const handleZoomOut = () =>
+    setZoom((z) => Math.max(ZOOM_MIN, Math.round((z - ZOOM_STEP) / ZOOM_STEP) * ZOOM_STEP));
+  const handleZoomReset = () => setZoom(ZOOM_DEFAULT);
+
   const handleSave = () => {
     if (!onSave) return;
     pendingSaveCb.current = onSave;
@@ -161,10 +196,82 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
 
   const handlePrint = () => sendMsg({ type: "PRINT" });
 
+  const zoomBarWidth = ((zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100;
+
   return (
     <div className="flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+      {/* ── Top toolbar ─────────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b bg-gray-50">
         <h3 className="text-sm font-bold text-gray-700">رسمي فورم / فورم رسمی</h3>
+
+        {/* ── Zoom bar ──────────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-1.5" dir="ltr">
+          {/* Zoom-out */}
+          <button
+            onClick={handleZoomOut}
+            disabled={zoom <= ZOOM_MIN}
+            title="کوچنی کول"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 text-base font-bold hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          >
+            −
+          </button>
+
+          {/* Slider track */}
+          <div className="relative flex items-center w-28 sm:w-36 h-7 cursor-pointer group"
+            onClick={(e) => {
+              const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+              const ratio = (e.clientX - rect.left) / rect.width;
+              const raw = ZOOM_MIN + ratio * (ZOOM_MAX - ZOOM_MIN);
+              const snapped = Math.round(raw / ZOOM_STEP) * ZOOM_STEP;
+              setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, snapped)));
+            }}
+          >
+            {/* Track background */}
+            <div className="absolute inset-x-0 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all duration-150"
+                style={{ width: `${zoomBarWidth}%` }}
+              />
+            </div>
+            {/* Hidden range input for keyboard/drag support */}
+            <input
+              type="range"
+              min={ZOOM_MIN}
+              max={ZOOM_MAX}
+              step={ZOOM_STEP}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer"
+              aria-label="Zoom"
+            />
+            {/* Thumb */}
+            <div
+              className="absolute w-4 h-4 rounded-full bg-white border-2 border-blue-500 shadow-sm transition-all duration-150 pointer-events-none"
+              style={{ left: `calc(${zoomBarWidth}% - 8px)` }}
+            />
+          </div>
+
+          {/* Zoom-in */}
+          <button
+            onClick={handleZoomIn}
+            disabled={zoom >= ZOOM_MAX}
+            title="لوی کول"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 text-base font-bold hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          >
+            +
+          </button>
+
+          {/* Percentage badge — click to reset */}
+          <button
+            onClick={handleZoomReset}
+            title="Reset to 100%"
+            className="min-w-[3.2rem] h-7 px-2 rounded-lg border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-blue-50 hover:border-blue-400 transition tabular-nums"
+          >
+            {zoom}%
+          </button>
+        </div>
+
+        {/* ── Action buttons ────────────────────────────────────────────────── */}
         <div className="flex gap-2">
           {!readOnly && onSave && (
             <button
@@ -182,6 +289,8 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* ── Iframe ──────────────────────────────────────────────────────────── */}
       <div className="relative">
         {loading && (
           <div
