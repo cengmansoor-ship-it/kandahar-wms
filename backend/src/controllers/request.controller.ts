@@ -40,11 +40,16 @@ export const createRequest = async (req: Request, res: Response) => {
 
 export const updateStatus = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { status } = req.body;
+    const { status, stage_label, action_by_name, action_by_role, comment, progress } = req.body;
     if (!status) return res.status(400).json({ success: false, message: 'حالت (Status) اړین دی.' });
     const userId = 1;
-    await RequestService.updateStatus(Number(req.params.id), status, userId);
-    res.json({ success: true, message: 'د غوښتنې حالت بدل شو.' });
+    const workflow = await RequestService.updateStatus(Number(req.params.id), status, userId, {
+      stageLabelOverride: stage_label,
+      actionByName: action_by_name,
+      actionByRole: action_by_role,
+      comment,
+    });
+    res.json({ success: true, message: 'د غوښتنې حالت بدل شو.', data: workflow });
   } catch (error) {
     handleError(res, error);
   }
@@ -52,10 +57,11 @@ export const updateStatus = async (req: Request, res: Response): Promise<any> =>
 
 export const updateLevel = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { level, reason } = req.body;
-    if (!level) return res.status(400).json({ success: false, message: 'درجه (Level) اړینه ده.' });
+    const { level, new_level, reason } = req.body;
+    const lvl = level || new_level;
+    if (!lvl) return res.status(400).json({ success: false, message: 'درجه (Level) اړینه ده.' });
     const userId = 1;
-    await RequestService.updateLevel(Number(req.params.id), level, reason || '', userId);
+    await RequestService.updateLevel(Number(req.params.id), lvl, reason || '', userId);
     res.json({ success: true, message: 'د غوښتنې درجه بدله شوه.' });
   } catch (error) {
     handleError(res, error);

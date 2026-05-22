@@ -19,6 +19,7 @@ import ConfirmerPanel from "../../components/requests/ConfirmerPanel";
 import SuperAdminPanel from "../../components/requests/SuperAdminPanel";
 import AdminDecisionPanel from "../../components/requests/AdminDecisionPanel";
 import { ROLES } from "../../constants/roles";
+import { getWorkflowStage } from "../../constants/workflow";
 
 export default function RequestDetails() {
   const { id } = useParams();
@@ -256,21 +257,39 @@ export default function RequestDetails() {
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">پرمختګ / پیشرفت</h3>
-              <div className="relative pt-1">
-                <div className="flex mb-2 items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-primary bg-primary/10">
-                      {request.progress}%
-                    </span>
+              {(() => {
+                const wf = getWorkflowStage(request.status);
+                const pct = request.progress ?? wf.progressPercent;
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold py-1 px-2 rounded-full text-primary bg-primary/10">{pct}%</span>
+                      {wf.workflowComplete && (
+                        <span className="text-xs font-bold text-green-600 bg-green-50 py-1 px-2 rounded-full">✓ بشپړه</span>
+                      )}
+                    </div>
+                    <div className="overflow-hidden h-2 rounded bg-gray-200 dark:bg-gray-800">
+                      <div
+                        style={{ width: `${pct}%` }}
+                        className={`h-full transition-all duration-500 rounded ${wf.workflowComplete ? 'bg-green-500' : 'bg-primary'}`}
+                      />
+                    </div>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{wf.stage_ps}</p>
+                    {wf.assignedRole_ps && !wf.workflowComplete && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">مسئول / مسؤول:</p>
+                        <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">{wf.assignedRole_ps}</p>
+                      </div>
+                    )}
+                    {wf.nextAction_ps && !wf.workflowComplete && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg p-3">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mb-1">بل ګام / اقدام بعدی:</p>
+                        <p className="text-sm text-amber-800 dark:text-amber-300">{wf.nextAction_ps}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200 dark:bg-gray-800">
-                  <div style={{ width: `${request.progress}%` }} className="shadow-none flex flex-col text-center white-space-nowrap text-white justify-center bg-primary transition-all duration-500"></div>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {request.currentStage}
-                </p>
-              </div>
+                );
+              })()}
             </div>
 
             {request.status === 'Draft' && profile?.role === ROLES.REQUESTER && (

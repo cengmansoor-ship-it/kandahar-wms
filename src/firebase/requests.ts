@@ -262,14 +262,13 @@ export const updateRequestStage = async (
   const dates = getCurrentHijriDates();
 
   try {
-    let apiStatus = "PENDING";
-    if (status.includes("Approved")) apiStatus = "CONFIRMED";
-    if (status.includes("Procurement")) apiStatus = "SENT_TO_PROCUREMENT";
-    if (status.includes("Delivery")) apiStatus = "READY_FOR_DELIVERY";
-    if (status.includes("Rejected")) apiStatus = "REJECTED";
-    
-    await apiClient.put(`/requests/${requestId}/status`, { status: apiStatus });
-    // Note: Local pipeline log could still be added if backend doesn't serve it yet
+    await apiClient.put(`/requests/${requestId}/status`, {
+      status,
+      stage_label: stage,
+      action_by_name: user.name,
+      action_by_role: user.role,
+      comment,
+    });
   } catch (apiError) {
     console.warn("Backend updateRequestStage failed; falling back to Firebase/Local");
   }
@@ -471,7 +470,29 @@ export const getRequestById = async (id: string) => {
   }
 };
 
-export const getPipelineHistory = async (requestId: string) => {
+export const getPipelineHistory = async (requestId: string): Promise<PipelineRecord[]> => {
+  try {
+    const data = await apiClient.get(`/requests/${requestId}/pipeline`);
+    if (data && Array.isArray(data.pipeline) && data.pipeline.length > 0) {
+      return data.pipeline.map((row: any): PipelineRecord => ({
+        id: row.id?.toString(),
+        requestId: requestId,
+        stage: row.stage_label || row.status || "",
+        status: row.status || "",
+        progress: Number(row.progress) || 0,
+        actionBy: row.action_by || "",
+        actionByName: row.action_by_name || row.actor_name || "",
+        actionByRole: row.action_by_role || "",
+        comment: row.comment || "",
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        createdAtHijriShamsi: "",
+        createdAtHijriQamari: "",
+      }));
+    }
+  } catch (apiError) {
+    console.warn("Backend getPipelineHistory failed; falling back to Firebase/Local");
+  }
+
   if (!isFirebaseConfigured) {
     return getDemoPipeline().filter((record) => record.requestId === requestId).sort((a, b) => a.createdAt - b.createdAt);
   }
