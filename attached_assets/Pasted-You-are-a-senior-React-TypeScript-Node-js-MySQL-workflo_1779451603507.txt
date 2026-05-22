@@ -1,0 +1,373 @@
+You are a senior React + TypeScript + Node.js/MySQL workflow engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Critical problem:
+Progress Tracking is still not working.
+
+Exact issue:
+When Requester creates/submits a request:
+1. The request is not added correctly to the main request list.
+2. The request does not appear for Request Confirmer.
+3. Requester → Request Confirmer workflow link is broken.
+4. progressPercent/currentStage/assignedRole are not saved or not read correctly.
+
+Fix only this issue.
+
+DO NOT:
+- Do not create a new report page.
+- Do not add bulk workflow audit page.
+- Do not touch Inventory.
+- Do not touch Official Forms.
+- Do not touch Procurement unless needed for stage constants only.
+- Do not touch Receiving.
+- Do not touch Reports.
+- Do not redesign UI.
+- Do not remove localStorage fallback.
+- Do not reset database.
+- Do not rewrite the whole system.
+
+First inspect these files:
+Frontend:
+- src/pages/Requests/CreateRequest.tsx
+- src/pages/Requests/RequestList.tsx
+- src/pages/Requests/RequestDetails.tsx
+- src/firebase/requests.ts
+- src/components/requests/ConfirmerPanel.tsx
+- src/components/requests/PipelineTimeline.tsx
+- src/context/AuthContext.tsx
+- src/constants/roles.ts
+- src/utils/permissions.ts
+
+Backend if request service is active:
+- backend/src/services/request.service.ts
+- backend/src/controllers/request.controller.ts
+- backend/src/routes/request.routes.ts
+- backend/src/database/schema.sql
+
+Main goal:
+After Requester submits a request, the request must:
+1. be saved in the same request data source used by RequestList
+2. appear in د غوښتنو لړۍ / لیست درخواست‌ها
+3. appear for Request Confirmer
+4. have correct workflow fields
+5. allow Request Confirmer to confirm it
+6. move to Super Admin with 5% progress after confirmation
+
+==================================================
+REQUIRED DATA AFTER REQUESTER SUBMIT
+==================================================
+
+When Requester submits a request, the saved request object MUST contain:
+
+status = "SUBMITTED"
+currentStage = "REQUEST_CONFIRMER"
+assignedRole = "REQUEST_CONFIRMER"
+progressPercent = 0
+requesterId = currentUser.uid or current user id
+submittedAt = current timestamp
+updatedAt = current timestamp
+
+Also create pipeline/history entry:
+
+{
+  requestId,
+  action: "SUBMITTED",
+  fromRole: "REQUESTER",
+  toRole: "REQUEST_CONFIRMER",
+  stage: "REQUEST_CONFIRMER",
+  status: "PENDING",
+  progressPercent: 0,
+  actorId,
+  actorRole: "REQUESTER",
+  createdAt
+}
+
+Important:
+Do not leave status as DRAFT after submit.
+Do not leave currentStage empty.
+Do not leave assignedRole empty.
+Do not save only form data without saving request list record.
+
+==================================================
+REQUEST LIST REQUIREMENT
+==================================================
+
+RequestList.tsx must load requests from the SAME service where CreateRequest.tsx saves requests.
+
+Check for mismatch:
+- CreateRequest may save to localStorage key A
+- RequestList may read from localStorage key B
+- CreateRequest may call createRequest()
+- RequestList may call getRequests()
+- createRequest() may save but getRequests() may not return same records
+
+Fix this mismatch.
+
+RequestList must show:
+
+Requester:
+- only own requests:
+  requesterId == currentUser.uid
+  OR createdBy == currentUser.uid
+
+Request Confirmer:
+- requests where:
+  assignedRole == "REQUEST_CONFIRMER"
+  OR currentStage == "REQUEST_CONFIRMER"
+  OR status == "SUBMITTED"
+
+Super Admin:
+- all requests
+- or requests assigned to SUPER_ADMIN depending on existing UI
+
+Admin:
+- requests where:
+  assignedRole == "ADMIN"
+  OR currentStage == "ADMIN"
+
+Do not filter Request Confirmer by requesterId.
+
+==================================================
+REQUEST CONFIRMER CONFIRM ACTION
+==================================================
+
+When Request Confirmer confirms:
+
+Update request:
+
+status = "CONFIRMED_BY_REQUEST_CONFIRMER"
+currentStage = "SUPER_ADMIN"
+assignedRole = "SUPER_ADMIN"
+progressPercent = 5
+updatedAt = current timestamp
+
+Add pipeline/history entry:
+
+{
+  requestId,
+  action: "CONFIRMED_BY_REQUEST_CONFIRMER",
+  fromRole: "REQUEST_CONFIRMER",
+  toRole: "SUPER_ADMIN",
+  stage: "SUPER_ADMIN",
+  status: "CONFIRMED",
+  progressPercent: 5,
+  actorId,
+  actorRole: "REQUEST_CONFIRMER",
+  createdAt
+}
+
+After confirm:
+- request must disappear from Request Confirmer pending list
+- request must appear for Super Admin
+- requester must still see it in own request progress
+
+==================================================
+NEXT STAGES PROGRESS MAP
+==================================================
+
+Use this progress mapping:
+
+SUBMITTED = 0
+CONFIRMED_BY_REQUEST_CONFIRMER = 5
+APPROVED_BY_SUPER_ADMIN = 10
+SENT_TO_ADMIN = 10
+SENT_TO_PROCUREMENT = 20
+SENT_TO_WAREHOUSE = 20
+TENDER_CREATED = 25
+WINNER_SELECTED = 40
+PURCHASE_ORDER_CREATED = 50
+RECEIVED_TO_WAREHOUSE = 60
+WAREHOUSE_NOTIFIED = 65
+FS5_CREATED = 70
+DELIVERED = 100
+COMPLETED = 100
+
+Super Admin approve:
+status = "APPROVED_BY_SUPER_ADMIN"
+currentStage = "ADMIN"
+assignedRole = "ADMIN"
+progressPercent = 10
+
+Admin sends to procurement:
+status = "SENT_TO_PROCUREMENT"
+currentStage = "PROCUREMENT_DIRECTOR"
+assignedRole = "PROCUREMENT_DIRECTOR"
+progressPercent = 20
+
+Admin sends to warehouse:
+status = "SENT_TO_WAREHOUSE"
+currentStage = "WAREHOUSE_DIRECTOR"
+assignedRole = "WAREHOUSE_DIRECTOR"
+progressPercent = 20
+
+Final delivery:
+status = "COMPLETED"
+currentStage = "COMPLETED"
+assignedRole = "NONE"
+progressPercent = 100
+
+==================================================
+BACKEND / MYSQL REQUIREMENTS
+==================================================
+
+If backend MySQL is currently used for requests:
+
+Check requests table has:
+- status
+- current_stage
+- assigned_role
+- progress_percent
+- requester_id
+- tracking_id
+
+If current_stage or assigned_role columns are missing, add safe ALTER TABLE statements only:
+
+ALTER TABLE requests ADD COLUMN current_stage VARCHAR(100) NULL;
+ALTER TABLE requests ADD COLUMN assigned_role VARCHAR(100) NULL;
+
+Do not drop data.
+
+Backend POST /api/requests must save:
+- status
+- current_stage
+- assigned_role
+- progress_percent
+
+Backend GET /api/requests must return frontend-compatible fields:
+- currentStage
+- assignedRole
+- progressPercent
+
+Backend PUT /api/requests/:id/status must update:
+- status
+- current_stage
+- assigned_role
+- progress_percent
+
+==================================================
+LOCALSTORAGE FALLBACK REQUIREMENTS
+==================================================
+
+If frontend still uses localStorage fallback:
+
+Fix src/firebase/requests.ts so that:
+- createRequest() saves to the same storage key used by getRequests()
+- submitRequest() changes DRAFT to SUBMITTED
+- getRequests() returns submitted requests
+- updateRequestStatus() updates status/currentStage/assignedRole/progressPercent
+- pipeline records are saved and loaded correctly
+
+Do not remove localStorage fallback.
+
+==================================================
+OLD DATA COMPATIBILITY
+==================================================
+
+Normalize old values safely:
+
+"Submitted" -> "SUBMITTED"
+"submitted" -> "SUBMITTED"
+"Request Confirmer" -> "REQUEST_CONFIRMER"
+"request_confirmer" -> "REQUEST_CONFIRMER"
+"Super Admin" -> "SUPER_ADMIN"
+"admin" -> "ADMIN"
+
+Old requests without assignedRole/currentStage:
+- If status is SUBMITTED, infer:
+  currentStage = REQUEST_CONFIRMER
+  assignedRole = REQUEST_CONFIRMER
+  progressPercent = 0
+
+Do not delete old requests.
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+Do not redesign UI.
+
+Visible labels/errors must be Pashto/Dari only.
+
+RequestList empty message:
+تر اوسه کومه غوښتنه نشته
+
+Request Confirmer pending message:
+د تایید لپاره غوښتنې
+
+Error message:
+د غوښتنو د بارولو ستونزه رامنځته شوه
+
+No English visible UI text.
+
+==================================================
+TESTING REQUIRED
+==================================================
+
+Test 1:
+Login as Requester.
+Create and submit request.
+Expected:
+- request appears in request list
+- saved request has:
+  status = SUBMITTED
+  currentStage = REQUEST_CONFIRMER
+  assignedRole = REQUEST_CONFIRMER
+  progressPercent = 0
+
+Test 2:
+Login as Request Confirmer.
+Open د غوښتنو لړۍ / لیست درخواست‌ها.
+Expected:
+- submitted request appears
+- not empty
+- no infinite loading
+- no hidden error
+
+Test 3:
+Open Request Details as Request Confirmer.
+Expected:
+- ConfirmerPanel appears
+- confirm button works
+
+Test 4:
+Confirm request.
+Expected:
+- status = CONFIRMED_BY_REQUEST_CONFIRMER
+- currentStage = SUPER_ADMIN
+- assignedRole = SUPER_ADMIN
+- progressPercent = 5
+- pipeline record added
+
+Test 5:
+Login as Super Admin.
+Expected:
+- request appears for Super Admin
+- progress shows 5%
+
+Test 6:
+Run:
+npm run build
+
+Fix only errors caused by this change.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Report exactly:
+
+1. Root cause why Requester request was not appearing for Request Confirmer.
+2. Root cause why request was not added to Request List.
+3. Files changed.
+4. Exact localStorage key or backend endpoint used for saving requests.
+5. Exact localStorage key or backend endpoint used for loading requests.
+6. Status/currentStage/assignedRole/progressPercent after Requester submit.
+7. Request Confirmer filter logic after fix.
+8. Confirm action behavior after fix.
+9. Pipeline/history behavior.
+10. Old request compatibility behavior.
+11. Test results.
+12. npm run build result.
+13. Remaining issues if any.

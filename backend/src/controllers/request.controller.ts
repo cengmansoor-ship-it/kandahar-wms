@@ -31,7 +31,12 @@ export const getRequestById = async (req: Request, res: Response): Promise<any> 
 export const createRequest = async (req: Request, res: Response) => {
   try {
     const userId = 1;
-    const id = await RequestService.createRequest(req.body, userId);
+    const id = await RequestService.createRequest({
+      ...req.body,
+      faculty_name:      req.body.faculty_name || req.body.faculty || null,
+      department_name:   req.body.department_name || req.body.departmentOrPerson || null,
+      requester_name:    req.body.requester_name || null,
+    }, userId);
     res.status(201).json({ success: true, message: 'غوښتنه په بریالیتوب سره ثبت شوه.', data: { id } });
   } catch (error) {
     handleError(res, error);

@@ -110,7 +110,10 @@ export default function RequestDetails() {
     }
   };
 
-  const canShowConfirmerPanel = profile?.role === ROLES.REQUEST_CONFIRMER && request?.status === 'Submitted';
+  const canShowConfirmerPanel = profile?.role === ROLES.REQUEST_CONFIRMER &&
+    (request?.status === 'Submitted' ||
+     request?.assignedRole === 'REQUEST_CONFIRMER' ||
+     request?.currentStage === 'REQUEST_CONFIRMER');
   const canShowSuperAdminPanel = profile?.role === ROLES.SUPER_ADMIN && request?.status === 'ConfirmedByRequestConfirmer';
   const canShowAdminPanel = (profile?.role === ROLES.ADMIN || profile?.role === ROLES.SUPER_ADMIN) && request?.status === 'ApprovedBySuperAdmin';
 

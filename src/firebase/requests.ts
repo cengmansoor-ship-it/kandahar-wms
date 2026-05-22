@@ -18,33 +18,83 @@ import { ROLES } from "../constants/roles";
 import { getItemById } from "./inventory";
 import { apiClient } from "../api/apiClient";
 
-const mapRequestFromApi = (apiReq: any): InventoryRequest => ({
-  id: apiReq.id ? apiReq.id.toString() : "",
-  requesterId: apiReq.requester_id?.toString() || "",
-  requesterName: apiReq.requester_name || "",
-  faculty: apiReq.faculty_name || "",
-  departmentOrPerson: apiReq.department_name || apiReq.person_name || "",
-  reason: apiReq.notes || "",
-  items: (apiReq.items || []).map((i: any) => ({
-    itemId: i.item_id?.toString() || "",
-    name: i.item_name || i.item_code || "",
-    unit: i.unit_name || "",
-    quantity: Number(i.quantity) || 0
-  })),
-  status: apiReq.status || "Submitted",
-  progress: Number(apiReq.progress_percent) || 0,
-  currentStage: apiReq.status || "Submitted",
-  originalRequestLevel: apiReq.request_level || "عادي",
-  currentRequestLevel: apiReq.request_level || "عادي",
-  createdAt: apiReq.created_at ? new Date(apiReq.created_at).getTime() : Date.now(),
-  createdAtHijriShamsi: "",
-  createdAtHijriQamari: "",
-  updatedAt: apiReq.updated_at ? new Date(apiReq.updated_at).getTime() : Date.now(),
-  updatedAtHijriShamsi: "",
-  updatedAtHijriQamari: "",
-  formInstances: {},
-  rejectionComment: ""
-});
+// Normalize legacy/variant status strings to canonical camelCase values
+const normalizeStatus = (raw: string): string => {
+  const map: Record<string, string> = {
+    PENDING: "Submitted", submitted: "Submitted", SUBMITTED: "Submitted",
+    CONFIRMED: "ConfirmedByRequestConfirmer",
+    REJECTED: "RejectedByRequestConfirmer",
+    SENT_TO_PROCUREMENT: "ProcurementPending",
+    READY_FOR_DELIVERY: "ReceivedToInventory",
+    DELIVERED: "Delivered", COMPLETED: "Completed",
+    "Request Confirmer": "Submitted",
+    "request_confirmer": "Submitted",
+  };
+  return map[raw] ?? raw;
+};
+
+// Infer assignedRole from status when column is missing
+const inferAssignedRole = (status: string, assignedRoleCol: string | null): string => {
+  if (assignedRoleCol && assignedRoleCol !== '') return assignedRoleCol;
+  const roleMap: Record<string, string> = {
+    Draft: "REQUEST_CONFIRMER",
+    Submitted: "REQUEST_CONFIRMER",
+    ConfirmedByRequestConfirmer: "SUPER_ADMIN",
+    RejectedByRequestConfirmer: "REQUESTER",
+    ApprovedBySuperAdmin: "ADMIN",
+    RejectedBySuperAdmin: "REQUESTER",
+    StockAvailable: "WAREHOUSE_DIRECTOR",
+    StockNotAvailable: "PROCUREMENT_DIRECTOR",
+    ProcurementPending: "PROCUREMENT_DIRECTOR",
+    TenderCreated: "PROCUREMENT_DIRECTOR",
+    OffersReceived: "PROCUREMENT_DIRECTOR",
+    ComparisonCreated: "PROCUREMENT_DIRECTOR",
+    WinnerSelected: "PROCUREMENT_DIRECTOR",
+    PurchaseOrderCreated: "WAREHOUSE_DIRECTOR",
+    ReceiptReportCreated: "WAREHOUSE_DIRECTOR",
+    ReceivedToInventory: "WAREHOUSE_DIRECTOR",
+    FS5Created: "WAREHOUSE_DIRECTOR",
+    Delivered: "NONE",
+    Completed: "NONE",
+  };
+  return roleMap[status] ?? "REQUEST_CONFIRMER";
+};
+
+const mapRequestFromApi = (apiReq: any): InventoryRequest => {
+  const rawStatus  = apiReq.status || "Submitted";
+  const status     = normalizeStatus(rawStatus);
+  const assignedRole = inferAssignedRole(status, apiReq.assigned_role ?? null);
+  const currentStage = apiReq.current_stage || assignedRole;
+
+  return {
+    id: apiReq.id ? apiReq.id.toString() : "",
+    requesterId: apiReq.requester_id?.toString() || "",
+    requesterName: apiReq.requester_name || "",
+    faculty: apiReq.faculty_name || "",
+    departmentOrPerson: apiReq.department_name || apiReq.person_name || "",
+    reason: apiReq.notes || "",
+    items: (apiReq.items || []).map((i: any) => ({
+      itemId: i.item_id?.toString() || "",
+      name: i.item_name || i.item_code || "",
+      unit: i.unit_name || "",
+      quantity: Number(i.quantity) || 0,
+    })),
+    status,
+    progress: Number(apiReq.progress_percent) || 0,
+    currentStage,
+    assignedRole,
+    originalRequestLevel: apiReq.request_level || "عادي",
+    currentRequestLevel: apiReq.request_level || "عادي",
+    createdAt: apiReq.created_at ? new Date(apiReq.created_at).getTime() : Date.now(),
+    createdAtHijriShamsi: "",
+    createdAtHijriQamari: "",
+    updatedAt: apiReq.updated_at ? new Date(apiReq.updated_at).getTime() : Date.now(),
+    updatedAtHijriShamsi: "",
+    updatedAtHijriQamari: "",
+    formInstances: {},
+    rejectionComment: "",
+  };
+};
 
 // --- Types ---
 
@@ -95,6 +145,7 @@ export interface InventoryRequest {
   status: string;
   progress: number;
   currentStage: string;
+  assignedRole?: string;
   originalRequestLevel: string;
   currentRequestLevel: string;
   createdAt: number;
@@ -126,6 +177,36 @@ const LEVEL_HISTORY_COL = "request_level_history";
 
 // --- Service Functions ---
 
+// Build a localStorage request object with correct workflow fields
+const buildLocalRequest = (
+  requestId: string,
+  requestData: Partial<InventoryRequest>,
+  userId: string,
+  userName: string,
+  dates: { timestamp: number; shamsi: string; qamari: string }
+): InventoryRequest => ({
+  id: requestId,
+  requesterId: userId,
+  requesterName: userName,
+  faculty: requestData.faculty || "",
+  departmentOrPerson: requestData.departmentOrPerson || "",
+  reason: requestData.reason || "",
+  items: requestData.items || [],
+  status: "Submitted",
+  progress: 0,
+  currentStage: "REQUEST_CONFIRMER",
+  assignedRole: "REQUEST_CONFIRMER",
+  originalRequestLevel: requestData.originalRequestLevel || "عادي",
+  currentRequestLevel: requestData.originalRequestLevel || "عادي",
+  createdAt: dates.timestamp,
+  createdAtHijriShamsi: dates.shamsi,
+  createdAtHijriQamari: dates.qamari,
+  updatedAt: dates.timestamp,
+  updatedAtHijriShamsi: dates.shamsi,
+  updatedAtHijriQamari: dates.qamari,
+  formInstances: {},
+});
+
 export const createRequest = async (requestData: Partial<InventoryRequest>, userId: string, userName: string) => {
   const dates = getCurrentHijriDates();
 
@@ -133,6 +214,9 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
     const apiPayload = {
       notes: requestData.reason || "",
       request_level: requestData.originalRequestLevel || "عادي",
+      faculty_name: requestData.faculty || "",
+      department_name: requestData.departmentOrPerson || "",
+      requester_name: userName,
       items: (requestData.items || []).map(i => ({
         item_id: parseInt(i.itemId) || null,
         item_name: i.name,
@@ -140,44 +224,36 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
       }))
     };
     const response = await apiClient.post('/requests', apiPayload);
-    return response.id?.toString() || "";
+    const newId = response.id?.toString() || response.data?.id?.toString() || "";
+    if (!newId) throw new Error("No ID returned from backend");
+
+    // Also persist to localStorage so Requester sees it immediately even if
+    // getRequests() is temporarily served from cache/backend without the new row
+    if (!isFirebaseConfigured) {
+      const localReq = buildLocalRequest(`_api_${newId}`, requestData, userId, userName, dates);
+      // Use the real backend ID as the canonical id
+      localReq.id = newId;
+      const existing = getDemoRequests().filter(r => r.id !== newId);
+      saveDemoRequests([localReq, ...existing]);
+    }
+    return newId;
   } catch (apiError) {
     console.warn("Backend createRequest failed; falling back to Firebase/Local");
     if (!isFirebaseConfigured) {
       const requestId = makeLocalId("request");
-      const newRequest: InventoryRequest = {
-        id: requestId,
-        requesterId: userId,
-        requesterName: userName,
-        faculty: requestData.faculty || "",
-        departmentOrPerson: requestData.departmentOrPerson || "",
-        reason: requestData.reason || "",
-        items: requestData.items || [],
-        status: "Submitted",
-        progress: 0,
-        currentStage: "Submitted",
-        originalRequestLevel: requestData.originalRequestLevel || "عادي",
-        currentRequestLevel: requestData.originalRequestLevel || "عادي",
-        createdAt: dates.timestamp,
-        createdAtHijriShamsi: dates.shamsi,
-        createdAtHijriQamari: dates.qamari,
-        updatedAt: dates.timestamp,
-        updatedAtHijriShamsi: dates.shamsi,
-        updatedAtHijriQamari: dates.qamari,
-        formInstances: {},
-      };
+      const newRequest = buildLocalRequest(requestId, requestData, userId, userName, dates);
       saveDemoRequests([newRequest, ...getDemoRequests()]);
       saveDemoPipeline([
         {
           id: makeLocalId("pipe"),
           requestId,
-          stage: "Submitted",
+          stage: "REQUEST_CONFIRMER",
           status: "Submitted",
           progress: 0,
           actionBy: userId,
           actionByName: userName,
-          actionByRole: "Super Admin",
-          comment: "Demo request created",
+          actionByRole: "REQUESTER",
+          comment: "",
           createdAt: dates.timestamp,
           createdAtHijriShamsi: dates.shamsi,
           createdAtHijriQamari: dates.qamari,
@@ -198,9 +274,10 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
     departmentOrPerson: requestData.departmentOrPerson || "",
     reason: requestData.reason || "",
     items: requestData.items || [],
-    status: 'Draft',
+    status: 'Submitted',
     progress: 0,
-    currentStage: 'Draft',
+    currentStage: 'REQUEST_CONFIRMER',
+    assignedRole: 'REQUEST_CONFIRMER',
     originalRequestLevel: requestData.originalRequestLevel || "عادي",
     currentRequestLevel: requestData.originalRequestLevel || "عادي",
     createdAt: dates.timestamp,
@@ -273,6 +350,8 @@ export const updateRequestStage = async (
     console.warn("Backend updateRequestStage failed; falling back to Firebase/Local");
   }
 
+  const nextAssignedRole = inferAssignedRole(status, null);
+
   if (!isFirebaseConfigured) {
     const updatedRequests = getDemoRequests().map((request) =>
       request.id === requestId
@@ -281,6 +360,7 @@ export const updateRequestStage = async (
             status,
             progress,
             currentStage: stage,
+            assignedRole: nextAssignedRole,
             rejectionComment: status.includes("Rejected") ? comment : "",
             updatedAt: dates.timestamp,
             updatedAtHijriShamsi: dates.shamsi,
@@ -307,6 +387,7 @@ export const updateRequestStage = async (
     status,
     progress,
     currentStage: stage,
+    assignedRole: nextAssignedRole,
     rejectionComment: status.includes('Rejected') ? comment : "",
     updatedAt: dates.timestamp,
     updatedAtHijriShamsi: dates.shamsi,
@@ -415,21 +496,68 @@ export const checkStockAvailability = async (items: RequestItem[]) => {
   return results;
 };
 
-export const getRequests = async (filters: { requesterId?: string } = {}) => {
+// Normalize old localStorage requests that are missing assignedRole/currentStage
+const normalizeLocalRequest = (r: InventoryRequest): InventoryRequest => {
+  const status = normalizeStatus(r.status || "Submitted");
+  const assignedRole = r.assignedRole && r.assignedRole !== ""
+    ? r.assignedRole
+    : inferAssignedRole(status, null);
+  const currentStage = r.currentStage && r.currentStage !== "" && r.currentStage !== r.status
+    ? r.currentStage
+    : assignedRole;
+  return { ...r, status, assignedRole, currentStage };
+};
+
+export const getRequests = async (filters: {
+  requesterId?: string;
+  assignedRole?: string;
+} = {}) => {
   try {
     const apiReqs = await apiClient.get('/requests');
-    let mapped = apiReqs.map(mapRequestFromApi);
+    let mapped: InventoryRequest[] = (apiReqs as any[]).map(mapRequestFromApi);
+
+    // Merge any locally-pending requests that aren't in the backend response yet
+    // (handles the race where backend create succeeded but getRequests doesn't include them yet)
+    if (!isFirebaseConfigured) {
+      const localReqs = getDemoRequests().map(normalizeLocalRequest);
+      const backendIds = new Set(mapped.map(r => r.id));
+      const localOnly = localReqs.filter(r => !backendIds.has(r.id));
+      if (localOnly.length > 0) mapped = [...localOnly, ...mapped];
+    }
+
+    // Apply role-based filters
     if (filters.requesterId) {
-      mapped = mapped.filter((r: any) => r.requesterId === filters.requesterId);
+      mapped = mapped.filter(r =>
+        r.requesterId === filters.requesterId ||
+        (r as any).createdBy === filters.requesterId
+      );
+    }
+    if (filters.assignedRole) {
+      mapped = mapped.filter(r =>
+        r.assignedRole === filters.assignedRole ||
+        r.currentStage === filters.assignedRole ||
+        (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted')
+      );
     }
     return mapped;
   } catch (apiError) {
     console.warn("Backend getRequests failed; falling back to Firebase/Local");
     if (!isFirebaseConfigured) {
-      const requests = getDemoRequests();
-      return filters.requesterId
-        ? requests.filter((request) => request.requesterId === filters.requesterId)
-        : requests;
+      let requests = getDemoRequests().map(normalizeLocalRequest);
+      if (filters.requesterId) {
+        requests = requests.filter(r =>
+          r.requesterId === filters.requesterId ||
+          (r as any).createdBy === filters.requesterId
+        );
+      }
+      if (filters.assignedRole) {
+        requests = requests.filter(r =>
+          r.assignedRole === filters.assignedRole ||
+          r.currentStage === filters.assignedRole ||
+          (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted')
+        );
+      }
+      return requests;
     }
 
     try {
@@ -441,10 +569,11 @@ export const getRequests = async (filters: { requesterId?: string } = {}) => {
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryRequest));
     } catch (error) {
       console.warn("Firebase getRequests failed; using demo requests:", error);
-      const requests = getDemoRequests();
-      return filters.requesterId
-        ? requests.filter((request) => request.requesterId === filters.requesterId)
-        : requests;
+      let requests = getDemoRequests().map(normalizeLocalRequest);
+      if (filters.requesterId) {
+        requests = requests.filter(r => r.requesterId === filters.requesterId);
+      }
+      return requests;
     }
   }
 };
@@ -456,7 +585,8 @@ export const getRequestById = async (id: string) => {
   } catch (apiError) {
     console.warn(`Backend getRequestById failed for ${id}; falling back to Firebase/Local`);
     if (!isFirebaseConfigured) {
-      return getDemoRequests().find((request) => request.id === id) || null;
+      const found = getDemoRequests().find((request) => request.id === id);
+      return found ? normalizeLocalRequest(found) : null;
     }
 
     try {

@@ -64,11 +64,23 @@ export default function RequestList() {
     if (!user || !profile) return;
     setLoading(true);
     try {
-      const filters = profile.role === ROLES.REQUESTER ? { requesterId: user.uid } : {};
+      let filters: { requesterId?: string; assignedRole?: string } = {};
+      if (profile.role === ROLES.REQUESTER) {
+        filters = { requesterId: user.uid };
+      } else if (profile.role === ROLES.REQUEST_CONFIRMER) {
+        filters = { assignedRole: "REQUEST_CONFIRMER" };
+      } else if (profile.role === ROLES.ADMIN) {
+        filters = { assignedRole: "ADMIN" };
+      } else if (profile.role === ROLES.PROCUREMENT_DIRECTOR) {
+        filters = { assignedRole: "PROCUREMENT_DIRECTOR" };
+      } else if (profile.role === ROLES.WAREHOUSE_DIRECTOR) {
+        filters = { assignedRole: "WAREHOUSE_DIRECTOR" };
+      }
+      // SUPER_ADMIN and others see all requests (no filter)
       const data = await getRequests(filters);
       setRequests(safeSortByCreatedAt(data, "desc"));
     } catch (e) {
-      console.error("Error loading requests:", e);
+      console.error("د غوښتنو د بارولو ستونزه رامنځته شوه", e);
     } finally {
       setLoading(false);
     }
