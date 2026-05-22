@@ -1,0 +1,269 @@
+You are a senior React 18 + TypeScript + Node.js/Express + MySQL + official HTML/CSS/JS forms integration engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Current status:
+- All 7 official forms now render inside React.
+- Form viewer blank issue was fixed.
+- Topbar hide/clipping issue was partly fixed.
+- Request/procurement/receiving/delivery data is injected into official forms.
+- Per-request localStorage isolation exists.
+- Do NOT redo those fixes.
+- Do NOT redesign forms.
+- Do NOT change official form layout, CSS, toolbar, print layout, or iframe design.
+
+Task:
+1. Connect official form Save actions to the existing Progress Tracking workflow.
+2. Fix the official forms viewer height issue inside the React system, especially in Super Admin → Forms menu.
+
+Important:
+Do NOT auto-advance blindly.
+Only advance progress if the saved form belongs to the current valid workflow stage.
+Do not skip required approvals.
+Do not move request forward if required data is missing.
+Do not update progress twice if user clicks Save multiple times.
+Do not change official form internal design.
+Do not change public/forms/official-forms.html layout or print style.
+
+────────────────────────
+CRITICAL UI FIX — OFFICIAL FORMS VIEWER HEIGHT / EMPTY WHITE SPACE
+────────────────────────
+
+Important issue:
+In Super Admin account → Forms menu, the official forms viewer area is too short in height. The forms render, but the visible viewer area is very small vertically, so the official forms cannot be viewed properly. Below the form viewer there is a large empty white/blank area in the system page.
+
+Fix this carefully.
+
+Goal:
+When the Forms menu or Official Forms page opens inside the React system, the official form viewer must use the available page space properly. The iframe/viewer area should expand vertically and use the empty white space below it.
+
+Rules:
+1. Do NOT change the internal official form design.
+2. Do NOT change official form CSS/layout/print format inside public/forms/official-forms.html.
+3. Do NOT resize or scale official form content in a way that damages print layout.
+4. Fix only the React wrapper/viewer/container height around the iframe/form viewer.
+5. The form viewer must not be clipped.
+6. The form viewer must not show a tiny vertical area.
+7. Remove unnecessary empty white space below the viewer.
+8. The viewer should use available viewport height.
+9. The viewer must remain responsive on desktop, laptop, tablet, and mobile.
+10. The viewer must work in Super Admin Forms menu and any other role/page where official forms are opened.
+11. The fix must not break existing fixes:
+    - noNavigate behavior
+    - hidden topbar integration
+    - viewer-card/viewer-wrap height fix
+    - no unnecessary SHOW_FORM reload
+    - per-request localStorage isolation
+    - all 7 forms rendering inside React
+    - request/vendor/receipt/FS5 data injection
+
+Files to inspect:
+- src/components/OfficialFormViewer.tsx
+- src/pages/OfficialForms/OfficialFormsPage.tsx
+- any wrapper/card/container used around OfficialFormViewer
+- related CSS/Tailwind classes controlling height, overflow, iframe height, viewer-card, viewer-wrap, formViewer
+
+Implementation requirements:
+1. Make the OfficialFormViewer container fill available page height.
+2. Use safe responsive height such as:
+   - min-height: calc(100vh - header/sidebar/page padding)
+   - flex: 1
+   - height: 100%
+   - overflow: auto where needed
+3. iframe/form viewer should have enough height to show the form comfortably.
+4. If topbar is hidden, the form viewer must grow to use that saved space.
+5. If the page has cards/wrappers with fixed height or overflow hidden, fix them safely.
+6. Avoid fixed tiny heights like 400px/500px if they cause clipping.
+7. Do not create double scrollbars if avoidable.
+8. Preserve toolbar visibility.
+9. Preserve print behavior.
+10. Preserve dark/light mode readability.
+
+Expected result:
+- In Super Admin → Forms menu, the forms must display with proper height.
+- The viewer must use the empty white area below it.
+- The forms must be readable inside the system.
+- The official form internal layout and print design must remain unchanged.
+
+────────────────────────
+FORMS AND WORKFLOW CONNECTION
+────────────────────────
+
+The 7 official forms are:
+
+1. proposal
+2. tender
+3. comparison
+4. purchaseOrder
+5. receiptReport
+6. si9
+7. fs5
+
+When saving each form:
+
+1. Proposal / پیشنهاد
+- Save form data for the current requestId.
+- If request is at Requester draft/submitted stage, keep or move to submitted stage according to existing workflow.
+- Do not approve automatically.
+- Do not skip Request Confirmer.
+
+2. SI9 / سی ۹
+- Save SI9 data for the same requestId.
+- If Proposal + SI9 are both saved and request submission is intended, mark request as submitted only through existing request submission logic.
+- Do not bypass confirmer.
+
+3. Tender / جګړه پاڼه
+- Save tender data for the current procurement case/request.
+- If procurement stage expects tender completion, update progress to tender completed / vendor offers stage.
+- Do not select winner here.
+
+4. Comparison Form / فورم مقایسوي
+- Save comparison data.
+- Check that at least 3 vendor offers exist.
+- If 3 valid offers exist, calculate/select winner using existing procurement logic.
+- Update progress to comparison/winner stage.
+- If fewer than 3 offers exist, show Pashto/Dari validation message and do not advance.
+
+5. Purchase Order / امر خریداری
+- Save purchase order data.
+- If winner exists and PO is complete, update progress to purchase order stage.
+- Do not mark receiving completed.
+
+6. Receipt Report / راپور رسید
+- Save receipt report data.
+- If receiving is confirmed, update progress to received/warehouse entry stage.
+- If stock-in is part of this stage, ensure it is idempotent and does not add stock twice.
+
+7. FS5 / ف س ۵
+- Save FS5/delivery data.
+- If delivery is confirmed, deduct stock once only.
+- Create item assignment once only.
+- Update request progress to 100% completed.
+- Prevent duplicate deduction if FS5 is saved multiple times.
+
+────────────────────────
+PROGRESS UPDATE RULES
+────────────────────────
+
+Use existing progress/request workflow functions.
+Do not create a separate disconnected workflow.
+
+Required:
+- requestId must be required.
+- formType must be required.
+- currentStage must be checked.
+- allowed role must be checked if current project supports RBAC.
+- action must be idempotent.
+- audit log must be created.
+- form data must remain attached to the same request.
+- no request data mixing.
+
+Do not update another request by mistake.
+
+Each progress update must store:
+- requestId
+- formType
+- previousStage
+- newStage
+- previousProgressPercent
+- newProgressPercent
+- userId if available
+- role if available
+- timestamp
+- audit message
+- form save reference
+
+────────────────────────
+IDEMPOTENCY / DOUBLE SAVE PROTECTION
+────────────────────────
+
+Prevent duplicate workflow actions.
+
+If the same form is saved twice:
+- save form data again
+- but do not duplicate stock deduction
+- do not duplicate item assignment
+- do not duplicate receiving stock-in
+- do not duplicate audit spam
+- do not advance progress twice incorrectly
+
+Use safe flags if needed:
+- receipt_stock_applied
+- fs5_delivery_applied
+- form_progress_applied
+- last_saved_at
+- last_saved_by
+
+────────────────────────
+DO NOT BREAK EXISTING FORM FIXES
+────────────────────────
+
+Do not undo these existing fixes:
+- noNavigate behavior
+- hidden topbar integration
+- viewer-card/viewer-wrap height fix
+- no unnecessary SHOW_FORM reload
+- per-request localStorage isolation
+- request/vendor/receipt/FS5 data injection
+- all 7 forms rendering inside React
+
+Only add workflow-progress connection and fix viewer/container height.
+
+────────────────────────
+FILES TO INSPECT
+────────────────────────
+
+Inspect only relevant files:
+- src/components/OfficialFormViewer.tsx
+- src/pages/OfficialForms/OfficialFormsPage.tsx
+- src/utils/officialFormDataAdapter.ts if exists
+- src/firebase/requests.ts
+- src/firebase/procurement.ts
+- src/firebase/receiving.ts
+- src/firebase/delivery.ts if exists
+- backend/src/services/request.service.ts
+- backend/src/services/procurement.service.ts
+- backend/src/services/receiving.service.ts
+- backend/src/services/delivery.service.ts
+- backend/src/routes/request.routes.ts
+- backend/src/routes/procurement.routes.ts
+- backend/src/routes/receiving.routes.ts
+- backend/src/routes/delivery.routes.ts
+
+Do not scan unrelated modules.
+
+────────────────────────
+UI STATUS INDICATOR
+────────────────────────
+
+Add a small progress/status indicator around the form viewer, not inside the official form layout.
+
+It should show:
+- current request stage
+- current progress percentage
+- saved/unsaved status
+- last save time if available
+- Pashto/Dari messages only
+
+Do not modify official form design.
+
+────────────────────────
+FINAL REPORT REQUIRED
+────────────────────────
+
+Report:
+1. Files changed.
+2. How official form viewer height/white-space issue was fixed.
+3. Confirmation that Super Admin → Forms menu now displays forms with proper height.
+4. Confirmation that official form internal layout/print design was not changed.
+5. How form save connects to progress tracking.
+6. Which form updates which workflow stage.
+7. How duplicate save/deduction is prevented.
+8. How requestId isolation is preserved.
+9. How audit log is created.
+10. Build result.
+11. Remaining limitations.
+
+Do not only create a plan.
+Implement this workflow connection and official form viewer height fix now.
