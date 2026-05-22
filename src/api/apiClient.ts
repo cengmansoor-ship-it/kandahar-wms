@@ -70,4 +70,23 @@ export const apiClient = {
       throw error;
     }
   },
+
+  deleteWithBody: async (path: string, body: any) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+      const data = await response.json();
+      return data.success ? data.data : data;
+    } catch (error) {
+      console.error(`API DELETE Error (${path}):`, error);
+      throw error;
+    }
+  },
 };

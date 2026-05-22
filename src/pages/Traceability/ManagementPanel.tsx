@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useAuth } from "../../context/AuthContext";
 import { managementService } from "../../services/management";
 import JSZip from "jszip";
 
@@ -37,6 +38,41 @@ function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onCo
             لغوه / لغو
           </button>
           <button onClick={onConfirm} className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-bold transition-all">
+            ړنګول / حذف
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteWithReasonDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: (reason: string) => void; onCancel: () => void }) {
+  const [reason, setReason] = useState("");
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-scale-in" dir="rtl">
+        <div className="text-center mb-4">
+          <div className="text-5xl mb-3">🗑️</div>
+          <p className="text-gray-800 dark:text-white font-semibold text-base">{message}</p>
+        </div>
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1 text-right">
+            د حذف دلیل (اختیاري) / دلیل حذف (اختیاری)
+          </label>
+          <textarea
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            rows={2}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-right text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+            placeholder="د حذف لامل وليکئ... / دلیل حذف را بنویسید..."
+          />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium transition-all">
+            لغوه / لغو
+          </button>
+          <button onClick={() => onConfirm(reason.trim())} className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-bold transition-all">
             ړنګول / حذف
           </button>
         </div>
@@ -85,6 +121,7 @@ function PhotoUpload({ value, onChange }: { value: string; onChange: (b64: strin
 
 // ─── Faculty Management ────────────────────────────────────────────────────────
 function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
+  const { profile } = useAuth();
   const [faculties, setFaculties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -116,8 +153,8 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
     finally { setSaving(false); }
   };
 
-  const doDelete = async (id: number) => {
-    try { await managementService.deleteFaculty(id); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
+  const doDelete = async (id: number, reason = "") => {
+    try { await managementService.deleteFaculty(id, reason, profile?.name); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
   };
 
   const exportCsv = () => {
@@ -191,7 +228,7 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
         </div>
       )}
 
-      {confirm !== null && <ConfirmDialog message={pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")} onConfirm={() => doDelete(confirm)} onCancel={() => setConfirm(null)} />}
+      {confirm !== null && <DeleteWithReasonDialog message={pick("ایا مطمئن یاست؟ ریکارډ به کثافاتو دانۍ ته لاړ شي.","آیا مطمئن هستید؟ رکورد به سطل زباله منتقل می‌شود.")} onConfirm={(r) => doDelete(confirm, r)} onCancel={() => setConfirm(null)} />}
 
       {showModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -227,6 +264,7 @@ function FacultiesTab({ pick }: { pick: (ps: string, dr: string) => string }) {
 
 // ─── Department Management ────────────────────────────────────────────────────
 function DepartmentsTab({ pick, defaultFacultyId }: { pick: (ps: string, dr: string) => string; defaultFacultyId?: number }) {
+  const { profile } = useAuth();
   const [departments, setDepartments] = useState<any[]>([]);
   const [faculties, setFaculties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,8 +315,8 @@ function DepartmentsTab({ pick, defaultFacultyId }: { pick: (ps: string, dr: str
     finally { setSaving(false); }
   };
 
-  const doDelete = async (id: number) => {
-    try { await managementService.deleteDepartment(id); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
+  const doDelete = async (id: number, reason = "") => {
+    try { await managementService.deleteDepartment(id, reason, profile?.name); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
   };
 
   const filtered = filter === "ALL" ? departments : departments.filter(d => d.department_type === filter);
@@ -387,7 +425,7 @@ function DepartmentsTab({ pick, defaultFacultyId }: { pick: (ps: string, dr: str
         </div>
       )}
 
-      {confirm !== null && <ConfirmDialog message={pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")} onConfirm={() => doDelete(confirm!)} onCancel={() => setConfirm(null)} />}
+      {confirm !== null && <DeleteWithReasonDialog message={pick("ایا مطمئن یاست؟ ریکارډ به کثافاتو دانۍ ته لاړ شي.","آیا مطمئن هستید؟ رکورد به سطل زباله منتقل می‌شود.")} onConfirm={(r) => doDelete(confirm!, r)} onCancel={() => setConfirm(null)} />}
 
       {showModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -425,6 +463,7 @@ function DepartmentsTab({ pick, defaultFacultyId }: { pick: (ps: string, dr: str
 
 // ─── People Management ────────────────────────────────────────────────────────
 function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
+  const { profile } = useAuth();
   const [people, setPeople] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -478,8 +517,8 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
     finally { setSaving(false); }
   };
 
-  const doDelete = async (id: number) => {
-    try { await managementService.deletePerson(id); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
+  const doDelete = async (id: number, reason = "") => {
+    try { await managementService.deletePerson(id, reason, profile?.name); setConfirm(null); load(); } catch { setError(pick("ړنګول ونه شو","حذف ناموفق")); }
   };
 
   const toggleSelect = (id: number) => {
@@ -670,7 +709,7 @@ function PeopleTab({ pick }: { pick: (ps: string, dr: string) => string }) {
         </div>
       )}
 
-      {confirm !== null && <ConfirmDialog message={pick("ایا مطمئن یاست؟","آیا مطمئن هستید؟")} onConfirm={() => doDelete(confirm!)} onCancel={() => setConfirm(null)} />}
+      {confirm !== null && <DeleteWithReasonDialog message={pick("ایا مطمئن یاست؟ ریکارډ به کثافاتو دانۍ ته لاړ شي.","آیا مطمئن هستید؟ رکورد به سطل زباله منتقل می‌شود.")} onConfirm={(r) => doDelete(confirm!, r)} onCancel={() => setConfirm(null)} />}
 
       {/* CSV Import Modal */}
       {showCsvModal && (

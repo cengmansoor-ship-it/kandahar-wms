@@ -5,13 +5,15 @@ export const managementService = {
   getFaculties: () => apiClient.get('/management/faculties'),
   createFaculty: (data: any) => apiClient.post('/management/faculties', data),
   updateFaculty: (id: number, data: any) => apiClient.put(`/management/faculties/${id}`, data),
-  deleteFaculty: (id: number) => apiClient.delete(`/management/faculties/${id}`),
+  deleteFaculty: (id: number, reason?: string, deletedByName?: string) =>
+    apiClient.deleteWithBody(`/management/faculties/${id}`, { delete_reason: reason || null, deleted_by_name: deletedByName || null }),
 
   // Departments
   getDepartments: () => apiClient.get('/management/departments'),
   createDepartment: (data: any) => apiClient.post('/management/departments', data),
   updateDepartment: (id: number, data: any) => apiClient.put(`/management/departments/${id}`, data),
-  deleteDepartment: (id: number) => apiClient.delete(`/management/departments/${id}`),
+  deleteDepartment: (id: number, reason?: string, deletedByName?: string) =>
+    apiClient.deleteWithBody(`/management/departments/${id}`, { delete_reason: reason || null, deleted_by_name: deletedByName || null }),
 
   // People
   getPeople: (departmentId?: number) => {
@@ -21,7 +23,8 @@ export const managementService = {
   getPersonById: (id: number) => apiClient.get(`/management/people/${id}`),
   createPerson: (data: any) => apiClient.post('/management/people', data),
   updatePerson: (id: number, data: any) => apiClient.put(`/management/people/${id}`, data),
-  deletePerson: (id: number) => apiClient.delete(`/management/people/${id}`),
+  deletePerson: (id: number, reason?: string, deletedByName?: string) =>
+    apiClient.deleteWithBody(`/management/people/${id}`, { delete_reason: reason || null, deleted_by_name: deletedByName || null }),
   importPeople: (rows: any[]) => apiClient.post('/management/people/import', { rows }),
 
   // Assignments

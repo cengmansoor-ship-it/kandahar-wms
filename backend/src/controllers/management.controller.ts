@@ -35,7 +35,8 @@ export const updateFaculty = async (req: Request, res: Response) => {
 export const deleteFaculty = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await ManagementService.deleteFaculty(id);
+    const { delete_reason, deleted_by_name } = req.body || {};
+    await ManagementService.deleteFaculty(id, delete_reason, deleted_by_name);
     res.json({ success: true });
   } catch (e) { handleError(res, e); }
 };
@@ -71,7 +72,8 @@ export const updateDepartment = async (req: Request, res: Response) => {
 export const deleteDepartment = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await ManagementService.deleteDepartment(id);
+    const { delete_reason, deleted_by_name } = req.body || {};
+    await ManagementService.deleteDepartment(id, delete_reason, deleted_by_name);
     res.json({ success: true });
   } catch (e) { handleError(res, e); }
 };
@@ -116,7 +118,8 @@ export const updatePerson = async (req: Request, res: Response) => {
 export const deletePerson = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await ManagementService.deletePerson(id);
+    const { delete_reason, deleted_by_name } = req.body || {};
+    await ManagementService.deletePerson(id, delete_reason, deleted_by_name);
     res.json({ success: true });
   } catch (e) { handleError(res, e); }
 };

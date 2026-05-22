@@ -47,8 +47,11 @@ export class ManagementService {
     return true;
   }
 
-  static async deleteFaculty(id: number) {
-    await db.query(`UPDATE faculties SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW() WHERE id = ?`, [id]);
+  static async deleteFaculty(id: number, reason?: string | null, deletedByName?: string | null) {
+    await db.query(
+      `UPDATE faculties SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW(), delete_reason = ?, deleted_by_name = ? WHERE id = ?`,
+      [reason || null, deletedByName || null, id]
+    );
     return true;
   }
 
@@ -89,8 +92,11 @@ export class ManagementService {
     return true;
   }
 
-  static async deleteDepartment(id: number) {
-    await db.query(`UPDATE departments SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW() WHERE id = ?`, [id]);
+  static async deleteDepartment(id: number, reason?: string | null, deletedByName?: string | null) {
+    await db.query(
+      `UPDATE departments SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW(), delete_reason = ?, deleted_by_name = ? WHERE id = ?`,
+      [reason || null, deletedByName || null, id]
+    );
     return true;
   }
 
@@ -163,8 +169,11 @@ export class ManagementService {
     return true;
   }
 
-  static async deletePerson(id: number) {
-    await db.query(`UPDATE people SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW() WHERE id = ?`, [id]);
+  static async deletePerson(id: number, reason?: string | null, deletedByName?: string | null) {
+    await db.query(
+      `UPDATE people SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW(), delete_reason = ?, deleted_by_name = ? WHERE id = ?`,
+      [reason || null, deletedByName || null, id]
+    );
     return true;
   }
 
