@@ -8,7 +8,7 @@ import {
 import { auth, isFirebaseConfigured } from "./firebase";
 import { ensureUserProfileExists } from "./firestore";
 import { logAuditEvent } from "./audit";
-import { getDemoUserProfile, DEMO_SEED_USERS } from "./localStore";
+import { getDemoUserProfile, DEMO_SEED_USERS, DEMO_LOGGED_OUT_KEY } from "./localStore";
 
 const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
 const DEMO_AUTH_EVENT = "kandahar-wms-demo-auth-change";
@@ -86,6 +86,7 @@ export const login = async (email: string, pass: string): Promise<User> => {
 
     const user = createDemoUser(matched.email, matched.uid, matched.name);
     if (typeof window !== "undefined") {
+      window.localStorage.removeItem(DEMO_LOGGED_OUT_KEY);
       window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({
         email: matched.email,
         uid: matched.uid,
@@ -156,6 +157,7 @@ export const logout = async (): Promise<void> => {
   if (!isFirebaseConfigured) {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(DEMO_AUTH_KEY);
+      window.localStorage.setItem(DEMO_LOGGED_OUT_KEY, "1");
       notifyDemoAuthChanged();
     }
     return;

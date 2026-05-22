@@ -85,13 +85,19 @@ export function setLocalItem<T>(key: string, value: T): void {
 
 // ── Demo auth key (must match auth.ts) ──
 const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
+// ── Explicit-logout flag: set when user calls logout(), cleared on login() ──
+export const DEMO_LOGGED_OUT_KEY = "kandahar_wms_user_logged_out";
 
-// ── Auto-restore demo auth session if missing ──
-// Ensures first-time visitors and users whose session was cleared are
-// automatically logged in as Super Admin (demo/local mode only).
-function restoreDemoAuth(): void {
+// ── Auto-restore demo auth session ONLY on fresh install ──
+// Does NOT restore if the user explicitly logged out (DEMO_LOGGED_OUT_KEY is set).
+function restoreDemoAuth(isFreshInstall: boolean): void {
   if (typeof window === "undefined") return;
-  if (window.localStorage.getItem(DEMO_AUTH_KEY)) return; // already logged in
+  // Never auto-restore after an explicit logout
+  if (window.localStorage.getItem(DEMO_LOGGED_OUT_KEY)) return;
+  // Only auto-login on fresh install / first visit
+  if (!isFreshInstall) return;
+  // Already logged in
+  if (window.localStorage.getItem(DEMO_AUTH_KEY)) return;
   const sa = DEMO_SEED_USERS[0]; // superadmin@ku.edu.af
   window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({
     email: sa.email,
@@ -103,10 +109,11 @@ function restoreDemoAuth(): void {
 // ── Version gate: clears all seed keys when DATA_VERSION changes ──
 export function ensureSeedVersion(): void {
   if (typeof window === "undefined") return;
-  // Always ensure auth session exists (safe – only sets if missing)
-  restoreDemoAuth();
   const stored = getLocalItem<string>("data_version", "");
-  if (stored === DATA_VERSION) return;
+  const isFreshInstall = stored !== DATA_VERSION;
+  // Only auto-restore on fresh install, not after explicit logout
+  restoreDemoAuth(isFreshInstall);
+  if (!isFreshInstall) return;
   const seedKeys = [
     "items","stock_transactions","requests","request_pipeline",
     "request_level_history","email_logs","users",

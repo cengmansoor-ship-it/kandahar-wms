@@ -1,0 +1,543 @@
+You are a senior React 18 + TypeScript + Node.js/Express + MySQL + official HTML/CSS/JS forms integration engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Current status:
+- Progress Tracking workflow mostly works.
+- Requests move through workflow roles.
+- The remaining critical problem is official forms integration.
+- The 7 official forms are already designed separately in pure HTML, CSS, and JavaScript.
+- When I open the official HTML forms file outside the system, all header buttons, toolbar buttons, ribbon buttons, and synchronization logic work correctly.
+- But when the same official forms file is loaded inside the React system, some header buttons, form buttons, toolbar actions, and synchronization logic do not work.
+- You must find exactly why the standalone HTML/CSS/JS works, but the integrated system version does not work.
+
+OBJECTIVE:
+Connect the existing 7 official HTML/CSS/JS forms 100% with:
+1. Request data
+2. Procurement data
+3. Receiving data
+4. Delivery data
+5. Progress Tracking workflow
+
+while preserving the exact original form design, layout, style, CSS, JavaScript behavior, print format, toolbar, header buttons, ribbon buttons, spacing, borders, fonts, and official structure.
+
+VERY IMPORTANT:
+Do NOT redesign official forms.
+Do NOT change form layout.
+Do NOT change form CSS visually.
+Do NOT change table structure visually.
+Do NOT convert official forms into React forms.
+Do NOT recreate forms.
+Do NOT remove existing buttons.
+Do NOT change print layout.
+Do NOT change margins, borders, alignment, colors, graphics, or official format.
+Do NOT break existing standalone HTML/CSS/JS behavior.
+Only repair integration, data binding, synchronization, iframe/script execution, event listeners, and workflow connection.
+
+Official forms file:
+public/forms/official-forms.html
+
+Likely viewer/component:
+src/components/OfficialFormViewer.tsx
+
+Likely page:
+src/pages/OfficialForms/OfficialFormsPage.tsx
+
+==================================================
+CRITICAL ISSUE TO INVESTIGATE
+==================================================
+
+The official forms were built manually in HTML, CSS, and JavaScript.
+
+When opened separately as a normal HTML file:
+- header buttons work
+- toolbar buttons work
+- ribbon buttons work
+- save/print/reset/clear buttons work
+- synchronization works
+- JavaScript behavior works
+
+But inside the React system:
+- some header buttons do not work
+- some toolbar/ribbon actions do not work
+- synchronization does not fully work
+- data does not correctly move between forms and workflow stages
+
+You must inspect and fix why this happens.
+
+Possible causes to check:
+1. iframe/srcdoc is not executing scripts correctly.
+2. scripts are loaded before DOM is ready.
+3. inline event handlers are stripped or not bound.
+4. OfficialFormViewer replaces HTML but does not re-run form JavaScript.
+5. template IDs are not preserved.
+6. form JavaScript expects window/global variables but iframe isolation blocks them.
+7. postMessage bridge is missing or broken.
+8. event listeners are duplicated or lost after switching forms.
+9. localStorage keys differ between standalone file and integrated system.
+10. React remounting iframe resets form state.
+11. CSP/sandbox attributes block scripts.
+12. buttons rely on document/global scope but iframe has separate document.
+13. synchronization works in original file but system does not call the original sync functions.
+14. form data is saved globally, not per request.
+15. progress workflow does not trigger form data population.
+
+Fix the integration safely.
+Do not rewrite the forms.
+
+==================================================
+OFFICIAL FORMS
+==================================================
+
+There are 7 official forms:
+
+1. Proposal / پیشنهاد
+2. Tender / جګړه پاڼه
+3. Comparison Form / فورم مقایسوي
+4. Purchase Order / امر خریداری
+5. Receipt Report / راپور رسید
+6. SI9 / سی ۹ فورم
+7. PC5 / FS5 / ف س ۵ / تسلیمي فورم
+
+These forms must remain exactly in their original official layout and print format.
+
+==================================================
+DIRECT CONNECTION WITH PROGRESS TRACKING
+==================================================
+
+The 7 official forms must be directly connected to the Progress Tracking workflow.
+
+This means:
+
+1. When request progress is at Requester stage:
+   - Proposal and SI9 must open with the request data.
+   - Request item rows must be filled automatically.
+   - Saving/submitting these forms must be connected to the request submit/progress logic.
+
+2. When request moves to Request Confirmer:
+   - The same request forms must be visible/readable where allowed.
+   - Request Confirmer confirmation must update progress.
+   - Form data must remain attached to the same request.
+
+3. When request moves to Super Admin:
+   - Super Admin must see the related official forms.
+   - Approval must update progress.
+   - Form data must remain unchanged unless explicitly edited in allowed fields.
+
+4. When Admin sends request to Procurement:
+   - Tender, Comparison, and Purchase Order must be connected to the same request.
+   - Progress must move according to procurement stages.
+
+5. When Procurement Director adds vendor prices:
+   - Vendor offer data must populate official Comparison Form.
+   - Comparison winner must be calculated and stored.
+   - Winner must be pushed to official Purchase Order.
+   - Progress Tracking must update accordingly.
+
+6. When Purchase Order is completed:
+   - Receipt Report must receive PO, vendor, item, quantity, and price data.
+   - Progress Tracking must update accordingly.
+
+7. When receiving/delivery happens:
+   - FS5/PC5 must receive delivery and receiver data.
+   - Final delivery must update progress to 100%.
+   - Form data must remain attached to the same request.
+   - No request data from another request should mix.
+
+Every form instance must belong to a specific request ID.
+
+==================================================
+REQUIRED DATA FLOW
+==================================================
+
+A) Requester creates request:
+- Request item data must automatically fill Proposal form item table.
+- Request item data must automatically fill SI9 form if SI9 has related fields.
+- Data must include:
+  - request ID / tracking ID
+  - requester name
+  - faculty
+  - department
+  - person/receiver
+  - item name
+  - item specification/type
+  - quantity
+  - unit
+  - request level if there is a field
+  - Hijri date if date field exists
+  - request reason/subject if field exists
+
+B) Proposal table connection:
+When Requester creates/submits a request, item rows must appear automatically in the Proposal table.
+
+Shared columns:
+- شمار
+- اسم جنس
+- اسم نوعیت / مشخصات
+- مقدار
+- واحد
+- قیمت دانه if available
+- قیمت مجموعي if available
+
+If price fields do not exist in Proposal, do not redesign the form.
+Only fill existing fields.
+
+C) Tender / 3 vendor prices:
+When Procurement Director or authorized role adds 3 vendor prices:
+- Vendor prices must be saved in system data.
+- Those 3 prices must automatically appear in the official Comparison Form table.
+- Do not use old generated comparison form.
+- Use official Comparison Form only.
+- Each vendor row must include:
+  - vendor/company name
+  - item name
+  - specification
+  - quantity
+  - unit
+  - unit price
+  - total price
+  - remarks if existing field exists
+
+D) Comparison Form:
+The official Comparison Form must automatically calculate/find the winning vendor:
+- Lowest total price should be selected as winner unless existing system has a different official decision rule.
+- Winner must be stored in procurement data.
+- Winner data must appear in the official Comparison Form if the form has winner fields.
+- Do not visually redesign the form.
+- If winner display area does not exist inside the official form, show winner in system UI around the form, not by changing form design.
+
+E) Purchase Order:
+After winner is selected:
+- Official Purchase Order must automatically receive winner data.
+- Purchase Order must include:
+  - winning vendor/company
+  - item name
+  - specification
+  - quantity
+  - unit
+  - unit price
+  - total price
+  - request ID
+  - date
+  - department/faculty if field exists
+- Do not change Purchase Order layout.
+
+F) Receipt Report:
+After Purchase Order and receiving:
+- Official Receipt Report must receive PO/winner/item data.
+- Received item rows must appear in the Receipt Report table.
+- Quantity received must be shown.
+- If partial receiving exists, show received quantity only.
+- Do not change Receipt Report layout.
+
+G) FS5 / PC5:
+After final delivery:
+- Official FS5/PC5 form must receive delivery data.
+- It must show:
+  - receiver/person/faculty/department
+  - delivered items
+  - quantity
+  - unit
+  - specification
+  - date
+  - request ID / FS5 reference if field exists
+- Final delivery must not deduct stock twice.
+- Do not change FS5/PC5 design.
+
+==================================================
+FORWARD-ONLY SYNCHRONIZATION RULE
+==================================================
+
+Data must move only forward.
+
+Form order:
+
+const formOrder = [
+  "proposal",
+  "tender",
+  "comparison",
+  "purchaseOrder",
+  "receiptReport",
+  "si9",
+  "fs5"
+];
+
+If the project uses pc5 instead of fs5, support both safely:
+- fs5
+- pc5
+
+Core rule:
+- Proposal can update downstream forms.
+- Tender can update Comparison, Purchase Order, Receipt Report, SI9, FS5.
+- Comparison can update Purchase Order, Receipt Report, SI9, FS5.
+- Purchase Order can update Receipt Report, SI9, FS5.
+- Receipt Report can update SI9 and FS5.
+- SI9 can update FS5 only.
+- FS5 updates only itself.
+
+Never update previous forms.
+
+Before syncing to any target form, always check:
+
+if (targetIndex <= sourceIndex) {
+  return;
+}
+
+==================================================
+PRIVATE FORM FIELDS MUST NOT BE OVERWRITTEN
+==================================================
+
+Do NOT overwrite private fields such as:
+- signatures
+- approval notes
+- comments
+- stamps
+- officer comments
+- director comments
+- handwritten notes
+- form-specific dates
+- confirmation notes
+- local remarks
+- form-specific status
+
+Only update shared request/procurement/item fields.
+
+==================================================
+OFFICIAL FORM VIEWER REQUIREMENTS
+==================================================
+
+OfficialFormViewer must:
+- Load the correct official template.
+- Execute the form’s original JavaScript inside iframe safely.
+- Preserve original button behavior.
+- Preserve header buttons.
+- Preserve toolbar buttons.
+- Preserve ribbon buttons.
+- Preserve synchronization behavior.
+- Inject data into existing fields/tables only.
+- Not change HTML structure visually.
+- Not change CSS visually.
+- Not break print.
+- Work after refresh.
+- Work after switching forms.
+- Work per request independently.
+- Never mix data from one request into another request.
+
+If iframe sandbox is used:
+- Ensure scripts are allowed only as needed.
+- Do not over-open security unnecessarily.
+- If sandbox blocks the original JS, fix sandbox attributes safely.
+
+If srcdoc is used:
+- Ensure inline scripts execute.
+- Ensure DOMContentLoaded/init functions run after HTML injection.
+- Ensure event listeners are bound after iframe load.
+- Ensure original form JS is not stripped or lost.
+
+If postMessage bridge is needed:
+- Use a safe message bridge between React and iframe.
+- React can send form data to iframe.
+- iframe can send saved form data back to React.
+- Keep each request isolated by requestId and formType.
+
+==================================================
+REQUIRED TECHNICAL IMPLEMENTATION
+==================================================
+
+Inspect first:
+- public/forms/official-forms.html
+- src/components/OfficialFormViewer.tsx
+- src/pages/OfficialForms/OfficialFormsPage.tsx
+- src/firebase/requests.ts
+- src/firebase/procurement.ts
+- src/firebase/receiving.ts
+- src/pages/Requests/CreateRequest.tsx
+- src/pages/Requests/RequestDetails.tsx
+- src/pages/Procurement/ProcurementDetails.tsx
+- src/pages/Procurement/VendorOffersPage.tsx
+- src/pages/Receiving/WarehouseRequestDetails.tsx
+- backend/src/services/request.service.ts
+- backend/src/services/procurement.service.ts
+- backend/src/services/receiving.service.ts
+- backend/src/services/delivery.service.ts
+
+Create or repair a safe adapter layer if needed:
+
+src/utils/officialFormDataAdapter.ts
+
+This adapter should:
+1. Map request data to Proposal/SI9 fields.
+2. Map vendor offers to Comparison Form fields.
+3. Map winning vendor to Purchase Order fields.
+4. Map PO/receiving data to Receipt Report fields.
+5. Map delivery data to FS5/PC5 fields.
+6. Preserve existing private form data.
+7. Preserve existing layout and CSS.
+8. Support localStorage fallback if backend is offline.
+9. Support MySQL/backend data if backend is available.
+10. Connect form status to Progress Tracking workflow.
+
+Required functions:
+
+- getOfficialFormKey(requestId, formType)
+- getOfficialTemplateId(formType)
+- loadOfficialFormData(requestId, formType)
+- saveOfficialFormData(requestId, formType, data)
+- extractSharedRequestData(request)
+- extractSharedItemRows(requestItems)
+- extractVendorOfferRows(vendorOffers)
+- calculateOfferTotals(vendorOffers)
+- selectWinningVendor(vendorOffers)
+- mapRequestToProposal(request)
+- mapRequestToSI9(request)
+- mapVendorOffersToComparison(vendorOffers)
+- mapWinnerToPurchaseOrder(winner, request)
+- mapReceivingToReceiptReport(receiving, request)
+- mapDeliveryToFS5(delivery, request)
+- syncForwardOnly(requestId, sourceFormType, sharedData)
+- applySharedDataToTargetForm(requestId, targetFormType, sharedData)
+- connectFormSaveToProgressTracking(requestId, formType, stage)
+
+==================================================
+PROGRESS TRACKING CONNECTION
+==================================================
+
+Forms must update and follow the existing progress workflow.
+
+Use existing progress logic. Do not rewrite it if it works.
+
+Required connections:
+- Proposal/SI9 save or submit must connect to Requester submit stage.
+- Request Confirmer confirmation must preserve Proposal/SI9 data.
+- Super Admin approval must preserve forms and move progress.
+- Admin warehouse/procurement decision must determine which forms become active.
+- Tender completion must update procurement progress.
+- Comparison winner selection must update progress.
+- Purchase Order creation must update progress.
+- Receipt Report completion must update progress.
+- FS5/PC5 completion must update progress to 100%.
+
+Do not create a separate disconnected form workflow.
+The official forms must follow the same requestId, status, currentStage, assignedRole, and progressPercent used by Progress Tracking.
+
+==================================================
+COMPARISON AND WINNER LOGIC
+==================================================
+
+When 3 vendor prices are added:
+- Save all vendor offers.
+- Auto calculate total price:
+  totalPrice = quantity * unitPrice
+- Compare total prices.
+- Mark lowest total price as winner.
+- Save winner to procurement data.
+- Push winner data forward to Purchase Order.
+- Update related progress stage if current workflow expects it.
+- Do not overwrite previous forms.
+- Do not change form design.
+
+If fewer than 3 offers exist:
+- Do not create final comparison winner.
+- Show Pashto/Dari validation message in system UI.
+- Do not break form.
+
+==================================================
+TESTING REQUIRED
+==================================================
+
+Test 1: Standalone behavior comparison
+- Open public/forms/official-forms.html outside the system.
+- Confirm header buttons, toolbar buttons, ribbon buttons, and synchronization work.
+- Open same form inside React system.
+- Confirm the same buttons and synchronization now work inside system.
+- Layout must be identical.
+
+Test 2: Request → Proposal
+- Create request with item rows.
+- Open Proposal.
+- Item rows must appear in Proposal table.
+- Layout must remain unchanged.
+- Progress Tracking must still show request at correct stage.
+
+Test 3: Request → SI9
+- Open SI9.
+- Request-related data must appear where fields exist.
+- Layout unchanged.
+- Same requestId must be used.
+
+Test 4: 3 Vendor Prices → Comparison
+- Add 3 vendor offers.
+- Open Comparison Form.
+- All 3 vendor data rows must appear.
+- Total prices calculated.
+- Winner selected by lowest total price.
+- Layout unchanged.
+- Progress Tracking must reflect comparison/winner stage.
+
+Test 5: Comparison Winner → Purchase Order
+- Open Purchase Order.
+- Winner vendor data must appear.
+- Item/price/quantity data must appear.
+- Layout unchanged.
+- Progress Tracking must remain connected.
+
+Test 6: Purchase Order → Receipt Report
+- Create/complete receiving.
+- Open Receipt Report.
+- Received items must appear.
+- Layout unchanged.
+
+Test 7: Delivery → FS5/PC5
+- Complete delivery.
+- Open FS5/PC5.
+- Delivered item rows and receiver data must appear.
+- Layout unchanged.
+- Progress becomes 100% when final delivery is complete.
+
+Test 8: Refresh browser
+- All form data must remain saved per request.
+- No data mixing between requests.
+- Button behavior still works.
+
+Test 9: Print
+- Print every official form.
+- Print layout must be identical to original standalone HTML form.
+
+Build:
+Run:
+npm run build
+
+Fix only errors caused by this integration.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Report exactly:
+
+1. Root cause: why standalone HTML forms worked but system-integrated forms did not.
+2. Files changed.
+3. Whether official form layout/design was changed or not.
+4. Where official forms are located.
+5. How header/buttons/ribbon behavior was repaired inside system.
+6. How original JS/synchronization is preserved inside iframe/system.
+7. How request data connects to Proposal.
+8. How SI9 receives request data.
+9. How vendor offers connect to Comparison Form.
+10. How winner is selected.
+11. How winner data connects to Purchase Order.
+12. How Receipt Report receives PO/receiving data.
+13. How FS5/PC5 receives delivery data.
+14. How all 7 forms directly connect to Progress Tracking.
+15. How forward-only synchronization is protected.
+16. How private fields are preserved.
+17. How each request keeps separate form data.
+18. Test results.
+19. npm run build result.
+20. Remaining issues if any.
+
+Final warning:
+Do NOT redesign the 7 official forms.
+Do NOT change layout/design/CSS/print format.
+Only connect data, JavaScript behavior, synchronization logic, and Progress Tracking workflow.

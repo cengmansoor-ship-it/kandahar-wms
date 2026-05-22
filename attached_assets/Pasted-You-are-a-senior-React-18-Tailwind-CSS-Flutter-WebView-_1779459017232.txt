@@ -1,0 +1,373 @@
+You are a senior React 18 + Tailwind CSS + Flutter/WebView mobile + Node.js/Express + MySQL + Firebase integration engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Main goal:
+Fix only these two problems:
+
+Problem 1:
+Inventory → Add Item / د جنس اضافه کول
+The dependent dropdowns are not working:
+- باب غوره کړی
+- فصل غوره کړی
+
+When adding an item manually, the Chapter/Bab and Section/Fasl dropdown lists do not populate or do not become selectable.
+
+Problem 2:
+Mobile application navigation/login issue
+When switching dashboards or logging out from Super Admin and then logging in as Requester, the mobile app sometimes opens:
+
+Web page not available
+https://kandahar-wms--shamsurahmanmus.replit.app/signin
+net::ERR_HTTP_RESPONSE_CODE_FAILURE
+
+This must be fixed so every role dashboard opens correctly in mobile:
+- Super Admin
+- Requester
+- Request Confirmer
+- Admin
+- Procurement Director
+- Warehouse Director
+- Warehouse Entry Person
+
+Very important:
+Do NOT redesign UI.
+Do NOT change layout.
+Do NOT change colors.
+Do NOT change official forms.
+Do NOT touch Progress Tracking workflow.
+Do NOT touch Procurement logic.
+Do NOT touch Receiving logic.
+Do NOT touch Reports.
+Do NOT rewrite the project.
+Do NOT remove localStorage fallback.
+Do NOT remove Firebase.
+Do NOT break current working Inventory CRUD.
+Do NOT change unrelated modules.
+Keep token usage minimal.
+
+Only fix:
+1. Add Item Bab/Fasl dropdown workflow.
+2. Mobile role-dashboard navigation/login issue.
+
+==================================================
+PART A — FIX INVENTORY ADD ITEM BAB/FASL DROPDOWNS
+==================================================
+
+Inspect first:
+
+Frontend:
+- src/pages/Inventory/AddItem.tsx
+- src/firebase/inventory.ts
+- src/firebase/localStore.ts
+- src/api/apiClient.ts if it exists
+- src/pages/Inventory/*
+- any component used for dropdown/select fields
+
+Backend:
+- backend/src/routes/inventory.routes.ts
+- backend/src/controllers/inventory.controller.ts
+- backend/src/services/inventory.service.ts
+- backend/src/database/schema.sql
+- backend/src/database/seed.sql
+
+Goal:
+Make باب and فصل dropdowns work correctly in Add Item.
+
+Required behavior:
+
+1. When Add Item page opens:
+   - Load Bab/Chapter list.
+   - Load from backend API if available.
+   - If backend unavailable, use localStorage fallback.
+
+2. When user selects باب:
+   - فصل dropdown must load only related فصل records.
+   - فصل dropdown must be disabled until باب is selected.
+   - Show Pashto/Dari message if no فصل exists.
+
+3. When user selects فصل:
+   - selected باب and فصل must be saved with the new item.
+   - data must be sent to backend if backend API is active.
+   - fallback to localStore if backend fails.
+
+4. Do not allow item submit if required باب/فصل is missing, if these fields are required in current UI.
+
+5. Do not break existing fields:
+   - item name
+   - category
+   - unit
+   - specification
+   - quantity/opening stock
+   - minimum stock
+   - warehouse
+   - stock in/out logic
+
+Backend checks:
+
+Check whether schema has tables/fields for:
+- chapters / bab
+- sections / fasl
+OR equivalent fields.
+
+If missing, add minimal safe support only if needed:
+
+Tables:
+chapters
+- id
+- name_ps
+- name_fa
+- created_at
+- updated_at
+- is_deleted
+
+sections
+- id
+- chapter_id
+- name_ps
+- name_fa
+- created_at
+- updated_at
+- is_deleted
+
+If the project already uses other table names or fields, use existing structure and do not create duplicates.
+
+Required endpoints if missing:
+GET /api/inventory/chapters
+GET /api/inventory/sections?chapterId=ID
+
+Response shape:
+{
+  "success": true,
+  "data": [...]
+}
+
+Frontend mapping:
+- باب dropdown uses chapters.
+- فصل dropdown uses sections filtered by selected chapter.
+- Preserve current UI design.
+
+Error messages:
+Use Pashto/Dari only:
+- د باب معلومات ترلاسه نه شول
+- د فصل معلومات ترلاسه نه شول
+- لومړی باب غوره کړئ
+- تر اوسه فصل نشته
+
+Testing for Problem 1:
+1. Open Add Item page.
+2. باب dropdown loads.
+3. Select a باب.
+4. فصل dropdown becomes active.
+5. فصل list loads according to selected باب.
+6. Select فصل.
+7. Submit item.
+8. Item saves with selected باب and فصل.
+9. Refresh page and test again.
+10. Backend down case: localStorage fallback still works.
+11. npm run build passes.
+
+==================================================
+PART B — FIX MOBILE APP DASHBOARD NAVIGATION ISSUE
+==================================================
+
+Current error:
+When using the mobile app, after switching from Super Admin to Requester or another role, it sometimes opens:
+
+https://kandahar-wms--shamsurahmanmus.replit.app/signin
+net::ERR_HTTP_RESPONSE_CODE_FAILURE
+
+Goal:
+Mobile app must not break when switching roles/dashboards.
+Every role login must redirect to the correct dashboard.
+Logout must clear stale auth state.
+Login as another role must work correctly.
+
+Inspect first:
+
+React/Auth:
+- src/context/AuthContext.tsx
+- src/firebase/auth.ts
+- src/components/ProtectedRoute.tsx
+- src/components/header/UserDropdown.tsx
+- src/App.tsx
+- src/constants/roles.ts
+- src/utils/permissions.ts
+- any Login/SignIn page or form
+
+Mobile/WebView/Flutter if present:
+- Flutter WebView files
+- mobile app route/navigation files
+- any hardcoded URL to Replit
+- any file containing:
+  kandahar-wms--shamsurahmanmus.replit.app
+  /signin
+  WebView
+  initialUrl
+  dashboard
+  role
+
+Backend:
+- backend/src/server.ts
+- backend auth/session middleware if exists
+- CORS configuration
+- role protected routes if exists
+
+Critical checks:
+
+1. Hardcoded Replit URL:
+Search entire project for:
+kandahar-wms--shamsurahmanmus.replit.app
+
+If found:
+- Do not hardcode role redirects to this URL.
+- Replace with configurable base URL.
+- For mobile local/demo mode, use correct deployed or local URL.
+- Use environment/config variable.
+
+2. Mobile navigation:
+After login, navigation must use app route/dashboard route, not an external broken /signin URL.
+
+3. Logout:
+Logout must:
+- call Firebase/backend logout if used
+- clear currentUser
+- clear userProfile
+- clear stale role
+- clear stale dashboard route
+- navigate to /signin with replace
+- not leave old Super Admin role cached
+
+4. Login as another role:
+When user logs in again:
+- fetch fresh user profile/role
+- redirect based on fresh role
+- do not reuse old Super Admin profile
+- do not redirect to a stale URL
+- do not return blank page or Web page not available
+
+5. ProtectedRoute:
+Must not create redirect loop.
+Rules:
+- if auth loading: show Pashto/Dari loading
+- if no user: redirect to /signin
+- if user exists and role allowed: render dashboard
+- if role not allowed: show Pashto/Dari access denied
+- never return null silently
+
+6. CORS:
+Backend must allow mobile/web origin safely.
+If using localhost and Replit/deployed URL, add correct allowed origins.
+Do not use unsafe open CORS unless already project standard.
+
+7. HTTP status:
+Backend/auth endpoints should return correct status:
+- 200 for success
+- 401 for not logged in
+- 403 for role not allowed
+- never return generic 500 for normal auth/role issue
+
+8. WebView:
+If Flutter WebView is used:
+- Enable JavaScript if needed.
+- Handle navigation errors gracefully.
+- Do not show raw Web page not available to user.
+- On navigation error, show Pashto/Dari message and retry button.
+- Use configured base URL.
+- Do not cache wrong /signin route after logout.
+
+Required behavior:
+
+Test flow:
+1. Login as Super Admin.
+2. Dashboard opens correctly.
+3. Logout.
+4. Login as Requester.
+5. Requester dashboard opens correctly.
+6. No broken Replit /signin error.
+7. Logout.
+8. Login as Request Confirmer.
+9. Correct dashboard opens.
+10. Repeat for Admin.
+11. Repeat for Warehouse Director.
+12. Repeat for Procurement Director.
+13. Refresh mobile app.
+14. User stays on correct route if session valid.
+15. If session invalid, redirect cleanly to /signin.
+
+Visible messages:
+Use Pashto/Dari only:
+- ننوتل بریالي شول
+- وتل بریالي شول
+- د لاسرسي اجازه نشته
+- اړیکه پرې شوې، بیا هڅه وکړئ
+- سیستم ته ننوتل
+
+==================================================
+IMPLEMENTATION RULES
+==================================================
+
+Work only on these two issues.
+Prefer minimal targeted fixes.
+Do not touch unrelated files.
+Keep localStorage fallback.
+Keep Firebase fallback if present.
+Keep MySQL backend connection.
+Keep current UI style.
+
+If backend API is available:
+- use it.
+
+If backend unavailable:
+- fallback to existing localStorage/Firebase demo mode.
+
+If a required endpoint/table is missing:
+- add only the minimal endpoint/table needed for Bab/Fasl dropdowns.
+- do not expand the whole database.
+
+==================================================
+BUILD AND TEST
+==================================================
+
+Run:
+npm run build
+
+If backend files changed, also run:
+cd backend
+npm run build
+
+Fix only errors caused by this work.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Report exactly:
+
+1. Root cause of Bab/Fasl dropdown problem.
+2. Files changed for dropdown fix.
+3. Backend endpoints used/created for باب and فصل.
+4. Whether localStorage fallback still works.
+5. Root cause of mobile dashboard navigation problem.
+6. Files changed for mobile/navigation/auth fix.
+7. Whether hardcoded Replit URL existed and how it was handled.
+8. Login/logout test results for:
+   - Super Admin
+   - Requester
+   - Request Confirmer
+   - Admin
+   - Procurement Director
+   - Warehouse Director
+   - Warehouse Entry Person
+9. npm run build result.
+10. backend npm run build result if backend changed.
+11. Remaining issues if any.
+
+Final warning:
+Do not redesign UI.
+Do not touch official forms.
+Do not touch Progress Tracking.
+Only fix:
+- Add Item باب/فصل dropdowns
+- Mobile role-dashboard navigation/login error

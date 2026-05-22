@@ -35,6 +35,60 @@ export class BudgetService {
           FOREIGN KEY (bab_id) REFERENCES budget_babs(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
+      // ── Seed standard Afghan government budget bab/fasl codes ─────────────
+      const seedBabs = [
+        { bab_code: '21', name_ps: 'معاشات او مزدونه',           name_fa: 'معاشات و مزدها',            description: 'د کارمندانو معاشات' },
+        { bab_code: '22', name_ps: 'اجناس او خدمات',             name_fa: 'کالاها و خدمات',            description: 'د دفتري اجناسو او خدماتو لیاقت' },
+        { bab_code: '23', name_ps: 'پانګه اچونه',                 name_fa: 'سرمایه‌گذاری',               description: 'د سامانه، فرنیچر او تجهیزاتو خریداری' },
+        { bab_code: '24', name_ps: 'د پروژو مصارف',              name_fa: 'مصارف پروژه‌ها',             description: 'د پراختیایي پروژو لپاره مصارف' },
+        { bab_code: '25', name_ps: 'نور مصارف',                  name_fa: 'سایر مصارف',                description: 'د پورتنیو بابونو له دایرې بهر مصارف' },
+      ];
+      for (const b of seedBabs) {
+        await conn.query(
+          `INSERT IGNORE INTO budget_babs (bab_code, name_ps, name_fa, description) VALUES (?, ?, ?, ?)`,
+          [b.bab_code, b.name_ps, b.name_fa, b.description]
+        ).catch(() => {});
+      }
+
+      const seedFasls = [
+        // Bab 21 — Salaries
+        { bab_code: '21', fasl_code: '2101', name_ps: 'اساسي معاشات',          name_fa: 'معاشات اساسی' },
+        { bab_code: '21', fasl_code: '2102', name_ps: 'اضافه معاشات',           name_fa: 'حق‌الزحمه اضافی' },
+        // Bab 22 — Goods & Services
+        { bab_code: '22', fasl_code: '2201', name_ps: 'قرطاسیه او دفتري مواد', name_fa: 'قرطاسیه و لوازم دفتری' },
+        { bab_code: '22', fasl_code: '2202', name_ps: 'کمپیوټري مواد',          name_fa: 'لوازم کامپیوتری' },
+        { bab_code: '22', fasl_code: '2203', name_ps: 'د چاپ او خپرونې مصارف', name_fa: 'مصارف چاپ و نشر' },
+        { bab_code: '22', fasl_code: '2204', name_ps: 'مخابراتي مصارف',         name_fa: 'مصارف مخابراتی' },
+        { bab_code: '22', fasl_code: '2205', name_ps: 'د لارې مصارف',           name_fa: 'مصارف ترانسپورتی' },
+        { bab_code: '22', fasl_code: '2206', name_ps: 'برق او اوبه',            name_fa: 'برق و آب' },
+        { bab_code: '22', fasl_code: '2207', name_ps: 'د پاکولو مواد',          name_fa: 'مواد نظافتی' },
+        { bab_code: '22', fasl_code: '2208', name_ps: 'د ماشین الاتو ساتنه',    name_fa: 'نگهداری ماشین‌آلات' },
+        { bab_code: '22', fasl_code: '2209', name_ps: 'د دفتر کرایه',           name_fa: 'اجاره دفتر' },
+        { bab_code: '22', fasl_code: '2210', name_ps: 'نور اجناس او خدمات',     name_fa: 'سایر کالاها و خدمات' },
+        // Bab 23 — Capital
+        { bab_code: '23', fasl_code: '2301', name_ps: 'فرنیچر او وسایل',        name_fa: 'مبلمان و لوازم' },
+        { bab_code: '23', fasl_code: '2302', name_ps: 'کمپیوټر او تجهیزات',     name_fa: 'کامپیوتر و تجهیزات' },
+        { bab_code: '23', fasl_code: '2303', name_ps: 'موټر او وسیله',           name_fa: 'وسایط نقلیه' },
+        { bab_code: '23', fasl_code: '2304', name_ps: 'د ودانیو جوړول',          name_fa: 'ساخت و ساز' },
+        // Bab 24 — Projects
+        { bab_code: '24', fasl_code: '2401', name_ps: 'د پراختیا پروژه',        name_fa: 'پروژه توسعه‌ای' },
+        // Bab 25 — Other
+        { bab_code: '25', fasl_code: '2501', name_ps: 'نور مصارف',              name_fa: 'سایر مصارف' },
+      ];
+      for (const f of seedFasls) {
+        try {
+          const [babRows]: any = await conn.query(
+            `SELECT id FROM budget_babs WHERE bab_code = ? AND is_deleted = 0 LIMIT 1`, [f.bab_code]);
+          if (babRows[0]) {
+            await conn.query(
+              `INSERT IGNORE INTO budget_fasls (bab_id, fasl_code, name_ps, name_fa) VALUES (?, ?, ?, ?)`,
+              [babRows[0].id, f.fasl_code, f.name_ps, f.name_fa]
+            );
+          }
+        } catch { /* skip if already exists */ }
+      }
+      // ────────────────────────────────────────────────────────────────────
+
       const cols = [
         { table: 'items', col: 'bab_id', def: 'INT DEFAULT NULL' },
         { table: 'items', col: 'fasl_id', def: 'INT DEFAULT NULL' },
