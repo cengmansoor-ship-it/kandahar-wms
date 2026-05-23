@@ -14,7 +14,9 @@ router.post('/stock-out', InventoryController.stockOut);
 router.get('/transactions', InventoryController.getTransactions);
 
 router.get('/categories', InventoryController.getCategories);
+router.post('/categories', InventoryController.createCategory);
 router.get('/units', InventoryController.getUnits);
+router.post('/units', InventoryController.createUnit);
 router.get('/warehouses', InventoryController.getWarehouses);
 
 router.post('/bulk-import', InventoryController.bulkImport);

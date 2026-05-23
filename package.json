@@ -29,6 +29,7 @@
     "express": "^5.2.1",
     "firebase": "^12.13.0",
     "flatpickr": "^4.6.13",
+    "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "mysql2": "^3.22.3",
     "nodemailer": "^8.0.7",

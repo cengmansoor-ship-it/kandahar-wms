@@ -117,10 +117,32 @@ export const getCategories = async (req: Request, res: Response) => {
   }
 };
 
+export const createCategory = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { name_ps, name_fa, description } = req.body;
+    if (!name_ps || !name_fa) return res.status(400).json({ success: false, message: 'د پښتو نوم او د دري نوم اړین دي.' });
+    const category = await InventoryService.createCategory(name_ps, name_fa, description);
+    res.json({ success: true, data: category });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 export const getUnits = async (req: Request, res: Response) => {
   try {
     const units = await InventoryService.getUnits();
     res.json({ success: true, data: units });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+export const createUnit = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { name_ps, name_fa, symbol } = req.body;
+    if (!name_ps || !name_fa) return res.status(400).json({ success: false, message: 'د پښتو نوم او د دري نوم اړین دي.' });
+    const unit = await InventoryService.createUnit(name_ps, name_fa, symbol);
+    res.json({ success: true, data: unit });
   } catch (error) {
     handleError(res, error);
   }

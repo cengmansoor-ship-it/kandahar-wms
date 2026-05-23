@@ -113,6 +113,18 @@ export default function AddItem() {
   const [editFaslError, setEditFaslError] = useState("");
   const [deleteFaslConfirm, setDeleteFaslConfirm] = useState<number | null>(null);
 
+  // Inline Add Category
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name_ps: "", name_fa: "", description: "" });
+  const [addCategoryLoading, setAddCategoryLoading] = useState(false);
+  const [addCategoryError, setAddCategoryError] = useState("");
+
+  // Inline Add Unit
+  const [showAddUnit, setShowAddUnit] = useState(false);
+  const [newUnit, setNewUnit] = useState({ name_ps: "", name_fa: "", symbol: "" });
+  const [addUnitLoading, setAddUnitLoading] = useState(false);
+  const [addUnitError, setAddUnitError] = useState("");
+
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -331,6 +343,48 @@ export default function AddItem() {
       setDeleteFaslConfirm(null);
     } catch {
       setDeleteFaslConfirm(null);
+    }
+  };
+
+  // ── Add Category ─────────────────────────────────────────────────────────────
+  const handleAddCategory = async () => {
+    setAddCategoryError("");
+    if (!newCategory.name_ps || !newCategory.name_fa) {
+      setAddCategoryError("د پښتو نوم او د دري نوم اړین دي.");
+      return;
+    }
+    setAddCategoryLoading(true);
+    try {
+      const created = await apiClient.post('/inventory/categories', newCategory);
+      setCategories(prev => [...prev, created].sort((a, b) => (a.name_ps || "").localeCompare(b.name_ps || "")));
+      setFormData(prev => ({ ...prev, category_id: String(created.id) }));
+      setNewCategory({ name_ps: "", name_fa: "", description: "" });
+      setShowAddCategory(false);
+    } catch (err: any) {
+      setAddCategoryError(err.message || "خطا د کټګوري ثبتولو کې");
+    } finally {
+      setAddCategoryLoading(false);
+    }
+  };
+
+  // ── Add Unit ─────────────────────────────────────────────────────────────────
+  const handleAddUnit = async () => {
+    setAddUnitError("");
+    if (!newUnit.name_ps || !newUnit.name_fa) {
+      setAddUnitError("د پښتو نوم او د دري نوم اړین دي.");
+      return;
+    }
+    setAddUnitLoading(true);
+    try {
+      const created = await apiClient.post('/inventory/units', newUnit);
+      setUnits(prev => [...prev, created].sort((a, b) => (a.name_ps || "").localeCompare(b.name_ps || "")));
+      setFormData(prev => ({ ...prev, unit_id: String(created.id) }));
+      setNewUnit({ name_ps: "", name_fa: "", symbol: "" });
+      setShowAddUnit(false);
+    } catch (err: any) {
+      setAddUnitError(err.message || "خطا د واحد ثبتولو کې");
+    } finally {
+      setAddUnitLoading(false);
     }
   };
 
@@ -713,14 +767,66 @@ export default function AddItem() {
                     <Input name="name" value={formData.name} onChange={handleChange} required placeholder="مثلاً: قلم، لپټاپ" />
                   </div>
                   <div>
-                    <Label>کټګوري / کتګوری <span className="text-error-500">*</span></Label>
+                    <div className="flex items-center justify-between mb-1" dir="rtl">
+                      <Label>کټګوري / کتګوری <span className="text-error-500">*</span></Label>
+                      <button type="button"
+                        onClick={() => { setShowAddCategory(v => !v); setAddCategoryError(""); }}
+                        className="text-xs text-green-600 hover:underline dark:text-green-400">
+                        {showAddCategory ? "✕ بندول" : "+ نوی کټګوري"}
+                      </button>
+                    </div>
+                    {showAddCategory && (
+                      <div className="mb-2 rounded-lg border border-green-200 bg-white dark:bg-gray-900 dark:border-green-900/40 p-3 space-y-2" dir="rtl">
+                        <p className="text-xs font-semibold text-green-700 dark:text-green-400">د نوي کټګوري اضافه کول</p>
+                        <input placeholder="د پښتو نوم *" value={newCategory.name_ps} onChange={e => setNewCategory(p => ({ ...p, name_ps: e.target.value }))} className={inputCls} dir="rtl" />
+                        <input placeholder="نام دری *" value={newCategory.name_fa} onChange={e => setNewCategory(p => ({ ...p, name_fa: e.target.value }))} className={inputCls} dir="rtl" />
+                        <input placeholder="توضیحات (اختیاري)" value={newCategory.description} onChange={e => setNewCategory(p => ({ ...p, description: e.target.value }))} className={inputCls} dir="rtl" />
+                        {addCategoryError && <p className="text-xs text-red-500">{addCategoryError}</p>}
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleAddCategory} disabled={addCategoryLoading}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition">
+                            {addCategoryLoading ? "ثبتېږي..." : "✓ ثبتول"}
+                          </button>
+                          <button type="button" onClick={() => setShowAddCategory(false)}
+                            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            لغوه
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <select name="category_id" value={formData.category_id} onChange={handleChange} required className={selectCls} dir="rtl">
                       <option value="">-- کټګوري غوره کړئ --</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name_ps}</option>)}
                     </select>
                   </div>
                   <div>
-                    <Label>واحد / واحد <span className="text-error-500">*</span></Label>
+                    <div className="flex items-center justify-between mb-1" dir="rtl">
+                      <Label>واحد / واحد <span className="text-error-500">*</span></Label>
+                      <button type="button"
+                        onClick={() => { setShowAddUnit(v => !v); setAddUnitError(""); }}
+                        className="text-xs text-green-600 hover:underline dark:text-green-400">
+                        {showAddUnit ? "✕ بندول" : "+ نوی واحد"}
+                      </button>
+                    </div>
+                    {showAddUnit && (
+                      <div className="mb-2 rounded-lg border border-green-200 bg-white dark:bg-gray-900 dark:border-green-900/40 p-3 space-y-2" dir="rtl">
+                        <p className="text-xs font-semibold text-green-700 dark:text-green-400">د نوي واحد اضافه کول</p>
+                        <input placeholder="د پښتو نوم * (مثلاً: دانه)" value={newUnit.name_ps} onChange={e => setNewUnit(p => ({ ...p, name_ps: e.target.value }))} className={inputCls} dir="rtl" />
+                        <input placeholder="نام دری * (مثلاً: عدد)" value={newUnit.name_fa} onChange={e => setNewUnit(p => ({ ...p, name_fa: e.target.value }))} className={inputCls} dir="rtl" />
+                        <input placeholder="سمبول (اختیاري، مثلاً: pcs)" value={newUnit.symbol} onChange={e => setNewUnit(p => ({ ...p, symbol: e.target.value }))} className={inputCls} dir="ltr" />
+                        {addUnitError && <p className="text-xs text-red-500">{addUnitError}</p>}
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleAddUnit} disabled={addUnitLoading}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition">
+                            {addUnitLoading ? "ثبتېږي..." : "✓ ثبتول"}
+                          </button>
+                          <button type="button" onClick={() => setShowAddUnit(false)}
+                            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            لغوه
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <select name="unit_id" value={formData.unit_id} onChange={handleChange} required className={selectCls} dir="rtl">
                       <option value="">-- واحد غوره کړئ --</option>
                       {units.map(u => <option key={u.id} value={u.id}>{u.name_ps}</option>)}

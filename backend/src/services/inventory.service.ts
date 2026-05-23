@@ -591,9 +591,27 @@ export class InventoryService {
     return rows;
   }
 
+  static async createCategory(name_ps: string, name_fa: string, description?: string) {
+    const [result] = await db.query<ResultSetHeader>(
+      `INSERT INTO categories (name_ps, name_fa, description) VALUES (?, ?, ?)`,
+      [name_ps, name_fa, description || null]
+    );
+    const [rows] = await db.query<RowDataPacket[]>(`SELECT * FROM categories WHERE id = ?`, [result.insertId]);
+    return rows[0];
+  }
+
   static async getUnits() {
     const [rows] = await db.query(`SELECT * FROM units WHERE is_deleted = FALSE ORDER BY name_ps ASC`);
     return rows;
+  }
+
+  static async createUnit(name_ps: string, name_fa: string, symbol?: string) {
+    const [result] = await db.query<ResultSetHeader>(
+      `INSERT INTO units (name_ps, name_fa, symbol) VALUES (?, ?, ?)`,
+      [name_ps, name_fa, symbol || null]
+    );
+    const [rows] = await db.query<RowDataPacket[]>(`SELECT * FROM units WHERE id = ?`, [result.insertId]);
+    return rows[0];
   }
 
   static async getWarehouses() {
