@@ -63,6 +63,7 @@ const AppSidebar: React.FC = () => {
     ] },
     { id: "settings", icon: <BoxCubeIcon />, name: "تنظیمات / تنظیمات", subItems: [
       { name: "د سیستم تنظیمات / تنظیمات سیستم", path: "/settings", roles: [ROLES.SUPER_ADMIN] },
+      { name: "د بودجې طبقه‌بندي / طبقه‌بندی بودجه", path: "/settings/budget-codes", roles: [ROLES.SUPER_ADMIN] },
       { name: "حذف شوي معلومات / اطلاعات حذف‌شده", path: "/maintenance/trash", roles: [ROLES.SUPER_ADMIN] },
       { name: "بیکپ / پشتیبان‌گیری", path: "/maintenance/backup", roles: [ROLES.SUPER_ADMIN] },
       { name: "د بیا رغونې تاریخچه / تاریخچه بازیابی", path: "/maintenance/recovery-history", roles: [ROLES.SUPER_ADMIN] },

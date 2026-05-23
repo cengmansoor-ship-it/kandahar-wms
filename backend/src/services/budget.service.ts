@@ -282,6 +282,56 @@ export class BudgetService {
     return { id: result.insertId, ...data };
   }
 
+  static async deleteBab(id: number) {
+    const [rows]: any = await pool.query(
+      `SELECT id FROM budget_babs WHERE id = ? AND is_deleted = 0 LIMIT 1`, [id]
+    );
+    if (!rows.length) throw new Error('not_found');
+    const [used]: any = await pool.query(
+      `SELECT COUNT(*) as cnt FROM items WHERE bab_id = ? AND is_deleted = 0`, [id]
+    );
+    if (used[0].cnt > 0) throw new Error('in_use');
+    await pool.query(`UPDATE budget_babs SET is_deleted = 1 WHERE id = ?`, [id]);
+  }
+
+  static async deleteFasl(id: number) {
+    const [rows]: any = await pool.query(
+      `SELECT id FROM budget_fasls WHERE id = ? AND is_deleted = 0 LIMIT 1`, [id]
+    );
+    if (!rows.length) throw new Error('not_found');
+    const [used]: any = await pool.query(
+      `SELECT COUNT(*) as cnt FROM items WHERE fasl_id = ? AND is_deleted = 0`, [id]
+    );
+    if (used[0].cnt > 0) throw new Error('in_use');
+    await pool.query(`UPDATE budget_fasls SET is_deleted = 1 WHERE id = ?`, [id]);
+  }
+
+  static async updateBab(id: number, data: { bab_code?: string; name_ps?: string; name_fa?: string; description?: string }) {
+    const [rows]: any = await pool.query(
+      `SELECT id FROM budget_babs WHERE id = ? AND is_deleted = 0 LIMIT 1`, [id]
+    );
+    if (!rows.length) throw new Error('not_found');
+    await pool.query(
+      `UPDATE budget_babs SET bab_code = COALESCE(?, bab_code), name_ps = COALESCE(?, name_ps), name_fa = COALESCE(?, name_fa), description = COALESCE(?, description) WHERE id = ?`,
+      [data.bab_code || null, data.name_ps || null, data.name_fa || null, data.description ?? null, id]
+    );
+    const [updated]: any = await pool.query(`SELECT * FROM budget_babs WHERE id = ?`, [id]);
+    return updated[0];
+  }
+
+  static async updateFasl(id: number, data: { fasl_code?: string; name_ps?: string; name_fa?: string; description?: string }) {
+    const [rows]: any = await pool.query(
+      `SELECT id FROM budget_fasls WHERE id = ? AND is_deleted = 0 LIMIT 1`, [id]
+    );
+    if (!rows.length) throw new Error('not_found');
+    await pool.query(
+      `UPDATE budget_fasls SET fasl_code = COALESCE(?, fasl_code), name_ps = COALESCE(?, name_ps), name_fa = COALESCE(?, name_fa), description = COALESCE(?, description) WHERE id = ?`,
+      [data.fasl_code || null, data.name_ps || null, data.name_fa || null, data.description ?? null, id]
+    );
+    const [updated]: any = await pool.query(`SELECT * FROM budget_fasls WHERE id = ?`, [id]);
+    return updated[0];
+  }
+
   static async importBabFasl(babs: any[], fasls: any[]) {
     const conn = await pool.getConnection();
     try {

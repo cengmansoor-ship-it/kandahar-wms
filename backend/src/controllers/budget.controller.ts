@@ -84,6 +84,48 @@ export const createFasl = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteBab = async (req: Request, res: Response) => {
+  try {
+    await BudgetService.deleteBab(Number(req.params.id));
+    return res.json({ success: true, message: 'باب حذف شو' });
+  } catch (e: any) {
+    if (e.message === 'not_found') return res.status(404).json({ success: false, message: 'باب ونه موندل شو' });
+    if (e.message === 'in_use') return res.status(400).json({ success: false, message: 'دا باب د اجناسو سره تړلی دی او نشي حذف کیدلی' });
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+export const deleteFasl = async (req: Request, res: Response) => {
+  try {
+    await BudgetService.deleteFasl(Number(req.params.id));
+    return res.json({ success: true, message: 'فصل حذف شو' });
+  } catch (e: any) {
+    if (e.message === 'not_found') return res.status(404).json({ success: false, message: 'فصل ونه موندل شو' });
+    if (e.message === 'in_use') return res.status(400).json({ success: false, message: 'دا فصل د اجناسو سره تړلی دی او نشي حذف کیدلی' });
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+export const updateBab = async (req: Request, res: Response) => {
+  try {
+    const data = await BudgetService.updateBab(Number(req.params.id), req.body);
+    return res.json({ success: true, data });
+  } catch (e: any) {
+    if (e.message === 'not_found') return res.status(404).json({ success: false, message: 'باب ونه موندل شو' });
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+export const updateFasl = async (req: Request, res: Response) => {
+  try {
+    const data = await BudgetService.updateFasl(Number(req.params.id), req.body);
+    return res.json({ success: true, data });
+  } catch (e: any) {
+    if (e.message === 'not_found') return res.status(404).json({ success: false, message: 'فصل ونه موندل شو' });
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
 export const importBabFasl = async (req: Request, res: Response) => {
   try {
     const { babs = [], fasls = [] } = req.body;

@@ -54,6 +54,7 @@ import FinalQAChecklist from "./pages/Maintenance/FinalQAChecklist";
 import OfficialFormsPage from "./pages/OfficialForms/OfficialFormsPage";
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
+import BudgetCodes from "./pages/Settings/BudgetCodes";
 import AboutPage from "./pages/About/AboutPage";
 import TraceabilityPage from "./pages/Traceability/TraceabilityPage";
 
@@ -121,6 +122,7 @@ export default function App() {
             <Route path="/maintenance/health" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><SystemHealth /></ProtectedRoute>} />
             <Route path="/maintenance/final-qa" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><FinalQAChecklist /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><SettingsPage /></ProtectedRoute>} />
+            <Route path="/settings/budget-codes" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><BudgetCodes /></ProtectedRoute>} />
             <Route path="/traceability" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON]}><TraceabilityPage /></ProtectedRoute>} />
             <Route path="/about" element={<AboutPage />} />
           </Route>

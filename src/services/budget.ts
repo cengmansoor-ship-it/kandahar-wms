@@ -114,4 +114,20 @@ export const budgetService = {
   createFasl: async (data: { bab_id: number; fasl_code: string; name_ps: string; name_fa: string; description?: string }): Promise<BudgetFasl> => {
     return await apiClient.post('/budget/fasls', data);
   },
+
+  updateBab: async (id: number, data: { bab_code?: string; name_ps?: string; name_fa?: string; description?: string }): Promise<BudgetBab> => {
+    return await apiClient.put(`/budget/babs/${id}`, data);
+  },
+
+  updateFasl: async (id: number, data: { fasl_code?: string; name_ps?: string; name_fa?: string; description?: string }): Promise<BudgetFasl> => {
+    return await apiClient.put(`/budget/fasls/${id}`, data);
+  },
+
+  deleteBab: async (id: number): Promise<void> => {
+    await apiClient.delete(`/budget/babs/${id}`);
+  },
+
+  deleteFasl: async (id: number): Promise<void> => {
+    await apiClient.delete(`/budget/fasls/${id}`);
+  },
 };
