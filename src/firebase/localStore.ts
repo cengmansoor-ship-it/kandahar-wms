@@ -6,7 +6,7 @@ import type { InventoryRequest, PipelineRecord, RequestLevelRecord } from "./req
 const PREFIX = "kandahar_wms_";
 
 // ── Data version: bump this string to force a full reseed on all clients ──
-const DATA_VERSION = "fy1404-full-year-v3";
+const DATA_VERSION = "fy1404-no-seed-v1";
 
 const BASE_TS = new Date(2026, 4, 14, 8, 0, 0).getTime(); // May 14 2026 = "today"
 const Y1     = new Date(2025, 4, 14, 8, 0, 0).getTime(); // May 14 2025 = one year ago
@@ -138,13 +138,16 @@ export function getDemoUsers(): UserProfile[] {
 }
 
 // ════════════════════════════════════════════════════════════════
-// ITEMS  — 20 realistic items for Kandahar University warehouse
+// ITEMS — returns only real data entered by users (no seed data)
 // ════════════════════════════════════════════════════════════════
 export function seedDemoItems(): WarehouseItem[] {
   ensureSeedVersion();
-  const existing = getLocalItem<WarehouseItem[]>("items", []);
-  if (existing.length > 0) return existing;
+  return getLocalItem<WarehouseItem[]>("items", []);
+}
 
+// ── REMOVED SEED DATA BLOCK (replaced by empty return above) ──
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _unusedItemsBlock(): WarehouseItem[] {
   const items: WarehouseItem[] = [
     // ── Stationery ──────────────────────────────────────────────
     {
@@ -398,10 +401,8 @@ export function seedDemoItems(): WarehouseItem[] {
 // ════════════════════════════════════════════════════════════════
 export function seedDemoTransactions(): StockTransaction[] {
   ensureSeedVersion();
-  const existing = getLocalItem<StockTransaction[]>("stock_transactions", []);
-  if (existing.length > 0) return existing;
-
-  // [item_id, item_name, unit, monthly_IN[12], monthly_OUT[12], start_balance]
+  return getLocalItem<StockTransaction[]>("stock_transactions", []);
+  // ── seed data removed ──
   const itemDefs: [string, string, string, number[], number[], number][] = [
     // Paper — heavy seasonal use (peak M3=Aug semester start, M0=May)
     ["demo_item_1","A4 کاغذ","ریمه",
@@ -542,9 +543,8 @@ export function saveDemoTransactions(t: StockTransaction[]): void { setLocalItem
 // ════════════════════════════════════════════════════════════════
 function seedDemoRequests(): InventoryRequest[] {
   ensureSeedVersion();
-  const existing = getLocalItem<InventoryRequest[]>("requests", []);
-  if (existing.length > 0) return existing;
-
+  return getLocalItem<InventoryRequest[]>("requests", []);
+  // ── seed data removed ──
   const requests: InventoryRequest[] = [
 
     // ── M0 (1404/03 - May 2025) ─────────────────────────────────
@@ -857,8 +857,9 @@ export function saveDemoRequests(r: InventoryRequest[]): void { setLocalItem("re
 // ════════════════════════════════════════════════════════════════
 function seedDemoPipeline(): PipelineRecord[] {
   ensureSeedVersion();
+  return getLocalItem<PipelineRecord[]>("request_pipeline", []);
+  // ── seed data removed ──
   const existing = getLocalItem<PipelineRecord[]>("request_pipeline", []);
-  if (existing.length > 0) return existing;
 
   // Helper to build the standard 5-stage "stock available → delivered" chain
   const stockChain = (
@@ -969,9 +970,8 @@ export function saveDemoPipeline(r: PipelineRecord[]): void { setLocalItem("requ
 // ════════════════════════════════════════════════════════════════
 export function getDemoLevelHistory(): RequestLevelRecord[] {
   ensureSeedVersion();
-  const saved = getLocalItem<RequestLevelRecord[]>("request_level_history", []);
-  if (saved.length > 0) return saved;
-
+  return getLocalItem<RequestLevelRecord[]>("request_level_history", []);
+  // ── seed data removed ──
   const history: RequestLevelRecord[] = [
     {
       id:"level_y1_01", requestId:"req_y1_08",
@@ -1024,9 +1024,8 @@ export function getDemoLevelHistory(): RequestLevelRecord[] {
 // ════════════════════════════════════════════════════════════════
 export function getDemoEmailLogs(): DemoEmailLog[] {
   ensureSeedVersion();
-  const saved = getLocalItem<DemoEmailLog[]>("email_logs", []);
-  if (saved.length > 0) return saved;
-
+  return getLocalItem<DemoEmailLog[]>("email_logs", []);
+  // ── seed data removed ──
   const logs: DemoEmailLog[] = [
     { id:"email_y1_01", to:"enayatzoon@gmail.com",           subject:"ستاسې د غوښتنې اجناس رسېدلي دي",               body:"د کمپیوټر ساینس پوهنځي غوښتنه (req_y1_01) بشپړه شوه. مهرباني وکړئ د تسلیمۍ لپاره مراجعه وکړئ.",              relatedRequestId:"req_y1_01", requestLevel:"ډېر مهم",  status:"Sent",   createdAt:ts(0,12)+1000,  createdAtHijriShamsi:"۱۴۰۴/۰۳/۲۲", createdAtHijriQamari:"۱۴۴۷/۰۱/۰۴" },
     { id:"email_y1_02", to:"engineering@ku.edu.af",          subject:"د شبکې کیبل تدارک بشپړ شو",                   body:"د انجینري پوهنځي (req_y1_02) شبکې کیبل تسلیم شو. ف س ۵ لاسلیک وکړئ.",                                   relatedRequestId:"req_y1_02", requestLevel:"ډېر عاجل", status:"Sent",   createdAt:ts(1,8)+2000,   createdAtHijriShamsi:"۱۴۰۴/۰۴/۱۸", createdAtHijriQamari:"۱۴۴۷/۰۱/۲۸" },

@@ -163,7 +163,7 @@ export default function ProcurementDetails() {
                 </button>
 
                 <button 
-                  onClick={() => navigate(`/procurement/winner/${id}`)}
+                  onClick={() => navigate(`/procurement/offers/${id}`)}
                   disabled={offers.length < 3}
                   className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
                     offers.length < 3 ? 'opacity-50 cursor-not-allowed grayscale' : 
