@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
@@ -7,9 +7,21 @@ import { getItems, WarehouseItem } from "../../firebase/inventory";
 import { createRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { managementService } from "../../services/management";
 
 const REQUEST_LEVELS_PS = ["ډېر عاجل", "ډېر مهم", "متوسط", "عادي", "لږ مهم"];
 const REQUEST_LEVELS_DR = ["بسیار عاجل", "بسیار مهم", "متوسط", "عادی", "کم‌اهمیت"];
+
+const UNITS_PS = [
+  "دانه", "پاکټ", "کارتن", "بسته", "کیلوګرام", "ګرام", "متر",
+  "سانتي متر", "لیتر", "ملي لیتر", "پارسل", "جوړه", "رول",
+  "بکس", "جلد", "ټوټه", "سیټ", "عدد", "ریمه", "نور",
+];
+const UNITS_DR = [
+  "دانه", "پاکت", "کارتن", "بسته", "کیلوگرام", "گرام", "متر",
+  "سانتی‌متر", "لیتر", "ملی‌لیتر", "پارسل", "جوره", "رول",
+  "بکس", "جلد", "قطعه", "سیت", "عدد", "ریم", "سایر",
+];
 
 interface RequestItemRow {
   mode: "existing" | "custom";
@@ -23,9 +35,18 @@ interface RequestItemRow {
 export default function CreateRequest() {
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<RequestItemRow[]>([]);
+
+  const [faculties, setFaculties] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [loadingFaculties, setLoadingFaculties] = useState(false);
+  const [facultyMode, setFacultyMode] = useState<"dropdown" | "text">("dropdown");
+  const [departmentMode, setDepartmentMode] = useState<"dropdown" | "text">("dropdown");
+
   const [formData, setFormData] = useState({
     faculty: "",
+    faculty_id: "",
     departmentOrPerson: "",
+    department_id: "",
     reason: "",
     requestLevel: "عادي",
   });
@@ -37,10 +58,36 @@ export default function CreateRequest() {
   const navigate = useNavigate();
 
   const levels = lang === "dr" ? REQUEST_LEVELS_DR : REQUEST_LEVELS_PS;
+  const UNITS = lang === "dr" ? UNITS_DR : UNITS_PS;
 
   useEffect(() => {
     getItems().then(setItems).catch(console.error);
+
+    setLoadingFaculties(true);
+    managementService.getFaculties()
+      .then((data: any[]) => {
+        setFaculties(data || []);
+        setFacultyMode(data && data.length > 0 ? "dropdown" : "text");
+      })
+      .catch(() => setFacultyMode("text"))
+      .finally(() => setLoadingFaculties(false));
   }, []);
+
+  // Load departments when faculty changes
+  useEffect(() => {
+    if (!formData.faculty_id) {
+      setDepartments([]);
+      return;
+    }
+    managementService.getDepartments()
+      .then((data: any[]) => {
+        const filtered = (data || []).filter((d: any) => String(d.faculty_id) === String(formData.faculty_id));
+        setDepartments(filtered);
+        setDepartmentMode(filtered.length > 0 ? "dropdown" : "text");
+        setFormData(prev => ({ ...prev, departmentOrPerson: "", department_id: "" }));
+      })
+      .catch(() => setDepartmentMode("text"));
+  }, [formData.faculty_id]);
 
   const getFilteredItems = (idx: number) => {
     const q = (itemSearch[idx] || "").toLowerCase().trim();
@@ -83,12 +130,38 @@ export default function CreateRequest() {
     });
   };
 
+  const handleFacultySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const fid = e.target.value;
+    const fac = faculties.find((f: any) => String(f.id) === fid);
+    setFormData(prev => ({
+      ...prev,
+      faculty_id: fid,
+      faculty: fac ? (lang === "dr" ? fac.name_fa : fac.name_ps) : "",
+      departmentOrPerson: "",
+      department_id: "",
+    }));
+  };
+
+  const handleDepartmentSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const did = e.target.value;
+    const dept = departments.find((d: any) => String(d.id) === did);
+    setFormData(prev => ({
+      ...prev,
+      department_id: did,
+      departmentOrPerson: dept ? (lang === "dr" ? dept.name_fa : dept.name_ps) : "",
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if (!user || !profile) {
       setError(pick("د کاروونکي معلومات ونه موندل شول.", "اطلاعات کاربر یافت نشد."));
+      return;
+    }
+    if (!formData.faculty.trim()) {
+      setError(pick("مهرباني وکړئ پوهنځی انتخاب کړئ.", "لطفاً پوهنکده را انتخاب کنید."));
       return;
     }
     if (selectedItems.length === 0) {
@@ -114,7 +187,14 @@ export default function CreateRequest() {
         quantity: i.quantity,
       }));
       const requestId = await createRequest(
-        { ...formData, originalRequestLevel: formData.requestLevel, items: requestItems },
+        {
+          faculty: formData.faculty,
+          departmentOrPerson: formData.departmentOrPerson,
+          reason: formData.reason,
+          originalRequestLevel: formData.requestLevel,
+          currentRequestLevel: formData.requestLevel,
+          items: requestItems,
+        },
         user.uid,
         profile.name
       );
@@ -126,6 +206,8 @@ export default function CreateRequest() {
       setLoading(false);
     }
   };
+
+  const inputCls = "w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:text-white/90";
 
   return (
     <>
@@ -141,29 +223,104 @@ export default function CreateRequest() {
           )}
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Faculty field */}
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {pick("پوهنځی / فاکولته", "پوهنکده / فاکولتی")} <span className="text-red-500">*</span>
               </label>
-              <input type="text" value={formData.faculty}
-                onChange={e => setFormData({ ...formData, faculty: e.target.value })}
-                required placeholder={pick("مثلاً: کمپیوټر ساینس", "مثلاً: علوم کامپیوتر")}
-                className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:text-white/90" />
+              {facultyMode === "dropdown" ? (
+                <>
+                  <select
+                    value={formData.faculty_id}
+                    onChange={handleFacultySelect}
+                    required
+                    disabled={loadingFaculties}
+                    className={inputCls}
+                  >
+                    <option value="">{loadingFaculties ? pick("بارگذاری...", "بارگذاری...") : pick("پوهنځی غوره کړئ...", "پوهنکده انتخاب کنید...")}</option>
+                    {faculties.map((f: any) => (
+                      <option key={f.id} value={f.id}>
+                        {lang === "dr" ? f.name_fa : f.name_ps}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => { setFacultyMode("text"); setFormData(p => ({ ...p, faculty_id: "", faculty: "" })); }}
+                    className="mt-1 text-xs text-blue-500 hover:underline">
+                    {pick("لاسي ولیکئ", "تایپ کنید")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input type="text" value={formData.faculty}
+                    onChange={e => setFormData({ ...formData, faculty: e.target.value, faculty_id: "" })}
+                    required placeholder={pick("مثلاً: کمپیوټر ساینس", "مثلاً: علوم کامپیوتر")}
+                    className={inputCls} />
+                  {faculties.length > 0 && (
+                    <button type="button" onClick={() => setFacultyMode("dropdown")}
+                      className="mt-1 text-xs text-blue-500 hover:underline">
+                      {pick("د لیست نه غوره کړئ", "از لیست انتخاب کنید")}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
+
+            {/* Department field */}
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {pick("څانګه یا کس", "دیپارتمنت یا شخص")} <span className="text-red-500">*</span>
               </label>
-              <input type="text" value={formData.departmentOrPerson}
-                onChange={e => setFormData({ ...formData, departmentOrPerson: e.target.value })}
-                required placeholder={pick("مثلاً: تدریسي مدیریت", "مثلاً: مدیریت آموزشی")}
-                className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:text-white/90" />
+              {departmentMode === "dropdown" && formData.faculty_id && departments.length > 0 ? (
+                <>
+                  <select
+                    value={formData.department_id}
+                    onChange={handleDepartmentSelect}
+                    required
+                    className={inputCls}
+                  >
+                    <option value="">{pick("څانګه غوره کړئ...", "دیپارتمنت انتخاب کنید...")}</option>
+                    {departments.map((d: any) => (
+                      <option key={d.id} value={d.id}>
+                        {lang === "dr" ? d.name_fa : d.name_ps}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => { setDepartmentMode("text"); setFormData(p => ({ ...p, department_id: "", departmentOrPerson: "" })); }}
+                    className="mt-1 text-xs text-blue-500 hover:underline">
+                    {pick("لاسي ولیکئ", "تایپ کنید")}
+                  </button>
+                </>
+              ) : formData.faculty_id && departments.length === 0 ? (
+                <>
+                  <input type="text" value={formData.departmentOrPerson}
+                    onChange={e => setFormData({ ...formData, departmentOrPerson: e.target.value })}
+                    required placeholder={pick("د دې پوهنځي لپاره څانګه نه ده ثبت شوې - لاسي ولیکئ", "برای این پوهنکده دیپارتمنت ثبت نشده - تایپ کنید")}
+                    className={inputCls} />
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    {pick("د دې پوهنځي لپاره څانګه نه ده ثبت شوې", "برای این پوهنکده هنوز دیپارتمنت ثبت نشده است")}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <input type="text" value={formData.departmentOrPerson}
+                    onChange={e => setFormData({ ...formData, departmentOrPerson: e.target.value })}
+                    required placeholder={pick("مثلاً: تدریسي مدیریت", "مثلاً: مدیریت آموزشی")}
+                    className={inputCls} />
+                  {departments.length > 0 && (
+                    <button type="button" onClick={() => setDepartmentMode("dropdown")}
+                      className="mt-1 text-xs text-blue-500 hover:underline">
+                      {pick("د لیست نه غوره کړئ", "از لیست انتخاب کنید")}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
+
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {pick("د غوښتنې درجه", "درجه درخواست")} <span className="text-red-500">*</span>
               </label>
-              <select className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:text-white/90"
+              <select className={inputCls}
                 value={formData.requestLevel}
                 onChange={e => setFormData({ ...formData, requestLevel: e.target.value })}
                 required>
@@ -178,7 +335,7 @@ export default function CreateRequest() {
             </label>
             <textarea value={formData.reason}
               onChange={e => setFormData({ ...formData, reason: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:text-white/90"
+              className={inputCls}
               rows={3} required
               placeholder={pick("د غوښتنې لنډه توضیح...", "توضیح مختصر درخواست...")} />
           </div>
@@ -264,10 +421,14 @@ export default function CreateRequest() {
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("واحد", "واحد")}</label>
-                        <input type="text" value={sItem.unit}
+                        <select
+                          value={sItem.unit}
                           onChange={e => handleFieldChange(index, "unit", e.target.value)}
-                          placeholder={pick("مثلاً: دانه، ریمه، متر", "مثلاً: دانه، ریم، متر")}
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white/90" />
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white/90"
+                        >
+                          <option value="">{pick("واحد غوره کړئ", "واحد انتخاب کنید")}</option>
+                          {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("مقدار *", "مقدار *")}</label>

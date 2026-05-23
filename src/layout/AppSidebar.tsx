@@ -44,7 +44,6 @@ const AppSidebar: React.FC = () => {
     ] },
     { id: "procurement", icon: <TableIcon />, name: "تدارکات / تدارکات", subItems: [
       { name: "تدارکاتي غوښتنې / درخواست‌های تدارکاتی", path: "/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
-      { name: "درې قیمتونه او مقایسه / سه قیمت و مقایسه", path: "/procurement", roles: [ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
     ] },
     { id: "requests", icon: <PageIcon />, name: "غوښتنې / درخواست‌ها", subItems: [
       { name: "د غوښتنو لیست / لیست درخواست‌ها", path: "/requests", roles: [ROLES.REQUESTER, ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUEST_CONFIRMER] },

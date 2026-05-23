@@ -89,6 +89,7 @@ export default function AddItem() {
   const [babSearch, setBabSearch] = useState("");
   const [faslSearch, setFaslSearch] = useState("");
 
+  // Add Bab/Fasl
   const [showAddBab, setShowAddBab] = useState(false);
   const [showAddFasl, setShowAddFasl] = useState(false);
   const [newBab, setNewBab] = useState({ bab_code: "", name_ps: "", name_fa: "", description: "" });
@@ -97,6 +98,20 @@ export default function AddItem() {
   const [addFaslLoading, setAddFaslLoading] = useState(false);
   const [addBabError, setAddBabError] = useState("");
   const [addFaslError, setAddFaslError] = useState("");
+
+  // Edit Bab
+  const [editingBab, setEditingBab] = useState<BudgetBab | null>(null);
+  const [editBabForm, setEditBabForm] = useState({ bab_code: "", name_ps: "", name_fa: "", description: "" });
+  const [editBabLoading, setEditBabLoading] = useState(false);
+  const [editBabError, setEditBabError] = useState("");
+  const [deleteBabConfirm, setDeleteBabConfirm] = useState<number | null>(null);
+
+  // Edit Fasl
+  const [editingFasl, setEditingFasl] = useState<BudgetFasl | null>(null);
+  const [editFaslForm, setEditFaslForm] = useState({ fasl_code: "", name_ps: "", name_fa: "", description: "" });
+  const [editFaslLoading, setEditFaslLoading] = useState(false);
+  const [editFaslError, setEditFaslError] = useState("");
+  const [deleteFaslConfirm, setDeleteFaslConfirm] = useState<number | null>(null);
 
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -137,6 +152,7 @@ export default function AddItem() {
       budgetService.getFaslsByBab(Number(formData.bab_id)).then(setFasls).catch(() => setFasls([]));
       setFormData(prev => ({ ...prev, fasl_id: "" }));
       setFaslSearch("");
+      setEditingFasl(null);
     } else {
       setFasls([]);
     }
@@ -191,6 +207,7 @@ export default function AddItem() {
     }
   };
 
+  // ── Add Bab ──────────────────────────────────────────────────────────────────
   const handleAddBab = async () => {
     setAddBabError("");
     if (!newBab.bab_code || !newBab.name_ps || !newBab.name_fa) {
@@ -211,6 +228,48 @@ export default function AddItem() {
     }
   };
 
+  // ── Edit Bab ─────────────────────────────────────────────────────────────────
+  const handleOpenEditBab = (bab: BudgetBab) => {
+    setEditingBab(bab);
+    setEditBabForm({ bab_code: bab.bab_code, name_ps: bab.name_ps, name_fa: bab.name_fa, description: bab.description || "" });
+    setEditBabError("");
+    setShowAddBab(false);
+  };
+
+  const handleSaveEditBab = async () => {
+    setEditBabError("");
+    if (!editBabForm.bab_code || !editBabForm.name_ps || !editBabForm.name_fa) {
+      setEditBabError("کود، د پښتو نوم او د دري نوم اړین دي.");
+      return;
+    }
+    setEditBabLoading(true);
+    try {
+      const updated = await budgetService.updateBab(editingBab!.id, editBabForm);
+      setBabs(prev => prev.map(b => b.id === updated.id ? updated : b));
+      setEditingBab(null);
+    } catch (err: any) {
+      setEditBabError(err.message || "خطا د باب ساتلو کې");
+    } finally {
+      setEditBabLoading(false);
+    }
+  };
+
+  // ── Delete Bab ───────────────────────────────────────────────────────────────
+  const handleDeleteBab = async (id: number) => {
+    try {
+      await budgetService.deleteBab(id);
+      setBabs(prev => prev.filter(b => b.id !== id));
+      if (formData.bab_id === String(id)) {
+        setFormData(prev => ({ ...prev, bab_id: "", fasl_id: "" }));
+        setFasls([]);
+      }
+      setDeleteBabConfirm(null);
+    } catch {
+      setDeleteBabConfirm(null);
+    }
+  };
+
+  // ── Add Fasl ─────────────────────────────────────────────────────────────────
   const handleAddFasl = async () => {
     setAddFaslError("");
     if (!formData.bab_id) {
@@ -232,6 +291,46 @@ export default function AddItem() {
       setAddFaslError(err.message || "خطا د فصل ثبتولو کې");
     } finally {
       setAddFaslLoading(false);
+    }
+  };
+
+  // ── Edit Fasl ────────────────────────────────────────────────────────────────
+  const handleOpenEditFasl = (fasl: BudgetFasl) => {
+    setEditingFasl(fasl);
+    setEditFaslForm({ fasl_code: fasl.fasl_code, name_ps: fasl.name_ps, name_fa: fasl.name_fa, description: fasl.description || "" });
+    setEditFaslError("");
+    setShowAddFasl(false);
+  };
+
+  const handleSaveEditFasl = async () => {
+    setEditFaslError("");
+    if (!editFaslForm.fasl_code || !editFaslForm.name_ps || !editFaslForm.name_fa) {
+      setEditFaslError("کود، د پښتو نوم او د دري نوم اړین دي.");
+      return;
+    }
+    setEditFaslLoading(true);
+    try {
+      const updated = await budgetService.updateFasl(editingFasl!.id, editFaslForm);
+      setFasls(prev => prev.map(f => f.id === updated.id ? updated : f));
+      setEditingFasl(null);
+    } catch (err: any) {
+      setEditFaslError(err.message || "خطا د فصل ساتلو کې");
+    } finally {
+      setEditFaslLoading(false);
+    }
+  };
+
+  // ── Delete Fasl ──────────────────────────────────────────────────────────────
+  const handleDeleteFasl = async (id: number) => {
+    try {
+      await budgetService.deleteFasl(id);
+      setFasls(prev => prev.filter(f => f.id !== id));
+      if (formData.fasl_id === String(id)) {
+        setFormData(prev => ({ ...prev, fasl_id: "" }));
+      }
+      setDeleteFaslConfirm(null);
+    } catch {
+      setDeleteFaslConfirm(null);
     }
   };
 
@@ -318,11 +417,46 @@ export default function AddItem() {
 
   const selectCls = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
   const inputCls = "mb-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
+  const listItemCls = "flex items-center justify-between border-t border-gray-100 dark:border-gray-800 transition-colors";
 
   return (
     <>
       <PageMeta title="نوی جنس اضافه کول | Kandahar University WMS" description="ګودام ته د نوي جنس زیاتول" />
       <Breadcrumb pageTitle="نوی جنس اضافه کول / اضافه کردن جنس جدید" />
+
+      {/* Delete Bab Confirm */}
+      {deleteBabConfirm !== null && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteBabConfirm(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full" dir="rtl">
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">⚠️</div>
+              <p className="text-gray-800 dark:text-white font-semibold">ایا ډاډه یاست؟ دا باب به ړنګ شي.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteBabConfirm(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">لغوه</button>
+              <button onClick={() => handleDeleteBab(deleteBabConfirm)} className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-bold transition-all">ړنګول</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Fasl Confirm */}
+      {deleteFaslConfirm !== null && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteFaslConfirm(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full" dir="rtl">
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">⚠️</div>
+              <p className="text-gray-800 dark:text-white font-semibold">ایا ډاډه یاست؟ دا فصل به ړنګ شي.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteFaslConfirm(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">لغوه</button>
+              <button onClick={() => handleDeleteFasl(deleteFaslConfirm)} className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-bold transition-all">ړنګول</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
@@ -374,15 +508,19 @@ export default function AddItem() {
                     <span className="text-xs text-blue-500">(اختیاري)</span>
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {/* Bab */}
+
+                    {/* ── Bab Column ── */}
                     <div>
                       <div className="flex items-center justify-between mb-1" dir="rtl">
                         <Label>باب (Bab)</Label>
-                        <button type="button" onClick={() => { setShowAddBab(v => !v); setAddBabError(""); }}
+                        <button type="button"
+                          onClick={() => { setShowAddBab(v => !v); setAddBabError(""); setEditingBab(null); }}
                           className="text-xs text-blue-600 hover:underline dark:text-blue-400">
                           {showAddBab ? "✕ بندول" : "+ نوی باب"}
                         </button>
                       </div>
+
+                      {/* Add Bab form */}
                       {showAddBab && (
                         <div className="mb-2 rounded-lg border border-blue-200 bg-white dark:bg-gray-900 dark:border-blue-900/40 p-3 space-y-2" dir="rtl">
                           <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">د نوي باب اضافه کول</p>
@@ -403,27 +541,79 @@ export default function AddItem() {
                           </div>
                         </div>
                       )}
+
+                      {/* Edit Bab inline form */}
+                      {editingBab && (
+                        <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-900/40 p-3 space-y-2" dir="rtl">
+                          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">✏️ د باب سمول — {editingBab.bab_code}</p>
+                          <input placeholder="کود" value={editBabForm.bab_code} onChange={e => setEditBabForm(p => ({ ...p, bab_code: e.target.value }))} className={inputCls} dir="ltr" />
+                          <input placeholder="د پښتو نوم" value={editBabForm.name_ps} onChange={e => setEditBabForm(p => ({ ...p, name_ps: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="نام دری" value={editBabForm.name_fa} onChange={e => setEditBabForm(p => ({ ...p, name_fa: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="توضیحات (اختیاري)" value={editBabForm.description} onChange={e => setEditBabForm(p => ({ ...p, description: e.target.value }))} className={inputCls} dir="rtl" />
+                          {editBabError && <p className="text-xs text-red-500">{editBabError}</p>}
+                          <div className="flex gap-2">
+                            <button type="button" onClick={handleSaveEditBab} disabled={editBabLoading}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition">
+                              {editBabLoading ? "ساتل..." : "✓ ساتل"}
+                            </button>
+                            <button type="button" onClick={() => setEditingBab(null)}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                              لغوه
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <input type="text" placeholder="د باب لټون..." value={babSearch} onChange={e => setBabSearch(e.target.value)}
                         className={inputCls} dir="rtl" />
-                      <select name="bab_id" value={formData.bab_id} onChange={handleChange}
-                        className={selectCls} dir="rtl" size={4}>
-                        <option value="">-- باب غوره کړئ --</option>
-                        {filteredBabs.map(b => <option key={b.id} value={b.id}>{b.bab_code} - {b.name_ps}</option>)}
-                      </select>
+
+                      {/* Bab custom list with edit/delete */}
+                      <div className="max-h-44 overflow-y-auto rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900" dir="rtl">
+                        <div
+                          onClick={() => setFormData(p => ({ ...p, bab_id: "", fasl_id: "" }))}
+                          className={`px-3 py-2 text-sm cursor-pointer ${!formData.bab_id ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold" : "text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>
+                          -- باب غوره کړئ --
+                        </div>
+                        {filteredBabs.map(b => (
+                          <div key={b.id} className={`${listItemCls} ${String(b.id) === formData.bab_id ? "bg-blue-50 dark:bg-blue-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
+                            <div className="flex items-center gap-0.5 px-1 shrink-0">
+                              <button type="button" onClick={() => setDeleteBabConfirm(b.id)}
+                                className="p-1 text-red-400 hover:text-red-600 transition rounded" title="ړنګول">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              </button>
+                              <button type="button" onClick={() => handleOpenEditBab(b)}
+                                className="p-1 text-blue-400 hover:text-blue-600 transition rounded" title="سمول">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                              </button>
+                            </div>
+                            <div className="flex-1 text-right px-2 py-2 cursor-pointer text-sm"
+                              onClick={() => { setFormData(p => ({ ...p, bab_id: String(b.id), fasl_id: "" })); setEditingBab(null); }}>
+                              <span className={String(b.id) === formData.bab_id ? "font-semibold text-blue-700 dark:text-blue-300" : "text-gray-800 dark:text-white/80"}>
+                                {b.bab_code} - {b.name_ps}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {filteredBabs.length === 0 && babSearch && (
+                          <p className="text-xs text-gray-400 text-center py-3">پایله ونه موندله</p>
+                        )}
+                      </div>
                       {selectedBab && <p className="mt-1 text-xs text-blue-700 dark:text-blue-300" dir="rtl">✓ {selectedBab.bab_code} — {selectedBab.name_ps}</p>}
                     </div>
 
-                    {/* Fasl */}
+                    {/* ── Fasl Column ── */}
                     <div>
                       <div className="flex items-center justify-between mb-1" dir="rtl">
                         <Label>فصل (Fasl)</Label>
                         {formData.bab_id && (
-                          <button type="button" onClick={() => { setShowAddFasl(v => !v); setAddFaslError(""); }}
+                          <button type="button" onClick={() => { setShowAddFasl(v => !v); setAddFaslError(""); setEditingFasl(null); }}
                             className="text-xs text-blue-600 hover:underline dark:text-blue-400">
                             {showAddFasl ? "✕ بندول" : "+ نوی فصل"}
                           </button>
                         )}
                       </div>
+
+                      {/* Add Fasl form */}
                       {showAddFasl && formData.bab_id && (
                         <div className="mb-2 rounded-lg border border-blue-200 bg-white dark:bg-gray-900 dark:border-blue-900/40 p-3 space-y-2" dir="rtl">
                           <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">
@@ -446,15 +636,71 @@ export default function AddItem() {
                           </div>
                         </div>
                       )}
-                      <input type="text" placeholder="د فصل لټون..." value={faslSearch} onChange={e => setFaslSearch(e.target.value)}
+
+                      {/* Edit Fasl inline form */}
+                      {editingFasl && (
+                        <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-900/40 p-3 space-y-2" dir="rtl">
+                          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">✏️ د فصل سمول — {editingFasl.fasl_code}</p>
+                          <input placeholder="کود" value={editFaslForm.fasl_code} onChange={e => setEditFaslForm(p => ({ ...p, fasl_code: e.target.value }))} className={inputCls} dir="ltr" />
+                          <input placeholder="د پښتو نوم" value={editFaslForm.name_ps} onChange={e => setEditFaslForm(p => ({ ...p, name_ps: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="نام دری" value={editFaslForm.name_fa} onChange={e => setEditFaslForm(p => ({ ...p, name_fa: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="توضیحات (اختیاري)" value={editFaslForm.description} onChange={e => setEditFaslForm(p => ({ ...p, description: e.target.value }))} className={inputCls} dir="rtl" />
+                          {editFaslError && <p className="text-xs text-red-500">{editFaslError}</p>}
+                          <div className="flex gap-2">
+                            <button type="button" onClick={handleSaveEditFasl} disabled={editFaslLoading}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition">
+                              {editFaslLoading ? "ساتل..." : "✓ ساتل"}
+                            </button>
+                            <button type="button" onClick={() => setEditingFasl(null)}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                              لغوه
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <input type="text" placeholder="د فصل لټون..." value={faslSearch}
+                        onChange={e => setFaslSearch(e.target.value)}
                         disabled={!formData.bab_id}
                         className={`${inputCls} disabled:opacity-40`} dir="rtl" />
-                      <select name="fasl_id" value={formData.fasl_id} onChange={handleChange}
-                        disabled={!formData.bab_id}
-                        className={`${selectCls} disabled:opacity-40`} dir="rtl" size={4}>
-                        <option value="">-- فصل غوره کړئ --</option>
-                        {filteredFasls.map(f => <option key={f.id} value={f.id}>{f.fasl_code} - {f.name_ps}</option>)}
-                      </select>
+
+                      {/* Fasl custom list with edit/delete */}
+                      <div className={`max-h-44 overflow-y-auto rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 ${!formData.bab_id ? "opacity-40 pointer-events-none" : ""}`} dir="rtl">
+                        <div
+                          onClick={() => setFormData(p => ({ ...p, fasl_id: "" }))}
+                          className={`px-3 py-2 text-sm cursor-pointer ${!formData.fasl_id ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold" : "text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>
+                          -- فصل غوره کړئ --
+                        </div>
+                        {filteredFasls.map(f => (
+                          <div key={f.id} className={`${listItemCls} ${String(f.id) === formData.fasl_id ? "bg-blue-50 dark:bg-blue-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
+                            <div className="flex items-center gap-0.5 px-1 shrink-0">
+                              <button type="button" onClick={() => setDeleteFaslConfirm(f.id)}
+                                className="p-1 text-red-400 hover:text-red-600 transition rounded" title="ړنګول">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              </button>
+                              <button type="button" onClick={() => handleOpenEditFasl(f)}
+                                className="p-1 text-blue-400 hover:text-blue-600 transition rounded" title="سمول">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                              </button>
+                            </div>
+                            <div className="flex-1 text-right px-2 py-2 cursor-pointer text-sm"
+                              onClick={() => { setFormData(p => ({ ...p, fasl_id: String(f.id) })); setEditingFasl(null); }}>
+                              <span className={String(f.id) === formData.fasl_id ? "font-semibold text-blue-700 dark:text-blue-300" : "text-gray-800 dark:text-white/80"}>
+                                {f.fasl_code} - {f.name_ps}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {!formData.bab_id && (
+                          <p className="text-xs text-gray-400 text-center py-3">لومړی باب غوره کړئ</p>
+                        )}
+                        {formData.bab_id && filteredFasls.length === 0 && faslSearch && (
+                          <p className="text-xs text-gray-400 text-center py-3">پایله ونه موندله</p>
+                        )}
+                        {formData.bab_id && filteredFasls.length === 0 && !faslSearch && (
+                          <p className="text-xs text-gray-400 text-center py-3">د دې باب لپاره فصل نشته</p>
+                        )}
+                      </div>
                       {selectedFasl && <p className="mt-1 text-xs text-blue-700 dark:text-blue-300" dir="rtl">✓ {selectedFasl.fasl_code} — {selectedFasl.name_ps}</p>}
                     </div>
                   </div>
