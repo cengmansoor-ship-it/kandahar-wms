@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { RequestService } from '../services/request.service';
+import { SmsService } from '../services/sms.service';
 
 const handleError = (res: Response, error: any) => {
   console.error(error);
@@ -48,12 +49,17 @@ export const updateStatus = async (req: Request, res: Response): Promise<any> =>
     const { status, stage_label, action_by_name, action_by_role, comment, progress } = req.body;
     if (!status) return res.status(400).json({ success: false, message: 'حالت (Status) اړین دی.' });
     const userId = 1;
-    const workflow = await RequestService.updateStatus(Number(req.params.id), status, userId, {
+    const requestId = Number(req.params.id);
+    const workflow = await RequestService.updateStatus(requestId, status, userId, {
       stageLabelOverride: stage_label,
       actionByName: action_by_name,
       actionByRole: action_by_role,
       comment,
     });
+
+    // Fire-and-forget: SMS approval notification (only fires for approval-family statuses)
+    SmsService.notifyRequestApproved(requestId, status, action_by_name).catch(() => {});
+
     res.json({ success: true, message: 'د غوښتنې حالت بدل شو.', data: workflow });
   } catch (error) {
     handleError(res, error);

@@ -265,6 +265,74 @@ export class SmsService {
   }
 
   /**
+   * Send an SMS when a request reaches an approval milestone.
+   * Covers: ConfirmedByRequestConfirmer, ApprovedBySuperAdmin, CONFIRMED (legacy).
+   * Queries the request from the DB so the controller stays clean.
+   * Always fire-and-forget: never throws, never blocks the caller.
+   */
+  static async notifyRequestApproved(
+    requestId: number,
+    status: string,
+    actionByName?: string
+  ): Promise<void> {
+    // Only fire on approval-family statuses
+    const APPROVAL_STATUSES = new Set([
+      'ConfirmedByRequestConfirmer',
+      'ApprovedBySuperAdmin',
+      'CONFIRMED',
+    ]);
+    if (!APPROVAL_STATUSES.has(status)) return;
+
+    try {
+      const cfg = await SmsService.getConfig();
+      if (!cfg || !cfg.is_active || !cfg.notify_approved) return;
+      if (!cfg.admin_phone) return;
+
+      // Fetch request details for the SMS body
+      const [rows]: any = await pool.query(`
+        SELECT
+          r.tracking_id,
+          COALESCE(r.requester_name_text, u.name)        AS requester_name,
+          COALESCE(r.faculty_name_text, f.name_ps)       AS faculty_name,
+          COALESCE(r.department_name_text, d.name_ps)    AS department_name,
+          r.progress_percent
+        FROM requests r
+        LEFT JOIN users u       ON r.requester_id  = u.id
+        LEFT JOIN faculties f   ON r.faculty_id    = f.id
+        LEFT JOIN departments d ON r.department_id = d.id
+        WHERE r.id = ? AND r.is_deleted = FALSE
+        LIMIT 1
+      `, [requestId]);
+
+      if (!rows || rows.length === 0) return;
+      const req = rows[0];
+
+      // Human-readable Pashto label per status
+      const STATUS_LABEL: Record<string, string> = {
+        ConfirmedByRequestConfirmer: 'د تایید کوونکي لخوا تایید شوه',
+        ApprovedBySuperAdmin:        'د لوی مدیر لخوا منظور شوه',
+        CONFIRMED:                   'تایید شوه',
+      };
+      const stageLabel = STATUS_LABEL[status] ?? status;
+
+      const lines: string[] = [
+        `✅ کندهار پوهنتون — د غوښتنې منظوري`,
+        `شمیره: ${req.tracking_id || requestId}`,
+        req.requester_name  ? `درخواست کوونکی: ${req.requester_name}`  : null,
+        req.faculty_name    ? `فاکولتي: ${req.faculty_name}`            : null,
+        req.department_name ? `ریاست: ${req.department_name}`           : null,
+        actionByName        ? `منظور کوونکی: ${actionByName}`           : null,
+        `حالت: ${stageLabel}`,
+        `پرمختګ: ${req.progress_percent ?? 0}٪`,
+      ].filter(Boolean) as string[];
+
+      await SmsService.sendSms(cfg.admin_phone, lines.join('\n'));
+    } catch {
+      // Fire-and-forget — never block
+    }
+  }
+
+  /**
    * After any stock-OUT operation, check if the affected items have fallen at or
    * below their minimum_stock threshold. If yes — and SMS low_stock notifications
    * are enabled — send one consolidated alert message to the admin phone.
