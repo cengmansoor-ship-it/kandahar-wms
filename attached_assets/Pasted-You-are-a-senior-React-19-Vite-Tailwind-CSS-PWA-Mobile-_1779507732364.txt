@@ -1,0 +1,262 @@
+You are a senior React 19 + Vite + Tailwind CSS + PWA/Mobile branding engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Objective:
+Fix ONLY these 2 issues:
+
+1. When I run the web app or build it for mobile/PWA/APK, the app still shows the old template/default icon.
+   It must use the Kandahar University logo that is already added on the Login Form.
+
+2. Remove the small visible text/badge:
+   “made with replit”
+   or any similar Replit branding from the system completely.
+
+VERY IMPORTANT:
+Do NOT redesign UI.
+Do NOT change dashboard layout.
+Do NOT touch official forms.
+Do NOT touch request workflow.
+Do NOT touch inventory/procurement/receiving logic.
+Do NOT touch backend/database.
+Do NOT change unrelated files.
+Only fix favicon/app-icon/logo source and remove visible Replit branding.
+
+==================================================
+1) USE LOGIN FORM KANDAHAR UNIVERSITY LOGO AS WEB/MOBILE ICON
+==================================================
+
+Problem:
+The system still shows the old template/default icon when:
+- web app runs in browser
+- web build is created
+- mobile/PWA/APK build is created
+
+Required:
+Use the exact Kandahar University logo that is already displayed in the Login Form as the source logo for:
+
+- browser favicon
+- browser tab icon
+- public favicon
+- PWA icon
+- mobile app icon
+- mobile launcher icon if mobile wrapper exists
+- manifest icons
+- app install icon
+
+First inspect and find where the Login Form logo is used:
+
+Check:
+- src/pages/AuthPages/SignIn.tsx
+- src/pages/AuthPages/AuthPageLayout.tsx
+- src/components/auth/*
+- src/assets/*
+- src/images/*
+- public/images/*
+- public/images/logo/*
+- public/favicon.*
+- index.html
+- public/manifest.json
+- vite.config.ts
+- package.json
+
+Use the same logo file used by the Login Form.
+
+Do NOT use:
+- TailAdmin logo
+- template icon
+- React icon
+- Vite icon
+- Replit icon
+- random generated icon
+
+If favicon/mobile icon sizes are missing:
+- create resized copies from the same Login Form Kandahar University logo
+- create 192x192 and 512x512 if manifest needs them
+- do not redesign the logo
+- do not change colors
+- do not create a new logo
+
+Update if needed:
+- index.html
+- public/favicon.ico
+- public/favicon.png
+- public/manifest.json
+- any PWA/mobile icon config
+- capacitor.config.* if exists
+- android app icon files if Android wrapper exists
+- Flutter launcher icon config if Flutter wrapper exists
+
+Required app title:
+د کندهار پوهنتون د عمومي ګدام او تدارکاتو مدیریت سیستم
+
+Required short app name:
+Kandahar WMS
+
+Testing:
+- Browser tab must show Kandahar University logo.
+- Web build must show Kandahar University logo.
+- Mobile/PWA/APK icon must show Kandahar University logo.
+- Login form logo must remain unchanged.
+
+==================================================
+2) REMOVE “MADE WITH REPLIT” BRANDING
+==================================================
+
+Problem:
+The system sometimes shows a small text/badge:
+“made with replit”
+
+This must be completely removed from web and mobile builds.
+
+Search entire project for:
+- made with replit
+- Made with Replit
+- Replit
+- replit
+- replit-badge
+- ReplitBadge
+- replitBadge
+- replit-dev-banner
+- ReplitBanner
+- replit.com
+- @replit
+- vite-plugin-replit
+- cartographer
+- runtime-error-plugin
+- replit-branding
+
+Inspect:
+- index.html
+- package.json
+- vite.config.ts
+- src/*
+- public/*
+- mobile wrapper files if present
+- Android/WebView files if present
+
+Required changes:
+- Remove any visible Replit badge component.
+- Remove any visible “made with replit” text.
+- Remove Replit badge script if it only injects visible branding.
+- Remove Replit badge CSS if it only styles the badge.
+- Remove Replit visible template label.
+- Do NOT remove required legal license files.
+- Do NOT remove functional deployment config unless it only creates the visible badge.
+
+If Replit injects this badge externally and it is not in source code:
+- clearly report that source code has no Replit badge
+- remove all source-level Replit references
+- recommend using custom deployed build without Replit injected badge
+
+==================================================
+3) MANUAL LOCALHOST RUN INSTRUCTIONS
+==================================================
+
+After the changes, provide exact manual commands so I can run the system on localhost myself.
+
+You must explain how to run:
+
+A) Backend manually:
+If this project has backend/start.sh, give this command:
+
+cd backend
+bash start.sh
+
+If Windows does not support bash, also give the alternative command according to existing package.json scripts, for example:
+
+cd backend
+npm install
+npm run dev
+
+Backend expected port:
+3001
+
+Expected backend health check:
+http://localhost:3001/api/health
+
+B) Frontend manually:
+From project root:
+
+npm install
+npm run dev
+
+Frontend expected port:
+5000
+
+Expected frontend URL:
+http://localhost:5000
+
+C) Web production build manually:
+
+npm run build
+npm run preview
+
+D) Icon cache note:
+If the old icon still appears:
+- hard refresh browser
+- clear browser cache
+- remove old PWA/mobile app
+- reinstall/rebuild mobile app
+- for Android APK, uninstall old APK before installing the new one
+
+E) Mobile/PWA/APK note:
+If the project has Capacitor/Android/PWA setup, provide the exact existing commands found in package.json or config files.
+Do not invent commands.
+Only report commands that actually exist in the project.
+
+==================================================
+FILES THAT MUST NOT BE CHANGED
+==================================================
+
+Do NOT change:
+- public/forms/official-forms.html
+- request workflow files
+- inventory logic files
+- procurement logic files
+- receiving logic files
+- report files
+- backend files
+- database files
+- official form viewer files
+
+Only branding/icon/favicon/manifest/Replit-badge related files may be changed.
+
+==================================================
+BUILD AND TEST
+==================================================
+
+Run:
+npm run build
+
+Then test:
+1. Browser tab icon shows Kandahar University logo.
+2. Login form still shows same Kandahar University logo.
+3. App install/PWA/mobile icon shows Kandahar University logo.
+4. No “made with replit” text appears anywhere.
+5. No Replit badge/banner appears.
+6. UI layout/design remains unchanged.
+7. Manual localhost run instructions are provided.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Report exactly:
+
+1. Which logo file is used in the Login Form.
+2. Which files were changed for favicon/browser icon.
+3. Which files were changed for PWA/mobile icon.
+4. Confirmation that old template icon was replaced.
+5. Where “made with replit” or Replit badge was found.
+6. What Replit branding was removed.
+7. Confirmation that no unrelated modules were touched.
+8. npm run build result.
+9. Exact manual localhost run commands:
+   - backend command
+   - frontend command
+   - frontend URL
+   - backend URL
+10. Mobile/PWA/APK build commands if they exist.
+11. Any remaining issue if Replit injects badge externally.

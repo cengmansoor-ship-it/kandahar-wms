@@ -63,6 +63,9 @@ export const addReceivingItems = async (req: Request, res: Response): Promise<an
       `✅ کندهار پوهنتون WMS\n${items.length} ډول اجناس ګدام ته داخل شول.\nرسید شمیره: ${req.params.id}`
     ).catch(() => {});
 
+    // Fire-and-forget budget utilization check after receiving
+    SmsService.checkBudgetUtilization().catch(() => {});
+
     res.json({ success: true, message: 'اجناس په بریالیتوب سره رسید او ګدام ته اضافه شول.' });
   } catch (error) {
     handleError(res, error);

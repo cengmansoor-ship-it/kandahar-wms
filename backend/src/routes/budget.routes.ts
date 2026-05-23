@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import {
   getBabs, getBabById, getFaslsByBab, getAllFasls, searchBudget, importBabFasl,
-  createBab, createFasl, deleteBab, deleteFasl, updateBab, updateFasl
+  createBab, createFasl, deleteBab, deleteFasl, updateBab, updateFasl,
+  getCeilings, setCeiling, deleteCeiling
 } from '../controllers/budget.controller';
 
 const router = Router();
@@ -18,5 +19,10 @@ router.put('/fasls/:id', updateFasl);
 router.delete('/fasls/:id', deleteFasl);
 router.get('/search', searchBudget);
 router.post('/import', importBabFasl);
+
+// Budget Ceilings
+router.get('/ceilings', getCeilings);
+router.post('/ceilings', setCeiling);
+router.delete('/ceilings/:id', deleteCeiling);
 
 export default router;

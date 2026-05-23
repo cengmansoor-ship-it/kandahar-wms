@@ -138,3 +138,45 @@ export const importBabFasl = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: e.message });
   }
 };
+
+// ── Budget Ceilings ────────────────────────────────────────────────────────
+export const getCeilings = async (req: Request, res: Response) => {
+  try {
+    const data = await BudgetService.getCeilings();
+    return res.json({ success: true, data });
+  } catch (e: any) {
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+export const setCeiling = async (req: Request, res: Response) => {
+  try {
+    const { bab_id, fiscal_year, ceiling_amount, notes } = req.body;
+    if (!bab_id || !fiscal_year || ceiling_amount == null) {
+      return res.status(400).json({ success: false, message: 'باب، مالي کال او سقف اړین دي' });
+    }
+    const amt = Number(ceiling_amount);
+    if (isNaN(amt) || amt < 0) {
+      return res.status(400).json({ success: false, message: 'سقف باید یو سم عدد وي' });
+    }
+    const data = await BudgetService.setCeiling(Number(bab_id), String(fiscal_year), amt, notes);
+    return res.status(201).json({ success: true, data });
+  } catch (e: any) {
+    if (e.message === 'bab_not_found') {
+      return res.status(404).json({ success: false, message: 'باب ونه موندل شو' });
+    }
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+export const deleteCeiling = async (req: Request, res: Response) => {
+  try {
+    await BudgetService.deleteCeiling(Number(req.params.id));
+    return res.json({ success: true, message: 'د بودجې سقف حذف شو' });
+  } catch (e: any) {
+    if (e.message === 'not_found') {
+      return res.status(404).json({ success: false, message: 'سقف ونه موندل شو' });
+    }
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};

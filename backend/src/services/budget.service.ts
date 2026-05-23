@@ -365,4 +365,112 @@ export class BudgetService {
       conn.release();
     }
   }
+
+  // ── Budget Ceilings ────────────────────────────────────────────────────────
+  static async runCeilingMigration(): Promise<void> {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS budget_ceilings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        bab_id INT NOT NULL,
+        fiscal_year VARCHAR(10) NOT NULL DEFAULT '1404',
+        ceiling_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+        notes VARCHAR(500) DEFAULT '',
+        alert_80_sent TINYINT(1) DEFAULT 0,
+        alert_100_sent TINYINT(1) DEFAULT 0,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_bab_year (bab_id, fiscal_year),
+        FOREIGN KEY (bab_id) REFERENCES budget_babs(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  }
+
+  static async getCeilings(): Promise<any[]> {
+    const [rows]: any = await pool.query(`
+      SELECT
+        bc.id, bc.bab_id, bc.fiscal_year, bc.ceiling_amount, bc.notes,
+        bc.alert_80_sent, bc.alert_100_sent,
+        bb.bab_code, bb.name_ps, bb.name_fa,
+        COALESCE(sp.spent_value, 0) AS spent_value,
+        CASE WHEN bc.ceiling_amount > 0
+          THEN ROUND(COALESCE(sp.spent_value, 0) / bc.ceiling_amount * 100, 1)
+          ELSE 0
+        END AS utilization_percent
+      FROM budget_ceilings bc
+      JOIN budget_babs bb ON bc.bab_id = bb.id AND bb.is_deleted = 0
+      LEFT JOIN (
+        SELECT bab_id, SUM(unit_price * current_stock) AS spent_value
+        FROM items
+        WHERE is_deleted = FALSE AND bab_id IS NOT NULL
+        GROUP BY bab_id
+      ) sp ON sp.bab_id = bc.bab_id
+      WHERE bc.is_active = 1
+      ORDER BY bb.bab_code
+    `);
+    return rows || [];
+  }
+
+  static async setCeiling(babId: number, fiscalYear: string, ceilingAmount: number, notes?: string): Promise<any> {
+    const [babRows]: any = await pool.query(
+      `SELECT id FROM budget_babs WHERE id = ? AND is_deleted = 0 LIMIT 1`, [babId]
+    );
+    if (!babRows.length) throw new Error('bab_not_found');
+    await pool.query(`
+      INSERT INTO budget_ceilings (bab_id, fiscal_year, ceiling_amount, notes, alert_80_sent, alert_100_sent)
+      VALUES (?, ?, ?, ?, 0, 0)
+      ON DUPLICATE KEY UPDATE
+        ceiling_amount = VALUES(ceiling_amount),
+        notes = VALUES(notes),
+        alert_80_sent = 0,
+        alert_100_sent = 0,
+        updated_at = CURRENT_TIMESTAMP
+    `, [babId, fiscalYear, ceilingAmount, notes || '']);
+    const [rows]: any = await pool.query(`
+      SELECT bc.*, bb.bab_code, bb.name_ps, bb.name_fa
+      FROM budget_ceilings bc
+      JOIN budget_babs bb ON bc.bab_id = bb.id
+      WHERE bc.bab_id = ? AND bc.fiscal_year = ?
+    `, [babId, fiscalYear]);
+    return rows[0];
+  }
+
+  static async deleteCeiling(id: number): Promise<void> {
+    const [rows]: any = await pool.query(`SELECT id FROM budget_ceilings WHERE id = ? LIMIT 1`, [id]);
+    if (!rows.length) throw new Error('not_found');
+    await pool.query(`DELETE FROM budget_ceilings WHERE id = ?`, [id]);
+  }
+
+  static async getCeilingsForSmsCheck(): Promise<any[]> {
+    const [rows]: any = await pool.query(`
+      SELECT
+        bc.id, bc.bab_id, bc.fiscal_year, bc.ceiling_amount,
+        bc.alert_80_sent, bc.alert_100_sent,
+        bb.bab_code, bb.name_ps,
+        COALESCE(sp.spent_value, 0) AS spent_value,
+        CASE WHEN bc.ceiling_amount > 0
+          THEN ROUND(COALESCE(sp.spent_value, 0) / bc.ceiling_amount * 100, 1)
+          ELSE 0
+        END AS utilization_percent
+      FROM budget_ceilings bc
+      JOIN budget_babs bb ON bc.bab_id = bb.id AND bb.is_deleted = 0
+      LEFT JOIN (
+        SELECT bab_id, SUM(unit_price * current_stock) AS spent_value
+        FROM items
+        WHERE is_deleted = FALSE AND bab_id IS NOT NULL
+        GROUP BY bab_id
+      ) sp ON sp.bab_id = bc.bab_id
+      WHERE bc.is_active = 1 AND bc.ceiling_amount > 0
+      ORDER BY bb.bab_code
+    `);
+    return rows || [];
+  }
+
+  static async markCeilingAlertSent(id: number, type: '80' | '100'): Promise<void> {
+    if (type === '80') {
+      await pool.query(`UPDATE budget_ceilings SET alert_80_sent = 1 WHERE id = ?`, [id]);
+    } else {
+      await pool.query(`UPDATE budget_ceilings SET alert_100_sent = 1 WHERE id = ?`, [id]);
+    }
+  }
 }

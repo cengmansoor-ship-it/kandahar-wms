@@ -29,6 +29,15 @@ export default function BudgetCodes() {
   const [addFaslLoading, setAddFaslLoading] = useState(false);
   const [addFaslError, setAddFaslError] = useState("");
 
+  // Budget Ceilings state
+  const [ceilings, setCeilings] = useState<any[]>([]);
+  const [ceilingsLoading, setCeilingsLoading] = useState(false);
+  const [showAddCeiling, setShowAddCeiling] = useState(false);
+  const [newCeiling, setNewCeiling] = useState({ bab_id: "", fiscal_year: "1404", ceiling_amount: "", notes: "" });
+  const [saveCeilingLoading, setSaveCeilingLoading] = useState(false);
+  const [ceilingError, setCeilingError] = useState("");
+  const [deletingCeiling, setDeletingCeiling] = useState<number | null>(null);
+
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [editForm, setEditForm] = useState({ bab_code: "", name_ps: "", name_fa: "", description: "" });
   const [editLoading, setEditLoading] = useState(false);
@@ -58,6 +67,58 @@ export default function BudgetCodes() {
   }, []);
 
   useEffect(() => { loadBabs(); }, [loadBabs]);
+
+  const loadCeilings = useCallback(async () => {
+    setCeilingsLoading(true);
+    try {
+      const res = await fetch("/api/budget/ceilings");
+      const json = await res.json();
+      if (json.success) setCeilings(json.data || []);
+    } catch {}
+    finally { setCeilingsLoading(false); }
+  }, []);
+
+  useEffect(() => { loadCeilings(); }, [loadCeilings]);
+
+  const handleSaveCeiling = async () => {
+    setCeilingError("");
+    if (!newCeiling.bab_id || !newCeiling.ceiling_amount || !newCeiling.fiscal_year) {
+      setCeilingError("باب، مالي کال او سقف اړین دي."); return;
+    }
+    setSaveCeilingLoading(true);
+    try {
+      const res = await fetch("/api/budget/ceilings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bab_id: Number(newCeiling.bab_id),
+          fiscal_year: newCeiling.fiscal_year,
+          ceiling_amount: Number(newCeiling.ceiling_amount),
+          notes: newCeiling.notes,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await loadCeilings();
+        setNewCeiling({ bab_id: "", fiscal_year: "1404", ceiling_amount: "", notes: "" });
+        setShowAddCeiling(false);
+        showToast("د بودجې سقف ثبت شو");
+      } else {
+        setCeilingError(json.message || "خطا");
+      }
+    } catch { setCeilingError("د سرور خطا"); }
+    finally { setSaveCeilingLoading(false); }
+  };
+
+  const handleDeleteCeiling = async (id: number) => {
+    setDeletingCeiling(id);
+    try {
+      const res = await fetch(`/api/budget/ceilings/${id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) { await loadCeilings(); showToast("سقف حذف شو"); }
+    } catch {}
+    finally { setDeletingCeiling(null); }
+  };
 
   const toggleBab = async (bab: BudgetBab) => {
     const id = bab.id;
@@ -477,6 +538,136 @@ export default function BudgetCodes() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Budget Ceilings Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden" dir="rtl">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">د بودجې سقف تنظیمات</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">د هر باب لپاره کلنی بودجه سقف — چې ٨٠٪ یا ١٠٠٪ ته ورسي SMS خبرتیا لیږل کیږي</p>
+            </div>
+            <button
+              onClick={() => { setShowAddCeiling(p => !p); setCeilingError(""); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs hover:bg-primary/90 transition"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              سقف اضافه کول
+            </button>
+          </div>
+
+          {showAddCeiling && (
+            <div className="px-5 py-4 bg-blue-50 dark:bg-blue-900/10 border-b border-blue-100 dark:border-blue-900/20 space-y-3">
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">نوی د بودجې سقف</p>
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={newCeiling.bab_id}
+                  onChange={e => setNewCeiling(p => ({ ...p, bab_id: e.target.value }))}
+                  className={`${inputCls} col-span-2`}
+                >
+                  <option value="">باب غوره کړئ *</option>
+                  {babs.map(b => (
+                    <option key={b.id} value={b.id}>{b.bab_code} — {b.name_ps}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder="مالي کال * (مثال: 1404)"
+                  value={newCeiling.fiscal_year}
+                  onChange={e => setNewCeiling(p => ({ ...p, fiscal_year: e.target.value }))}
+                  className={inputCls}
+                  dir="ltr"
+                />
+                <input
+                  placeholder="سقف (افغانۍ) *"
+                  type="number"
+                  min="0"
+                  value={newCeiling.ceiling_amount}
+                  onChange={e => setNewCeiling(p => ({ ...p, ceiling_amount: e.target.value }))}
+                  className={inputCls}
+                  dir="ltr"
+                />
+                <input
+                  placeholder="یادداشت"
+                  value={newCeiling.notes}
+                  onChange={e => setNewCeiling(p => ({ ...p, notes: e.target.value }))}
+                  className={`${inputCls} col-span-2`}
+                  dir="rtl"
+                />
+              </div>
+              {ceilingError && <p className="text-xs text-red-500">{ceilingError}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveCeiling}
+                  disabled={saveCeilingLoading}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs hover:bg-blue-700 disabled:opacity-50 transition"
+                >
+                  {saveCeilingLoading ? "ثبتېږي..." : "✓ ثبتول"}
+                </button>
+                <button
+                  onClick={() => { setShowAddCeiling(false); setCeilingError(""); }}
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  لغوه
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {ceilingsLoading ? (
+              <div className="px-5 py-6 text-center text-xs text-gray-400">لوډیږي...</div>
+            ) : ceilings.length === 0 ? (
+              <div className="px-5 py-6 text-center text-xs text-gray-400">
+                هیڅ بودجه سقف نشته — د پورتنۍ تڼۍ له لارې اضافه کړئ
+              </div>
+            ) : (
+              ceilings.map((c: any) => {
+                const pct = Number(c.utilization_percent);
+                const barColor = pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-emerald-500";
+                const textColor = pct >= 100 ? "text-red-600 dark:text-red-400" : pct >= 80 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400";
+                return (
+                  <div key={c.id} className="px-5 py-3.5">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{c.bab_code}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300">{c.name_ps}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">مالي کال: {c.fiscal_year}</span>
+                          {c.alert_100_sent ? (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">سقف بشپړ SMS</span>
+                          ) : c.alert_80_sent ? (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">٨٠٪ SMS</span>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-gray-500">
+                            مصرف: <b>{Number(c.spent_value).toLocaleString()}</b> / سقف: <b>{Number(c.ceiling_amount).toLocaleString()}</b> افغانۍ
+                          </span>
+                          <span className={`text-xs font-bold ${textColor}`}>{pct}٪</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteCeiling(c.id)}
+                        disabled={deletingCeiling === c.id}
+                        className="p-1.5 rounded-lg text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition disabled:opacity-40"
+                        title="حذف"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${barColor}`}
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]" dir="rtl">

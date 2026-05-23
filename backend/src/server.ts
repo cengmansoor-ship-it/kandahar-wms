@@ -42,6 +42,7 @@ ManagementService.runMigrations().then(() => console.log('[WMS] Management migra
 EmailConfigService.runMigrations().then(() => console.log('[WMS] Email config migrations complete.')).catch(e => console.warn('[WMS] Email config migrations warning:', e.message));
 CustomRolesService.runMigrations().then(() => console.log('[WMS] Custom roles migrations complete.')).catch(e => console.warn('[WMS] Custom roles migrations warning:', e.message));
 BudgetService.runMigrations().then(() => console.log('[WMS] Budget migrations complete.')).catch(e => console.warn('[WMS] Budget migrations warning:', e.message));
+BudgetService.runCeilingMigration().then(() => console.log('[WMS] Budget ceiling migration complete.')).catch(e => console.warn('[WMS] Budget ceiling migration warning:', e.message));
 RequestService.runMigrations().then(() => console.log('[WMS] Request pipeline migrations complete.')).catch(e => console.warn('[WMS] Request pipeline migrations warning:', e.message));
 TrashService.runMigrations().then(() => console.log('[WMS] Trash migrations complete.')).catch(e => console.warn('[WMS] Trash migrations warning:', e.message));
 TrashService.purgeExpired(30).catch(e => console.warn('[WMS] Trash purge warning:', e.message));

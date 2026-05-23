@@ -380,4 +380,65 @@ export class SmsService {
       // Fire-and-forget — never block
     }
   }
+
+  static async checkBudgetUtilization(): Promise<void> {
+    try {
+      const cfg = await SmsService.getConfig();
+      if (!cfg || !cfg.is_active || !cfg.admin_phone) return;
+
+      const [ceilings]: any = await pool.query(`
+        SELECT
+          bc.id, bc.fiscal_year, bc.ceiling_amount,
+          bc.alert_80_sent, bc.alert_100_sent,
+          bb.bab_code, bb.name_ps,
+          COALESCE(sp.spent_value, 0) AS spent_value,
+          CASE WHEN bc.ceiling_amount > 0
+            THEN ROUND(COALESCE(sp.spent_value, 0) / bc.ceiling_amount * 100, 1)
+            ELSE 0
+          END AS utilization_percent
+        FROM budget_ceilings bc
+        JOIN budget_babs bb ON bc.bab_id = bb.id AND bb.is_deleted = 0
+        LEFT JOIN (
+          SELECT bab_id, SUM(unit_price * current_stock) AS spent_value
+          FROM items
+          WHERE is_deleted = FALSE AND bab_id IS NOT NULL
+          GROUP BY bab_id
+        ) sp ON sp.bab_id = bc.bab_id
+        WHERE bc.is_active = 1 AND bc.ceiling_amount > 0
+        ORDER BY bb.bab_code
+      `);
+
+      if (!ceilings || ceilings.length === 0) return;
+
+      for (const c of ceilings) {
+        const pct = Number(c.utilization_percent);
+        const spent = Number(c.spent_value).toLocaleString('en-US');
+        const ceil = Number(c.ceiling_amount).toLocaleString('en-US');
+
+        if (pct >= 100 && !c.alert_100_sent) {
+          const msg =
+            `🚨 کندهار پوهنتون — د بودجې سقف بشپړ شو\n` +
+            `باب: ${c.bab_code} - ${c.name_ps}\n` +
+            `تخصیص: ${ceil} افغانۍ\n` +
+            `مصرف: ${spent} افغانۍ (${pct}٪)\n` +
+            `مالي کال: ${c.fiscal_year}\n` +
+            `د بودجې سقف بشپړ شوی دی — نور لګښت د منظورۍ پرته نشي کیدلی.`;
+          await SmsService.sendSms(cfg.admin_phone, msg);
+          await pool.query(`UPDATE budget_ceilings SET alert_100_sent = 1 WHERE id = ?`, [c.id]);
+        } else if (pct >= 80 && pct < 100 && !c.alert_80_sent) {
+          const msg =
+            `⚠️ کندهار پوهنتون — د بودجې ٨٠٪ خبرتیا\n` +
+            `باب: ${c.bab_code} - ${c.name_ps}\n` +
+            `تخصیص: ${ceil} افغانۍ\n` +
+            `مصرف: ${spent} افغانۍ (${pct}٪)\n` +
+            `مالي کال: ${c.fiscal_year}\n` +
+            `مهرباني وکړئ د بودجې مصرف وڅاری.`;
+          await SmsService.sendSms(cfg.admin_phone, msg);
+          await pool.query(`UPDATE budget_ceilings SET alert_80_sent = 1 WHERE id = ?`, [c.id]);
+        }
+      }
+    } catch {
+      // Fire-and-forget — never block
+    }
+  }
 }
