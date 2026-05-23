@@ -92,7 +92,7 @@ export default function ItemList() {
           <p className="text-xs font-bold mb-1">د کندهار پوهنتون د عمومي ګدام مدیریت سیستم</p>
           <p className="text-xs text-gray-500 mb-3">Kandahar University WMS</p>
           <div className="inline-block p-3 border border-gray-300 rounded-lg">
-            <QRCode value={(printItem as any).tracking_code || printItem.id || "N/A"} size={130} level="M" includeMargin />
+            <QRCode value={(printItem as any).tracking_code ? `${window.location.origin}/inventory/barcode-scanner?code=${(printItem as any).tracking_code}` : (printItem.id || "N/A")} size={130} level="M" includeMargin />
           </div>
           <div className="mt-2 space-y-0.5">
             <p className="font-bold text-sm">{printItem.name}</p>

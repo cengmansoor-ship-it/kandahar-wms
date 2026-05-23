@@ -482,7 +482,7 @@ export default function AddItem() {
                   <div className="flex flex-col items-center gap-3 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300" dir="rtl">د چاپ لپاره QR کوډ</p>
                     <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                      <QRCode value={manualSuccess.tracking_code} size={130} level="M" includeMargin />
+                      <QRCode value={`${window.location.origin}/inventory/barcode-scanner?code=${manualSuccess.tracking_code}`} size={130} level="M" includeMargin />
                     </div>
                     <p className="text-xs font-mono font-bold text-gray-600 dark:text-gray-400">{manualSuccess.tracking_code}</p>
                     <div className="flex gap-3">
@@ -861,7 +861,7 @@ export default function AddItem() {
                 <div className="flex flex-wrap gap-4 print:gap-2">
                   {printItems.map(item => (
                     <div key={item.id} className="flex flex-col items-center gap-1 p-3 border border-gray-200 rounded-lg text-center">
-                      <QRCode value={item.tracking_code} size={90} level="M" includeMargin />
+                      <QRCode value={`${window.location.origin}/inventory/barcode-scanner?code=${item.tracking_code}`} size={90} level="M" includeMargin />
                       <p className="text-xs font-semibold text-gray-800 dark:text-white/90 max-w-[120px] truncate">{item.name}</p>
                       <p className="text-xs font-mono text-gray-500">{item.tracking_code}</p>
                     </div>

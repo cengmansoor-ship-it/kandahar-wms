@@ -85,7 +85,9 @@ export default function App() {
             <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><AddItem /></ProtectedRoute>} />
             <Route path="/inventory/add-item" element={<Navigate to="/inventory/add" replace />} />
             <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
+            <Route path="/inventory/stock-in/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
             <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><StockOut /></ProtectedRoute>} />
+            <Route path="/inventory/stock-out/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><StockOut /></ProtectedRoute>} />
             <Route path="/inventory/ledger" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><InventoryLedger /></ProtectedRoute>} />
             <Route path="/inventory/barcode-scanner" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><BarcodeScanner /></ProtectedRoute>} />
 

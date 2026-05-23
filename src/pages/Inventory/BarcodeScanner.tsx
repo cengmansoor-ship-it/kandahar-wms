@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import Button from "../../components/ui/button/Button";
@@ -27,6 +27,8 @@ export default function BarcodeScanner() {
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<any>(null);
   const scanningRef = useRef(false);
+
+  const [searchParams] = useSearchParams();
 
   const canAccess = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN || profile?.role === ROLES.WAREHOUSE_DIRECTOR;
 
@@ -101,6 +103,14 @@ export default function BarcodeScanner() {
   useEffect(() => {
     return () => { stopCamera(); };
   }, [stopCamera]);
+
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl && codeFromUrl.trim()) {
+      setManualCode(codeFromUrl.trim());
+      handleSearch(codeFromUrl.trim());
+    }
+  }, [searchParams, handleSearch]);
 
   const handlePrint = async () => {
     if (!scanResult?.item) return;
@@ -221,7 +231,11 @@ export default function BarcodeScanner() {
                 <div className="flex-shrink-0 flex flex-col items-center gap-2">
                   <div className="p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                     <QRCode
-                      value={scanResult.item.tracking_code || scanResult.item.item_code || "N/A"}
+                      value={
+                        (scanResult.item.tracking_code || scanResult.item.item_code)
+                          ? `${window.location.origin}/inventory/barcode-scanner?code=${scanResult.item.tracking_code || scanResult.item.item_code}`
+                          : "N/A"
+                      }
                       size={120}
                       level="M"
                       includeMargin

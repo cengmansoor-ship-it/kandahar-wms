@@ -1,0 +1,319 @@
+You are a senior React 18 + TypeScript + Tailwind CSS + Node.js/Express + MySQL integration engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Objective:
+Fix ONLY the following 3 specific problems.
+
+Very important:
+Do NOT redesign the system.
+Do NOT change dashboard layout.
+Do NOT touch Progress Tracking.
+Do NOT touch Official Forms.
+Do NOT touch Procurement workflow.
+Do NOT touch Receiving workflow.
+Do NOT touch Reports.
+Do NOT touch unrelated menus.
+Do NOT rewrite the project.
+Do NOT remove localStorage fallback.
+Do NOT break MySQL backend.
+Do NOT change colors/layout unless required only for responsive fixing.
+All visible UI text must remain Pashto/Dari only.
+
+==================================================
+1) FIX NOTIFICATION ICON RESPONSIVENESS
+==================================================
+
+Problem:
+The notification icon in the website header is not fully responsive on all devices.
+
+Goal:
+The notification icon/bell must work and display correctly on:
+- desktop
+- laptop
+- tablet
+- mobile
+- small mobile screens
+- web build
+- mobile/WebView/PWA build if used
+
+Inspect:
+- src/layout/AppHeader.tsx
+- src/components/header/*
+- src/components/NotificationDropdown*
+- src/pages/Notifications/*
+- src/layout/AppSidebar.tsx only if header/sidebar overlap affects mobile
+- any Bell / Notification icon component
+
+Required fix:
+- Notification icon must not overflow.
+- Notification icon must not disappear.
+- Notification dropdown must open correctly on mobile and desktop.
+- Dropdown must stay inside screen width.
+- Dropdown must not be cut off on small screens.
+- Touch target must be mobile friendly.
+- If screen is small, dropdown should align right/left safely according to current RTL layout.
+- Do not change header design except minimal responsive classes.
+
+Testing:
+- Test at desktop width.
+- Test at tablet width.
+- Test at mobile width.
+- Click notification icon.
+- Dropdown opens and closes correctly.
+- No horizontal overflow.
+- No broken layout.
+
+==================================================
+2) MAKE EVERY “واحد” FIELD A DROPDOWN WITH OFFICIAL UNITS
+==================================================
+
+Problem:
+In many places, “واحد” is an input field. It should not be typed manually everywhere.
+
+Goal:
+Every field named:
+- واحد
+- unit
+- Unit
+- item unit
+must become a dropdown/select list using official units.
+
+Official units list must include at least:
+- دانه
+- پاکټ
+- کارتن
+- بسته
+- کیلوګرام
+- ګرام
+- متر
+- سانتي متر
+- لیتر
+- ملي لیتر
+- پارسل
+- جوړه
+- رول
+- بکس
+- جلد
+- ټوټه
+- سیټ
+- عدد
+
+Dari labels if language is Dari:
+- دانه
+- پاکت
+- کارتن
+- بسته
+- کیلوگرام
+- گرام
+- متر
+- سانتی‌متر
+- لیتر
+- ملی‌لیتر
+- پارسل
+- جوره
+- رول
+- بکس
+- جلد
+- قطعه
+- سیت
+- عدد
+
+Inspect:
+- src/pages/Inventory/AddItem.tsx
+- src/pages/Inventory/EditItem.tsx if exists
+- src/pages/Inventory/StockIn.tsx
+- src/pages/Inventory/StockOut.tsx
+- src/pages/Requests/CreateRequest.tsx
+- src/pages/Requests/RequestDetails.tsx if editable
+- src/pages/Procurement/*
+- src/pages/Receiving/*
+- src/firebase/inventory.ts
+- backend/src/database/seed.sql
+- backend/src/routes/inventory.routes.ts
+- backend/src/controllers/inventory.controller.ts
+- backend/src/services/inventory.service.ts
+
+Required behavior:
+- If backend units API exists, load units from:
+  GET /api/inventory/units
+- If backend is unavailable, fallback to local/static units list.
+- User must select unit from dropdown.
+- Do not allow free random typing for unit unless existing system has “نور” option.
+- Add “نور” only if current UI supports custom units safely.
+- New item/request/stock records must save selected unit consistently.
+- Existing saved data must still display correctly.
+- Do not break old records that have unit as text.
+
+Backend:
+- If units table already exists, ensure seed.sql includes these official units.
+- Do not create duplicate units.
+- Do not drop data.
+- Do not reset database.
+- Use INSERT IGNORE or safe unique logic if needed.
+
+Testing:
+- Add item page: unit dropdown shows official units.
+- Request page: unit dropdown shows official units.
+- Stock In/Out pages: unit dropdown shows official units if unit field exists.
+- Procurement/Receiving pages: any unit field uses same dropdown.
+- Backend down: fallback still shows units.
+- Build passes.
+
+==================================================
+3) CONNECT FACULTY → DEPARTMENT DROPDOWNS IN TRACEABILITY AND NEW REQUEST
+==================================================
+
+Problem A:
+In the “تعقیب د اجناسو” menu, when adding a faculty, there are fields like:
+- د پوهنځي نوم
+- دری نوم
+But related departments/څانګې for that faculty must also be addable and linked to the faculty.
+
+Problem B:
+In “غوښتنې” menu → “نوی غوښتنه”, there are fields for:
+- پوهنځی
+- څانګه
+Currently user must type them manually or they are not properly loaded.
+They must come automatically from dropdown lists.
+
+Goal:
+Faculty and Department workflow must work like this:
+
+A) In Traceability / تعقیب د اجناسو:
+- User can add a faculty.
+- Faculty has Pashto name and Dari name.
+- User can add departments/څانګې under that faculty.
+- Each department must be linked to its faculty.
+- Department should have Pashto name and Dari name if UI supports it.
+- Show departments under the selected faculty.
+
+B) In New Request:
+- Faculty field must be a dropdown loaded from saved faculties.
+- Department field must be a dropdown loaded based on selected faculty.
+- Department dropdown must be disabled until faculty is selected.
+- When faculty is selected, only that faculty’s departments appear.
+- User should not manually type faculty/department if data exists.
+- Selected faculty_id and department_id must be saved with request.
+- Old text-based faculty/department requests must still display.
+
+Inspect:
+- src/pages/Traceability/*
+- src/pages/Requests/CreateRequest.tsx
+- src/pages/Requests/RequestDetails.tsx
+- src/firebase/requests.ts
+- src/firebase/localStore.ts
+- src/firebase/inventory.ts if faculties/departments are stored there
+- backend/src/database/schema.sql
+- backend/src/database/seed.sql
+- backend/src/services/request.service.ts
+- backend/src/controllers/request.controller.ts
+- backend/src/routes/request.routes.ts
+
+Backend:
+Check if these tables already exist:
+- faculties
+- departments
+
+If they exist:
+- Use them.
+- Do not create duplicates.
+
+If needed, ensure endpoints exist:
+GET /api/faculties
+POST /api/faculties
+GET /api/departments?facultyId=ID
+POST /api/departments
+
+If endpoints already exist under another route, use existing route.
+Do not duplicate route names.
+
+Required UI behavior:
+- Traceability faculty add form must save faculty.
+- Traceability department add form must save department linked to faculty.
+- New Request page must load faculties in dropdown.
+- Selecting faculty loads related departments.
+- Department dropdown shows Pashto/Dari names according to current language.
+- If no departments exist for selected faculty, show:
+  د دې پوهنځي لپاره څانګه نه ده ثبت شوې
+  / برای این پوهنځی هنوز دیپارتمنت ثبت نشده است
+
+Validation:
+- New request cannot submit with empty faculty/department if those fields are required.
+- Show Pashto/Dari validation messages only.
+
+Testing:
+- Add a faculty in Traceability.
+- Add departments under that faculty.
+- Go to New Request.
+- Faculty appears in dropdown.
+- Select faculty.
+- Related departments appear automatically.
+- Select department.
+- Submit request.
+- Request saves faculty and department correctly.
+- Refresh page and verify saved request still shows correct faculty/department.
+- Backend down: localStorage fallback still works if available.
+
+==================================================
+GENERAL IMPLEMENTATION RULES
+==================================================
+
+Use minimal targeted changes only.
+
+If new shared components are needed, create:
+- src/components/common/UnitSelect.tsx
+- src/components/common/FacultySelect.tsx
+- src/components/common/DepartmentSelect.tsx
+
+Only create them if it reduces duplication safely.
+
+Do not change existing visual design.
+Use existing Tailwind styles and component style.
+Keep RTL support.
+Keep Pashto/Dari labels only.
+
+==================================================
+BUILD
+==================================================
+
+Run:
+npm run build
+
+If backend files changed:
+cd backend
+npm run build
+
+Fix only errors caused by these 3 tasks.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Report exactly:
+
+1. Notification icon responsive fix:
+   - root cause
+   - files changed
+   - test result
+
+2. Unit dropdown fix:
+   - where unit input fields were found
+   - where dropdown was applied
+   - unit list added/used
+   - backend/localStorage fallback status
+   - test result
+
+3. Faculty/Department dropdown fix:
+   - where faculty add was fixed
+   - where department add was fixed
+   - how departments link to faculty
+   - how New Request dropdowns load faculty/department
+   - test result
+
+4. Files changed.
+5. Confirmation that no unrelated modules were touched.
+6. npm run build result.
+7. backend npm run build result if backend changed.
+8. Remaining issues if any.
