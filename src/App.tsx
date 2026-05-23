@@ -17,6 +17,7 @@ import RoleManagement from "./pages/RoleManagement";
 import InventoryDashboard from "./pages/Inventory/Dashboard";
 import ItemList from "./pages/Inventory/ItemList";
 import AddItem from "./pages/Inventory/AddItem";
+import EditItem from "./pages/Inventory/EditItem";
 import StockIn from "./pages/Inventory/StockIn";
 import StockOut from "./pages/Inventory/StockOut";
 import InventoryLedger from "./pages/Inventory/Ledger";
@@ -84,6 +85,7 @@ export default function App() {
             <Route path="/inventory/items" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><ItemList /></ProtectedRoute>} />
             <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><AddItem /></ProtectedRoute>} />
             <Route path="/inventory/add-item" element={<Navigate to="/inventory/add" replace />} />
+            <Route path="/inventory/edit/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><EditItem /></ProtectedRoute>} />
             <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
             <Route path="/inventory/stock-in/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
             <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><StockOut /></ProtectedRoute>} />

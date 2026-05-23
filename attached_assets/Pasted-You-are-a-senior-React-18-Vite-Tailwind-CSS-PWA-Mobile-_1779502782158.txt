@@ -1,0 +1,355 @@
+You are a senior React 18 + Vite + Tailwind CSS + PWA/Mobile branding and smart online/offline readiness engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Goal:
+Fix ONLY these specific issues:
+
+1. Web + Mobile branding/logo/app-icon.
+2. Remove visible “Made with Replit” branding.
+3. Replace the old language flag/icon with my uploaded image.
+4. Implement smart Online + Offline behavior.
+
+Do NOT redesign UI.
+Do NOT change layout.
+Do NOT touch official forms design.
+Do NOT rewrite request workflow.
+Do NOT rewrite inventory/procurement/receiving logic.
+Do NOT change dashboard design.
+Do NOT rewrite the system.
+Make minimal, safe, targeted changes only.
+
+==================================================
+1) WEB + MOBILE LOGO / APP ICON FIX
+==================================================
+
+Find the official Kandahar University/System logo already inside the project.
+
+Search in:
+- public/
+- public/images/
+- public/images/logo/
+- src/assets/
+- src/images/
+- src/layout/
+- src/components/
+- src/layout/AppSidebar.tsx
+- src/layout/AppHeader.tsx
+- src/pages/AuthPages/
+- index.html
+- public/manifest.json
+- package.json
+- vite.config.ts
+
+Use the official Kandahar University/System logo, not:
+- TailAdmin default logo
+- React/Vite icon
+- Replit icon
+- random generated icon
+
+Required:
+- Browser tab favicon must show Kandahar University/System logo.
+- Sidebar/header/login logo must use Kandahar University/System logo.
+- PWA/mobile icon must use Kandahar University/System logo.
+- APK/mobile launcher icon must use Kandahar University/System logo if mobile wrapper exists.
+
+Required web app title:
+د کندهار پوهنتون د عمومي ګدام او تدارکاتو مدیریت سیستم
+
+Required mobile app display name:
+Kandahar WMS
+
+or if Pashto label is supported:
+د کندهار ګدام سیستم
+
+Do not leave:
+- kandahar-wms.app
+- default app icon
+- React/Vite icon
+- Replit icon
+
+If required icon sizes do not exist:
+- create 192x192 and 512x512 copies from the existing Kandahar University/System logo
+- do not redesign the logo
+- do not change logo colors
+- do not create a new logo
+
+==================================================
+2) REMOVE “MADE WITH REPLIT” BRANDING
+==================================================
+
+Search entire project for:
+- Made with Replit
+- made with replit
+- Replit
+- replit
+- replit-badge
+- ReplitBadge
+- replitBadge
+- replit-dev-banner
+- ReplitBanner
+- replit.com
+- @replit
+- vite-plugin-replit
+- cartographer
+- runtime-error-plugin
+- replit-branding
+
+Required changes:
+- Remove any visible Replit badge component.
+- Remove any visible Made with Replit text.
+- Remove Replit banner script if it only injects visible branding.
+- Remove Replit badge CSS if it only styles the badge.
+- Remove Replit visible template label.
+- Do not remove necessary deployment configuration unless it is only used for visible badge.
+- Do not remove legal license files.
+
+If Replit injects the badge externally during hosting and it is not in source code:
+- report this clearly
+- remove all source-level Replit branding
+- recommend deploying custom build without Replit injected badge
+
+==================================================
+3) REPLACE OLD LANGUAGE FLAG/ICON WITH MY UPLOADED IMAGE
+==================================================
+
+Problem:
+In the language switcher section, the system currently shows an old colorful flag/icon beside the language selector.
+
+The section is labeled:
+- د سیستم ژبه
+- زبان سیستم
+
+Required change:
+Remove the old flag/icon and replace it with my uploaded image.
+
+Important:
+- Use my uploaded image as the new language switcher icon.
+- Do NOT keep the old flag.
+- Do NOT use emoji flags.
+- Do NOT use country flags.
+- Do NOT use the default language icon.
+- Do NOT make it text-only.
+- Do NOT remove the language switcher.
+- The uploaded image must appear exactly in place of the old flag/icon.
+
+Visible language text must remain:
+- پښتو
+- دری
+
+Inspect:
+- src/components/LanguageSwitcher*
+- src/components/header/*
+- src/layout/AppHeader.tsx
+- src/layout/AppSidebar.tsx
+- src/context/LanguageContext.tsx if exists
+- src/i18n/*
+- src/locales/*
+- public/
+- src/assets/
+
+Implementation requirements:
+1. Copy/place the uploaded image into a suitable asset folder, for example:
+   - public/images/language-icon.png
+   or
+   - src/assets/language-icon.png
+
+2. Update the language switcher component so the old flag/icon source is replaced with this uploaded image.
+
+3. Keep the image small and clean:
+   - width: 20px to 28px
+   - height: 20px to 28px
+   - object-fit: contain
+   - do not stretch or distort the image
+
+4. Keep existing layout/design unchanged.
+5. Keep language switching functionality working.
+6. Keep RTL layout.
+7. The image must appear correctly on:
+   - desktop
+   - tablet
+   - mobile
+   - mobile/WebView build
+
+The uploaded image must be stored locally in the project, not loaded from an external URL.
+
+==================================================
+4) SMART ONLINE + OFFLINE MODE SUPPORT
+==================================================
+
+Main requirement:
+The system must work as a smart hybrid system.
+
+Meaning:
+- Features that need internet/server/backend must work 100% when online.
+- Features that do not need internet/server/backend must work 100% offline.
+- If internet/backend is disconnected, the system must NOT become useless.
+- The system must NOT show blank screen when offline.
+- The system should behave like modern apps such as Facebook/TikTok: if some data was already loaded before, the user should still be able to view it for some time from cache/local storage.
+
+Do NOT rewrite the whole data layer.
+Do NOT remove Firebase.
+Do NOT remove MySQL/backend.
+Do NOT remove localStorage fallback.
+Do NOT remove existing demo/offline behavior.
+Do NOT fake online success when the system is offline.
+
+==================================================
+4A) ONLINE-ONLY FEATURES
+==================================================
+
+These features require backend/Firebase/internet and must work fully when online:
+
+1. Login / authentication
+2. Role profile refresh
+3. Final request submission
+4. Progress Tracking final workflow updates
+5. Request Confirmer confirmation
+6. Super Admin approval
+7. Admin workflow decision
+8. Procurement final actions
+9. Receiving final actions
+10. Final delivery/completion
+11. Notifications sending
+12. Email sending
+13. Firebase online services
+14. GitHub backup push if exists
+15. Any action that must update shared data for other users
+
+When ONLINE:
+- Use backend/MySQL/API/Firebase normally.
+- Save shared workflow data to backend.
+- Progress Tracking must sync correctly.
+- Requests must appear for the next role.
+- Notifications must send normally.
+- Fresh backend data must not be overwritten by stale local data.
+
+When OFFLINE:
+- Do NOT falsely mark requests as submitted/confirmed/approved/completed.
+- Do NOT advance Progress Tracking if backend sync is required.
+- Do NOT deduct inventory as final action if server validation is required.
+- Show Pashto/Dari message:
+  - انټرنېټ یا سرور ته اړیکه نشته
+  - دا عمل آنلاین اړیکې ته اړتیا لري
+  - مهرباني وکړئ وروسته بیا هڅه وکړئ
+
+If safe, save as local draft or pending item only, clearly marked:
+- د همغږۍ په تمه
+- منتظر همگام‌سازی
+
+Prevent duplicates:
+- Do not submit the same request twice.
+- Do not advance progress twice.
+- Do not deduct inventory twice.
+
+==================================================
+4B) OFFLINE-WORKING FEATURES
+==================================================
+
+These features must work offline if already loaded/cached or stored locally:
+
+1. App shell / layout / sidebar / header
+2. Dashboard shell
+3. Logos, favicon, PWA icons, mobile icons
+4. Uploaded language switcher image
+5. Language switching UI
+6. Static menus
+7. Official forms templates
+8. Open/view previously loaded official forms
+9. Save official form drafts locally
+10. View previously loaded requests
+11. View previously loaded inventory lists
+12. View cached progress timeline
+13. View cached reports
+14. View cached traceability data
+15. Local filtering/searching over cached data
+16. Local print of already loaded official forms
+17. Local Excel/PDF export from cached data if already available
+18. About/settings/static pages that do not need backend update
+
+Offline behavior:
+- App must not crash.
+- App must not show blank screen.
+- Previously loaded data should remain visible.
+- Cached data should be clearly shown as cached/offline data.
+- Local drafts must remain saved.
+- Official forms must open from local project assets.
+- Logos/icons/language icon must load from local assets.
+- Replit badge must not appear online or offline.
+
+==================================================
+4C) CACHING / FALLBACK REQUIREMENT
+==================================================
+
+Use existing fallback system where available.
+
+Inspect:
+- src/api/apiClient.ts
+- src/firebase/localStore.ts
+- src/firebase/requests.ts
+- src/firebase/inventory.ts
+- src/context/AuthContext.tsx
+- src/components/ProtectedRoute.tsx
+- public/manifest.json
+- service worker files if any
+- vite.config.ts
+- package.json
+
+Use:
+- localStorage fallback where already implemented
+- IndexedDB only if already used or safe/minimal
+- browser cache / PWA cache if already present
+- service worker only if already present or minimal safe setup exists
+
+Cache these static assets locally:
+- Kandahar University/System logo
+- favicon
+- PWA icons
+- mobile launcher icons if applicable
+- uploaded language icon
+- official forms HTML/CSS/JS
+- core app shell assets
+
+Cache recently loaded data when safe:
+- inventory list
+- request list
+- request details
+- progress timeline
+- official form data per request
+- cached report/traceability data if already loaded
+
+Never cache:
+- passwords
+- raw tokens
+- GitHub tokens
+- private credentials
+- sensitive secrets
+
+==================================================
+4D) ONLINE/OFFLINE DETECTION
+==================================================
+
+Add or repair small connectivity detection.
+
+Use:
+- navigator.onLine
+- backend health check if available:
+  GET /api/health
+- Firebase connectivity only where relevant
+
+Required:
+- Show a small Pashto/Dari offline indicator when backend/internet is unavailable.
+- Do not block the whole app.
+- Do not show raw browser/network errors.
+- Do not show blank page.
+- When connection returns:
+  - hide offline warning
+  - refresh data safely
+  - allow pending draft/action retry if implemented
+
+Visible messages:
+
+Pashto:
+- افلاین حالت
+- سرور ته اړیک

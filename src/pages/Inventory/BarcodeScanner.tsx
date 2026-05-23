@@ -231,11 +231,7 @@ export default function BarcodeScanner() {
                 <div className="flex-shrink-0 flex flex-col items-center gap-2">
                   <div className="p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                     <QRCode
-                      value={
-                        (scanResult.item.tracking_code || scanResult.item.item_code)
-                          ? `${window.location.origin}/inventory/barcode-scanner?code=${scanResult.item.tracking_code || scanResult.item.item_code}`
-                          : "N/A"
-                      }
+                      value={scanResult.item.tracking_code || scanResult.item.item_code || "N/A"}
                       size={120}
                       level="M"
                       includeMargin
