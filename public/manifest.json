@@ -1,0 +1,28 @@
+{
+  "name": "د کندهار پوهنتون د ګدام مدیریت سیستم",
+  "short_name": "KU WMS",
+  "description": "Kandahar University Warehouse & Inventory Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#465fff",
+  "orientation": "portrait-primary",
+  "lang": "ps",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/kandahar-university-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/kandahar-university-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "screenshots": []
+}

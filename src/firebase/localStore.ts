@@ -83,6 +83,39 @@ export function setLocalItem<T>(key: string, value: T): void {
   window.localStorage.setItem(PREFIX + key, JSON.stringify(value));
 }
 
+// ── In-app notification system ──
+export type InAppNotification = {
+  id: string;
+  type: "received" | "delivered" | "approved" | "rejected" | "info";
+  titlePs: string;
+  titleDr: string;
+  bodyPs: string;
+  bodyDr: string;
+  requestId?: string;
+  createdAt: number;
+  read: boolean;
+};
+
+export function getInAppNotifications(): InAppNotification[] {
+  return getLocalItem<InAppNotification[]>("in_app_notifications", []);
+}
+
+export function addInAppNotification(n: Omit<InAppNotification, "id" | "read" | "createdAt">): void {
+  const notif: InAppNotification = {
+    ...n,
+    id: uid("notif"),
+    read: false,
+    createdAt: Date.now(),
+  };
+  const existing = getInAppNotifications();
+  setLocalItem("in_app_notifications", [notif, ...existing].slice(0, 50));
+}
+
+export function markAllNotificationsRead(): void {
+  const all = getInAppNotifications().map(n => ({ ...n, read: true }));
+  setLocalItem("in_app_notifications", all);
+}
+
 // ── Demo auth key (must match auth.ts) ──
 const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
 // ── Explicit-logout flag: set when user calls logout(), cleared on login() ──

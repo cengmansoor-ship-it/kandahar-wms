@@ -913,6 +913,132 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+
+        {/* د SMS تنظیمات */}
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 text-lg">📱</span>
+            <div>
+              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">
+                {pick("د SMS خبرتیا تنظیمات", "تنظیمات اطلاع‌رسانی SMS")}
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {pick("د موبایل له لارې خبرتیاوې لیږل", "ارسال اعلانات از طریق پیامک")}
+              </p>
+            </div>
+          </div>
+
+          {/* د SMS حالت کارډ */}
+          <div className="mb-5 rounded-xl border border-yellow-200 bg-yellow-50 dark:border-yellow-800/40 dark:bg-yellow-900/10 p-4 flex items-start gap-3">
+            <span className="text-yellow-500 text-xl mt-0.5">⚠️</span>
+            <div>
+              <p className="text-sm font-bold text-yellow-800 dark:text-yellow-300">
+                {pick("SMS سرویس د فعالولو لپاره چمتو دی", "سرویس SMS آماده فعال‌سازی است")}
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1 leading-relaxed">
+                {pick(
+                  "د SMS د فعالولو لپاره د لاندې برخو ډکول اړین دي. مرکزي سیستم کولای شي چې له Twilio، Kavenegar، یا نورو SMS API چمتو کوونکو سره وصل شي.",
+                  "برای فعال‌سازی SMS لطفاً اطلاعات زیر را پر کنید. سیستم می‌تواند با Twilio، کاوه‌نگار یا سایر ارائه‌دهندگان API پیامک ادغام شود."
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            {/* SMS Provider */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                {pick("د SMS سرویس چمتو کوونکی", "ارائه‌دهنده سرویس SMS")}
+              </label>
+              <select
+                disabled
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
+              >
+                <option>Twilio</option>
+                <option>Kavenegar</option>
+                <option>Custom API</option>
+              </select>
+            </div>
+
+            {/* SMS Sender Number */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                {pick("د لیږونکي شمیره / Sender ID", "شماره فرستنده / Sender ID")}
+              </label>
+              <input
+                type="text"
+                disabled
+                dir="ltr"
+                placeholder="+93XXXXXXXXX"
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed placeholder-gray-300"
+              />
+            </div>
+
+            {/* API Key */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                {pick("د API کیلي / Account SID", "کلید API / Account SID")}
+              </label>
+              <input
+                type="password"
+                disabled
+                dir="ltr"
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed placeholder-gray-300"
+              />
+            </div>
+
+            {/* Auth Token */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                {pick("د تصدیق ټوکن / Auth Token", "توکن احراز هویت / Auth Token")}
+              </label>
+              <input
+                type="password"
+                disabled
+                dir="ltr"
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed placeholder-gray-300"
+              />
+            </div>
+          </div>
+
+          {/* د SMS خبرتیاوو ډولونه */}
+          <div className="mt-5">
+            <p className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-3">
+              {pick("د SMS خبرتیاوو ډولونه", "انواع اعلانات SMS")}
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                [pick("د اجناسو رسید", "دریافت کالا"), pick("کله چې اجناس ګدام ته رسیږي", "هنگام دریافت کالا")],
+                [pick("د غوښتنې تایید", "تأیید درخواست"), pick("کله چې غوښتنه تایید شي", "هنگام تأیید درخواست")],
+                [pick("د تسلیمۍ خبر", "اطلاع تحویل"), pick("کله چې جنس تسلیم شي", "هنگام تحویل کالا")],
+                [pick("د موجودۍ کمښت", "کمبود موجودی"), pick("کله چې موجودي ټیټه شي", "هنگام کاهش موجودی")],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 p-3 bg-gray-50 dark:bg-white/5 opacity-60">
+                  <input type="checkbox" disabled className="h-4 w-4 accent-primary cursor-not-allowed" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{title}</p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center gap-3">
+            <button
+              disabled
+              className="flex items-center gap-2 rounded-xl bg-green-400 px-5 py-2.5 text-sm font-semibold text-white cursor-not-allowed opacity-50"
+            >
+              <span>📱</span>
+              {pick("د SMS تنظیمات خوندي کول", "ذخیره تنظیمات SMS")}
+            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+              {pick("— د فعالولو لپاره د API کیلي ډک کړئ", "— برای فعال‌سازی کلید API را وارد کنید")}
+            </span>
+          </div>
+        </div>
       </div>
     </>
   );

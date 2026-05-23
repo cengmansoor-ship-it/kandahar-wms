@@ -6,7 +6,7 @@ import {
   runTransaction
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
-import { getLocalItem, setLocalItem, makeLocalId } from "./localStore";
+import { getLocalItem, setLocalItem, makeLocalId, addInAppNotification } from "./localStore";
 import { getDemoRequests, saveDemoRequests } from "./localStore";
 import { performStockTransaction } from "./inventory";
 import { getCurrentHijriDates } from "../utils/dateUtils";
@@ -307,6 +307,14 @@ export const receiveProcurementToInventory = async (requestId: string, items: an
     setLocalItem("receipt_reports", [{ id: requestId, requestId, receivedItems: items, receivedBy: user.uid, receivedByName: user.name, createdAt: dates.timestamp, createdAtHijriShamsi: dates.shamsi, status: "Submitted" }, ...getLocalItem<any[]>("receipt_reports", [])]);
     saveDemoRequests(getDemoRequests().map((entry) => entry.id === requestId ? { ...entry, status: "ReceivedToInventory", progress: 65, currentStage: "ګدام ته داخل شو", updatedAt: dates.timestamp, updatedAtHijriShamsi: dates.shamsi, updatedAtHijriQamari: dates.qamari } : entry));
     await updateRequestStage(requestId, "ReceivedToInventory", 65, "ګدام ته داخل شو", user, "تدارکاتي جنس موجودۍ ته داخل شو.");
+    addInAppNotification({
+      type: "received",
+      titlePs: "اجناس ګدام ته داخل شول",
+      titleDr: "اجناس وارد انبار شد",
+      bodyPs: `${items.length} ډول اجناس د غوښتنې (${requestId}) لپاره ګدام ته داخل شول. موجودي تازه شوه.`,
+      bodyDr: `${items.length} نوع جنس برای درخواست (${requestId}) وارد انبار شد. موجودی بروزرسانی شد.`,
+      requestId,
+    });
     return { success: true };
   }
   

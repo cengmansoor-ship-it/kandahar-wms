@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
+import { getInAppNotifications, markAllNotificationsRead, InAppNotification } from "../../firebase/localStore";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
@@ -29,6 +30,22 @@ const STATUS_COLOR: Record<string, string> = {
   Delivered: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
 };
 
+const NOTIF_TYPE_COLOR: Record<string, string> = {
+  received: "bg-teal-500",
+  delivered: "bg-purple-500",
+  approved: "bg-emerald-500",
+  rejected: "bg-red-500",
+  info: "bg-blue-500",
+};
+
+const NOTIF_TYPE_ICON: Record<string, string> = {
+  received: "📦",
+  delivered: "✅",
+  approved: "👍",
+  rejected: "❌",
+  info: "ℹ️",
+};
+
 function timeAgo(ts: number, lang: string): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
   if (lang === "dr") {
@@ -55,6 +72,7 @@ const AVATAR_COLORS = [
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
+  const [inAppNotifs, setInAppNotifs] = useState<InAppNotification[]>([]);
   const [seen, setSeen] = useState(false);
   const [query, setQuery] = useState("");
   const [dropdownPos, setDropdownPos] = useState({ top: 72, right: 16 });
@@ -64,7 +82,7 @@ export default function NotificationDropdown() {
   const btnRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const loadData = () => {
     getRequests().then(all => {
       let filtered = all;
       if (profile?.role === ROLES.REQUESTER) {
@@ -73,7 +91,10 @@ export default function NotificationDropdown() {
       filtered.sort((a: InventoryRequest, b: InventoryRequest) => b.createdAt - a.createdAt);
       setRequests(filtered.slice(0, 20));
     });
-  }, [profile]);
+    setInAppNotifs(getInAppNotifications().slice(0, 10));
+  };
+
+  useEffect(() => { loadData(); }, [profile]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -90,7 +111,8 @@ export default function NotificationDropdown() {
     return () => document.removeEventListener("mousedown", handle);
   }, [isOpen]);
 
-  const unread = !seen && requests.length > 0;
+  const unreadNotifs = inAppNotifs.filter(n => !n.read).length;
+  const unread = !seen && (requests.length > 0 || unreadNotifs > 0);
 
   const handleClick = () => {
     if (btnRef.current) {
@@ -100,6 +122,10 @@ export default function NotificationDropdown() {
     }
     setIsOpen(o => !o);
     setSeen(true);
+    if (!isOpen) {
+      markAllNotificationsRead();
+      setInAppNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    }
     if (isOpen) setQuery("");
   };
 
@@ -130,6 +156,11 @@ export default function NotificationDropdown() {
             <span className="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 animate-ping"></span>
           </span>
         )}
+        {unreadNotifs > 0 && !seen && (
+          <span className="absolute -right-1 -top-1 z-20 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[9px] font-bold text-white">
+            {unreadNotifs > 9 ? "9+" : unreadNotifs}
+          </span>
+        )}
         <svg className="fill-current" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
           <path fillRule="evenodd" clipRule="evenodd" d="M10.75 2.29248C10.75 1.87827 10.4143 1.54248 10 1.54248C9.58583 1.54248 9.25004 1.87827 9.25004 2.29248V2.83613C6.08266 3.20733 3.62504 5.9004 3.62504 9.16748V14.4591H3.33337C2.91916 14.4591 2.58337 14.7949 2.58337 15.2091C2.58337 15.6234 2.91916 15.9591 3.33337 15.9591H4.37504H15.625H16.6667C17.0809 15.9591 17.4167 15.6234 17.4167 15.2091C17.4167 14.7949 17.0809 14.4591 16.6667 14.4591H16.375V9.16748C16.375 5.9004 13.9174 3.20733 10.75 2.83613V2.29248ZM14.875 14.4591V9.16748C14.875 6.47509 12.6924 4.29248 10 4.29248C7.30765 4.29248 5.12504 6.47509 5.12504 9.16748V14.4591H14.875ZM8.00004 17.7085C8.00004 18.1228 8.33583 18.4585 8.75004 18.4585H11.25C11.6643 18.4585 12 18.1228 12 17.7085C12 17.2943 11.6643 16.9585 11.25 16.9585H8.75004C8.33583 16.9585 8.00004 17.2943 8.00004 17.7085Z" fill="currentColor" />
         </svg>
@@ -144,7 +175,7 @@ export default function NotificationDropdown() {
             top: dropdownPos.top,
             right: dropdownPos.right,
             width: "min(361px, calc(100vw - 32px))",
-            maxHeight: "min(500px, calc(100vh - 90px))",
+            maxHeight: "min(560px, calc(100vh - 90px))",
           }}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
@@ -152,9 +183,9 @@ export default function NotificationDropdown() {
               <h5 className="text-base font-bold text-gray-800 dark:text-gray-200">
                 {pick("خبرتیاوې", "اعلانات")}
               </h5>
-              {requests.length > 0 && (
+              {(requests.length > 0 || inAppNotifs.length > 0) && (
                 <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
-                  {q ? `${filtered.length}/${requests.length}` : requests.length}
+                  {requests.length + inAppNotifs.length}
                 </span>
               )}
             </div>
@@ -165,7 +196,44 @@ export default function NotificationDropdown() {
             </button>
           </div>
 
-          <div className="px-3 pt-3 pb-1">
+          {/* In-app notifications for received items */}
+          {inAppNotifs.length > 0 && (
+            <div className="px-3 pt-3 pb-1">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide">
+                {pick("د ګدام خبرتیاوې", "اعلانات انبار")}
+              </p>
+              <ul className="flex flex-col gap-1.5 mb-2">
+                {inAppNotifs.map(n => (
+                  <li key={n.id}
+                    className={`flex gap-2.5 items-start rounded-xl p-2.5 transition-colors ${
+                      n.read ? "bg-gray-50 dark:bg-white/5" : "bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/40"
+                    }`}
+                  >
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm ${NOTIF_TYPE_COLOR[n.type] || "bg-gray-400"} text-white`}>
+                      {NOTIF_TYPE_ICON[n.type] || "📌"}
+                    </span>
+                    <span className="flex flex-col min-w-0 flex-1 gap-0.5">
+                      <span className="text-xs font-bold text-gray-800 dark:text-white/90">
+                        {lang === "dr" ? n.titleDr : n.titlePs}
+                      </span>
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
+                        {lang === "dr" ? n.bodyDr : n.bodyPs}
+                      </span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        {timeAgo(n.createdAt, lang)}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="border-t border-gray-100 dark:border-gray-800 mb-2" />
+            </div>
+          )}
+
+          <div className="px-3 pt-2 pb-1">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide">
+              {pick("د غوښتنو حالت", "وضعیت درخواست‌ها")}
+            </p>
             <div className="relative flex items-center">
               <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
                 width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

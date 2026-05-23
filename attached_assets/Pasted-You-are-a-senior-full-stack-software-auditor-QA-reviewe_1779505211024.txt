@@ -1,0 +1,395 @@
+You are a senior full-stack software auditor, QA reviewer, university ERP workflow analyst, and implementation engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Main task:
+First audit the system against the 16 functional requirements below.
+Then, if any requirement is missing or partially implemented, complete ONLY that exact requirement safely.
+
+VERY IMPORTANT:
+Do NOT rewrite the project.
+Do NOT redesign UI.
+Do NOT change unrelated modules.
+Do NOT break existing working features.
+Do NOT remove localStorage fallback.
+Do NOT break MySQL backend.
+Do NOT break Firebase/online services.
+Do NOT touch official forms design/layout/print style.
+Do NOT change colors/layout unless required for the exact missing functional requirement.
+All visible UI text must remain Pashto/Dari only.
+
+Workflow:
+PHASE 1: Audit only.
+PHASE 2: Implement only missing/partial functional requirements.
+PHASE 3: Test and report.
+
+==================================================
+FUNCTIONAL REQUIREMENTS TO AUDIT AND COMPLETE
+==================================================
+
+Check and complete these 16 requirements:
+
+1. Single interface traceability:
+Show from one interface how many items are registered under each faculty, department, and person.
+
+Pashto:
+د یو انترفېس له لارې دا روښانه کول چې په هر پوهنځي، ډیپارټمنټ او شخص پسې څومره اجناس ثبت دي.
+
+Required if missing:
+- Create/fix Traceability page/menu.
+- Show faculty → department → person hierarchy.
+- Show item count at every level.
+- Show item ledger/details per person.
+- Do not affect inventory CRUD.
+
+2. Automatic stock deduction:
+Delivered/distributed items must automatically decrease from warehouse stock.
+
+Pashto:
+د توزیع شوو اجناسو اتومات کمښت له سټاک څخه.
+
+Required if missing:
+- On final delivery/FS5 completion, deduct stock automatically.
+- Prevent duplicate deduction.
+- Prevent negative stock.
+- Log stock transaction.
+- Keep old inventory records compatible.
+
+3. Standard official forms:
+Proposal and Tender forms, plus related official forms, must exist and be connected.
+
+Pashto:
+په سیستم کې د وړاندیز او جګړه پاڼو معیاري فارمټ شاملول.
+
+Required if missing:
+- Use existing official HTML forms only.
+- Do not redesign forms.
+- Connect request data to Proposal/SI9.
+- Connect procurement data to Tender/Comparison/Purchase Order.
+- Preserve layout and print style.
+
+4. Progress percentage for requesters:
+Requesters must see progress percentage of their requests.
+
+Pashto:
+غوښتونکو ته د کار د پرمختګ فیصدي ښودل.
+
+Required if missing:
+- Show progressPercent in requester request list/details.
+- Use existing progress tracking logic.
+- Do not rewrite workflow.
+
+5. Role-based access:
+Menus, pages, and actions must be controlled by role.
+
+Pashto:
+د رول پر بنسټ د ډیټابیس/سیستم لاسرسي برابرول.
+
+Required if missing:
+- Fix RBAC guards.
+- Super Admin, Admin, Requester, Request Confirmer, Procurement Director, Warehouse Director, Warehouse Entry Person must have correct access.
+- Do not rely only on hidden buttons; protect actions too.
+
+6. Daily, monthly, yearly reports:
+System must generate/support daily, monthly, and yearly reports.
+
+Pashto:
+د ورځنیو، میاشتنیو او کلنیو راپورونو اتومات تولید.
+
+Required if missing:
+- Add/fix report filters by day/month/year.
+- Use existing data from inventory, requests, procurement, receiving.
+- Add print/export if already supported.
+- Do not redesign report UI.
+
+7. Annual university needs analysis:
+Analyze university needs at the beginning of the year using historical data.
+
+Pashto:
+د کال په پیل کې د پوهنتون د اړتیاوو تحلیل.
+
+Required if missing:
+- Use stock OUT/request history.
+- Show estimated annual consumption.
+- Show stock gap.
+- Recommend purchase if needed.
+- Keep it simple and safe.
+
+8. Mobile and desktop access:
+System must work on desktop and mobile.
+
+Pashto:
+د موبایل او ډیسټاپ له لارې د سیستم لاسرسی.
+
+Required if missing:
+- Fix responsive issues only.
+- Do not redesign UI.
+- Ensure menus/forms/pages open on mobile.
+
+9. Admin notification for received items:
+Admin/relevant users must receive notification when new items arrive.
+
+Pashto:
+د Admin له خوا د راغلو اجناسو نوټیفیکیشن.
+
+Required if missing:
+- When receiving record is completed, create notification.
+- Show in notification menu/icon.
+- If email/SMS is unavailable, keep in-app notification.
+
+10. Progress Tracking:
+Full workflow must work:
+Requester → Request Confirmer → Super Admin → Admin → Procurement/Warehouse → Completed.
+
+Pashto:
+Progress Tracking.
+
+Required if missing:
+- Fix stage routing.
+- Fix assignedRole/currentStage/status/progressPercent.
+- Do not change unrelated modules.
+- Create pipeline/history record for each stage.
+
+11. Item registration process:
+System must support full item registration.
+
+Pashto:
+د اجناسو د ثبت پروسه.
+
+Required if missing:
+- Add item, edit item, stock in, stock out, duplicate prevention, unit selection.
+- Do not break existing inventory logic.
+
+12. Monthly/yearly report analysis and future recommendation:
+Analyze monthly/yearly reports and suggest future needs.
+
+Pashto:
+کلني او میاشتني راپورونو تحلیل او د راتلونکي کال لپاره نظر سنجي.
+
+Required if missing:
+- Add simple trend/needs analysis.
+- Use previous month/year data.
+- Show recommendation by faculty/department/item.
+
+13. SMS notification / alert:
+System should support SMS notification/alert.
+
+Pashto:
+نوټیفیکیشن یا خبرداری د SMS له لارې.
+
+Required if missing:
+- Do NOT add paid SMS provider unless already configured.
+- Add SMS-ready structure/config placeholder safely.
+- Add UI/status showing SMS is configurable.
+- In-app notification must work.
+- Document that real SMS provider needs API key.
+
+14. Web/mobile app:
+System must support web/mobile usage.
+
+Pashto:
+web/mobile app.
+
+Required if missing:
+- Ensure web build works.
+- Ensure PWA/mobile wrapper config if present uses correct app name/icon.
+- Do not rewrite app.
+
+15. Trash/Bin and Recovery:
+Deleted records must go to Trash/Bin and be recoverable.
+
+Pashto:
+trash/bin او recovery system موجود وي.
+
+Required if missing:
+- Use soft delete.
+- Add/fix Trash/Bin page.
+- Allow Super Admin recovery.
+- Do not permanently delete unless explicitly required.
+
+16. Animated UI style:
+UI should have modern/animated style where appropriate.
+
+Pashto:
+UI animated style.
+
+Required if missing:
+- Add only small existing-style transitions/hover/loading animations.
+- Do not redesign UI.
+- Do not slow the system.
+
+==================================================
+PHASE 1 — AUDIT METHOD
+==================================================
+
+For each requirement:
+
+1. Search the codebase for relevant:
+- frontend pages
+- components
+- services
+- API routes
+- backend services/controllers
+- MySQL tables
+- localStorage/Firebase fallback
+- UI menus
+- testable behavior
+
+2. Mark each requirement as:
+- ✅ Fully Completed
+- 🟡 Partially Completed
+- ❌ Not Completed
+- ⚠️ Manual Test Needed
+
+3. Provide evidence:
+- file paths
+- component names
+- function names
+- route names
+- database table names
+- UI page/menu names
+- exact behavior found
+
+4. If partial/missing, identify the exact missing part.
+
+Do not implement anything until the audit list is clear.
+
+==================================================
+PHASE 2 — IMPLEMENT ONLY MISSING/PARTIAL REQUIREMENTS
+==================================================
+
+After audit, implement only requirements marked:
+- 🟡 Partially Completed
+- ❌ Not Completed
+
+Rules:
+- Make minimal targeted changes.
+- Do not modify completed requirements unless required for integration.
+- Do not touch unrelated modules.
+- Preserve existing UI.
+- Preserve official forms design.
+- Preserve existing data.
+- Use localStorage fallback where already present.
+- Use backend/MySQL where already connected.
+- Keep visible text Pashto/Dari only.
+
+If a requirement is too large, implement the minimum defense-ready version first and report the remaining limitation.
+
+==================================================
+FILES / AREAS TO INSPECT
+==================================================
+
+Frontend:
+- src/App.tsx
+- src/layout/*
+- src/pages/Dashboard/*
+- src/pages/Inventory/*
+- src/pages/Requests/*
+- src/pages/Procurement/*
+- src/pages/Receiving/*
+- src/pages/Reports/*
+- src/pages/Traceability/*
+- src/pages/Notifications/*
+- src/pages/Settings/*
+- src/pages/Trash*
+- src/components/*
+- src/components/OfficialFormViewer.tsx
+- public/forms/official-forms.html
+- src/firebase/*
+- src/api/*
+- src/utils/*
+- src/constants/*
+- src/context/*
+
+Backend:
+- backend/src/server.ts
+- backend/src/routes/*
+- backend/src/controllers/*
+- backend/src/services/*
+- backend/src/database/schema.sql
+- backend/src/database/seed.sql
+
+Mobile/PWA:
+- public/manifest.json
+- vite.config.ts
+- capacitor.config.* if exists
+- android/ if exists
+- flutter/ if exists
+- WebView files if exists
+
+==================================================
+TESTING REQUIRED
+==================================================
+
+After implementation, test:
+
+1. npm run build
+2. backend npm run build if backend changed
+3. Login as Super Admin
+4. Login as Admin
+5. Login as Requester
+6. Create request and view progress
+7. Confirm request through workflow if changed
+8. Add item and stock transaction if changed
+9. Complete delivery if stock deduction changed
+10. Open Traceability if changed
+11. Open Reports if changed
+12. Open Trash/Bin if changed
+13. Check mobile responsive view if changed
+14. Check official forms still keep same design if touched only for data connection
+
+Fix only errors caused by these functional requirement changes.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Final answer must be in Pashto.
+
+Use this structure:
+
+# د Functional Requirements د تکمیل او اصلاح راپور
+
+## ۱. لنډه نتیجه
+- مکمل پوره شوي: X / 16
+- نیمګړي وو او اصلاح شول: X / 16
+- لا هم نیمګړي دي: X / 16
+- Manual Test ته اړتیا لري: X / 16
+
+## ۲. د ۱۶ اهدافو جدول
+
+For each requirement, include:
+1. نمبر
+2. Functional Requirement
+3. د Audit حالت
+4. شواهد / Evidence
+5. څه پوره وو؟
+6. څه نیمګړي وو؟
+7. کوم اصلاحات وشول؟
+8. اوسنی حالت
+9. لومړیتوب
+
+Use status:
+- ✅ مکمل پوره شوی
+- 🟡 نیمګړی و، اوس اصلاح شو
+- ❌ لا هم نه دی پوره شوی
+- ⚠️ Manual Test ته اړتیا لري
+
+## ۳. بدل شوي فایلونه
+List every changed file and exact purpose.
+
+## ۴. هغه برخې چې قصداً ونه لمس شوې
+Confirm unrelated modules were not touched.
+
+## ۵. Testing Results
+Include:
+- npm run build result
+- backend build result if changed
+- manual workflow test notes
+
+## ۶. پاتې محدودیتونه
+Be honest about anything still incomplete.
+
+STRICT RULE:
+Do not claim a requirement is complete unless it has evidence and test result.
