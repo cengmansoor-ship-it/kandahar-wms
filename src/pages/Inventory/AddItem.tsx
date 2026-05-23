@@ -14,6 +14,8 @@ import { QRCodeSVG as QRCode } from "qrcode.react";
 
 type TabMode = "manual" | "bulk";
 
+interface LookupItem { id: number; name_ps: string; name_fa: string; }
+
 interface BulkRow {
   name: string;
   typeOrSpecification: string;
@@ -59,26 +61,43 @@ const COL_MAP: Record<string, keyof BulkRow> = {
   "یادښت": "notes",
 };
 
+const emptyForm = {
+  name: "",
+  category_id: "",
+  unit_id: "",
+  warehouse_id: "",
+  typeOrSpecification: "",
+  initialQuantity: 0,
+  minimumStockLevel: 0,
+  unitPrice: 0,
+  supplierOrSource: "",
+  description: "",
+  bab_id: "",
+  fasl_id: "",
+};
+
 export default function AddItem() {
   const [tab, setTab] = useState<TabMode>("manual");
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    typeOrSpecification: "",
-    unit: "",
-    initialQuantity: 0,
-    minimumStockLevel: 0,
-    unitPrice: 0,
-    supplierOrSource: "",
-    description: "",
-    bab_id: "",
-    fasl_id: "",
-  });
+  const [formData, setFormData] = useState({ ...emptyForm });
   const [loading, setLoading] = useState(false);
+
+  const [categories, setCategories] = useState<LookupItem[]>([]);
+  const [units, setUnits] = useState<LookupItem[]>([]);
+  const [warehouses, setWarehouses] = useState<LookupItem[]>([]);
   const [babs, setBabs] = useState<BudgetBab[]>([]);
   const [fasls, setFasls] = useState<BudgetFasl[]>([]);
   const [babSearch, setBabSearch] = useState("");
   const [faslSearch, setFaslSearch] = useState("");
+
+  const [showAddBab, setShowAddBab] = useState(false);
+  const [showAddFasl, setShowAddFasl] = useState(false);
+  const [newBab, setNewBab] = useState({ bab_code: "", name_ps: "", name_fa: "", description: "" });
+  const [newFasl, setNewFasl] = useState({ fasl_code: "", name_ps: "", name_fa: "", description: "" });
+  const [addBabLoading, setAddBabLoading] = useState(false);
+  const [addFaslLoading, setAddFaslLoading] = useState(false);
+  const [addBabError, setAddBabError] = useState("");
+  const [addFaslError, setAddFaslError] = useState("");
+
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,9 +111,26 @@ export default function AddItem() {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [manualSuccess, setManualSuccess] = useState<{ id: string; tracking_code: string; name: string } | null>(null);
 
-  useEffect(() => {
+  const loadLookups = () => {
+    apiClient.get('/inventory/categories').then(setCategories).catch(() => {});
+    apiClient.get('/inventory/units').then(setUnits).catch(() => {});
+    apiClient.get('/inventory/warehouses').then(setWarehouses).catch(() => {});
+  };
+
+  const loadBabs = () => {
     budgetService.getBabs().then(setBabs).catch(() => setBabs([]));
+  };
+
+  useEffect(() => {
+    loadLookups();
+    loadBabs();
   }, []);
+
+  useEffect(() => {
+    if (warehouses.length > 0 && !formData.warehouse_id) {
+      setFormData(prev => ({ ...prev, warehouse_id: String(warehouses[0].id) }));
+    }
+  }, [warehouses]);
 
   useEffect(() => {
     if (formData.bab_id) {
@@ -110,7 +146,9 @@ export default function AddItem() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: (name === "minimumStockLevel" || name === "unitPrice" || name === "initialQuantity") ? Number(value) : value
+      [name]: (name === "minimumStockLevel" || name === "unitPrice" || name === "initialQuantity")
+        ? Number(value)
+        : value
     }));
   };
 
@@ -124,7 +162,7 @@ export default function AddItem() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !profile) return;
-    if (!formData.name || !formData.category || !formData.unit) {
+    if (!formData.name || !formData.category_id || !formData.unit_id) {
       alert("مهرباني وکړئ ټول اړین معلومات دننه کړئ.");
       return;
     }
@@ -153,6 +191,50 @@ export default function AddItem() {
     }
   };
 
+  const handleAddBab = async () => {
+    setAddBabError("");
+    if (!newBab.bab_code || !newBab.name_ps || !newBab.name_fa) {
+      setAddBabError("کود، د پښتو نوم او د دري نوم اړین دي.");
+      return;
+    }
+    setAddBabLoading(true);
+    try {
+      const created = await budgetService.createBab(newBab);
+      setBabs(prev => [...prev, created].sort((a, b) => a.bab_code.localeCompare(b.bab_code)));
+      setFormData(prev => ({ ...prev, bab_id: String(created.id), fasl_id: "" }));
+      setNewBab({ bab_code: "", name_ps: "", name_fa: "", description: "" });
+      setShowAddBab(false);
+    } catch (err: any) {
+      setAddBabError(err.message || "خطا د باب ثبتولو کې");
+    } finally {
+      setAddBabLoading(false);
+    }
+  };
+
+  const handleAddFasl = async () => {
+    setAddFaslError("");
+    if (!formData.bab_id) {
+      setAddFaslError("لومړی باب غوره کړئ.");
+      return;
+    }
+    if (!newFasl.fasl_code || !newFasl.name_ps || !newFasl.name_fa) {
+      setAddFaslError("کود، د پښتو نوم او د دري نوم اړین دي.");
+      return;
+    }
+    setAddFaslLoading(true);
+    try {
+      const created = await budgetService.createFasl({ ...newFasl, bab_id: Number(formData.bab_id) });
+      setFasls(prev => [...prev, created].sort((a, b) => a.fasl_code.localeCompare(b.fasl_code)));
+      setFormData(prev => ({ ...prev, fasl_id: String(created.id) }));
+      setNewFasl({ fasl_code: "", name_ps: "", name_fa: "", description: "" });
+      setShowAddFasl(false);
+    } catch (err: any) {
+      setAddFaslError(err.message || "خطا د فصل ثبتولو کې");
+    } finally {
+      setAddFaslLoading(false);
+    }
+  };
+
   const handleExportTemplate = () => {
     const headers = [
       "* د جنس نوم", "* مشخصات", "* کټګوري", "* واحد", "* ګدام",
@@ -164,18 +246,9 @@ export default function AddItem() {
       "5", "2",
       "۲۰۱", "۲۰۱۰۱", "ITEM-001", "45000", "225000", "Dell Inc.", "احمدي شرکت", "د دفتر لپاره"
     ];
-    const guide = [
-      "(اړین) د جنس بشپړ نوم", "(اړین) مشخصات یا نوعیت", "(اړین) کټګوري: باید سیستم کې شتون ولري", "(اړین) واحد: باید سیستم کې شتون ولري", "(اړین) ګدام: باید سیستم کې شتون ولري",
-      "(اړین) عدد >= 0", "(اړین) عدد >= 0",
-      "(اختیاري) د باب کود", "(اختیاري) د فصل کود", "(اختیاري) د جنس ځانګړی کود", "(اختیاري) قیمت دانه", "(اختیاري) ټول قیمت", "(اختیاري) شرکت", "(اختیاري) عرضه کوونکی", "(اختیاري) یادښتونه"
-    ];
-
     const wb = XLSX.utils.book_new();
-    const wsData = [headers, example, guide];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
     ws["!cols"] = headers.map(() => ({ wch: 22 }));
-
     XLSX.utils.book_append_sheet(wb, ws, "اجناس");
     XLSX.writeFile(wb, "kandahar-wms-template.xlsx");
   };
@@ -187,7 +260,6 @@ export default function AddItem() {
     setBulkPreviewReady(false);
     setImportResult(null);
     setBulkRows([]);
-
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
@@ -195,19 +267,13 @@ export default function AddItem() {
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: "" }) as string[][];
-
         if (raw.length < 2) { setFileError("فایل خالي دی."); return; }
-
         const headers = (raw[0] as string[]).map(h => String(h).trim());
         const rows: BulkRow[] = [];
-
         for (let i = 1; i < raw.length; i++) {
           const rowRaw = raw[i] as string[];
           if (rowRaw.every(v => !String(v).trim())) continue;
-          const row: any = {
-            name: "", typeOrSpecification: "", category: "", unit: "", warehouse: "",
-            initialQuantity: 0, minimumStock: 0
-          };
+          const row: any = { name: "", typeOrSpecification: "", category: "", unit: "", warehouse: "", initialQuantity: 0, minimumStock: 0 };
           headers.forEach((h, colIdx) => {
             const key = COL_MAP[h];
             if (key) {
@@ -221,7 +287,6 @@ export default function AddItem() {
           });
           rows.push(row);
         }
-
         if (rows.length === 0) { setFileError("هیڅ کرښه نشته."); return; }
         setBulkRows(rows);
         setBulkPreviewReady(true);
@@ -239,9 +304,7 @@ export default function AddItem() {
     try {
       const result = await apiClient.post("/inventory/bulk-import", { rows: bulkRows });
       setImportResult(result);
-      if (result.importedItems?.length > 0) {
-        setPrintItems(result.importedItems);
-      }
+      if (result.importedItems?.length > 0) setPrintItems(result.importedItems);
       setBulkPreviewReady(false);
     } catch (err: any) {
       setFileError("د وارد کولو خطا: " + err.message);
@@ -253,6 +316,9 @@ export default function AddItem() {
   const selectedBab = babs.find(b => String(b.id) === formData.bab_id);
   const selectedFasl = fasls.find(f => String(f.id) === formData.fasl_id);
 
+  const selectCls = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
+  const inputCls = "mb-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
+
   return (
     <>
       <PageMeta title="نوی جنس اضافه کول | Kandahar University WMS" description="ګودام ته د نوي جنس زیاتول" />
@@ -260,28 +326,12 @@ export default function AddItem() {
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setTab("manual")}
-            className={`pb-3 px-4 text-sm font-semibold transition border-b-2 -mb-px ${
-              tab === "manual"
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-            dir="rtl"
-          >
-            د لاس له لارې اضافه کول
-          </button>
-          <button
-            onClick={() => setTab("bulk")}
-            className={`pb-3 px-4 text-sm font-semibold transition border-b-2 -mb-px ${
-              tab === "bulk"
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-            dir="rtl"
-          >
-            د اکسیل له لارې ډله‌ییز وارد کول
-          </button>
+          <button onClick={() => setTab("manual")}
+            className={`pb-3 px-4 text-sm font-semibold transition border-b-2 -mb-px ${tab === "manual" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}
+            dir="rtl">د لاس له لارې اضافه کول</button>
+          <button onClick={() => setTab("bulk")}
+            className={`pb-3 px-4 text-sm font-semibold transition border-b-2 -mb-px ${tab === "bulk" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}
+            dir="rtl">د اکسیل له لارې ډله‌ییز وارد کول</button>
         </div>
 
         {tab === "manual" && (
@@ -303,7 +353,7 @@ export default function AddItem() {
                     <p className="text-xs font-mono font-bold text-gray-600 dark:text-gray-400">{manualSuccess.tracking_code}</p>
                     <div className="flex gap-3">
                       <Button onClick={() => window.print()} variant="outline" className="text-sm">🖨️ د بارکوډ چاپ</Button>
-                      <Button onClick={() => { setManualSuccess(null); setFormData({ name: "", category: "", typeOrSpecification: "", unit: "", initialQuantity: 0, minimumStockLevel: 0, unitPrice: 0, supplierOrSource: "", description: "", bab_id: "", fasl_id: "" }); }} variant="outline" className="text-sm">+ نوی جنس</Button>
+                      <Button onClick={() => setManualSuccess(null)} variant="outline" className="text-sm">+ نوی جنس</Button>
                       <Button onClick={() => navigate("/inventory/items")} className="text-sm">لیست ته ورو</Button>
                     </div>
                   </div>
@@ -316,26 +366,92 @@ export default function AddItem() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* ── Bab / Fasl ────────────────────────────────────────── */}
                 <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/30 dark:bg-blue-900/10">
-                  <h3 className="mb-3 text-sm font-semibold text-blue-800 dark:text-blue-300" dir="rtl">د بودجې طبقه‌بندي (باب / فصل)</h3>
+                  <div className="flex items-center justify-between mb-3" dir="rtl">
+                    <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300">د بودجې طبقه‌بندي (باب / فصل)</h3>
+                    <span className="text-xs text-blue-500">(اختیاري)</span>
+                  </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {/* Bab */}
                     <div>
-                      <Label>باب (Bab)</Label>
+                      <div className="flex items-center justify-between mb-1" dir="rtl">
+                        <Label>باب (Bab)</Label>
+                        <button type="button" onClick={() => { setShowAddBab(v => !v); setAddBabError(""); }}
+                          className="text-xs text-blue-600 hover:underline dark:text-blue-400">
+                          {showAddBab ? "✕ بندول" : "+ نوی باب"}
+                        </button>
+                      </div>
+                      {showAddBab && (
+                        <div className="mb-2 rounded-lg border border-blue-200 bg-white dark:bg-gray-900 dark:border-blue-900/40 p-3 space-y-2" dir="rtl">
+                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">د نوي باب اضافه کول</p>
+                          <input placeholder="کود (مثلاً: 230)" value={newBab.bab_code} onChange={e => setNewBab(p => ({ ...p, bab_code: e.target.value }))} className={inputCls} dir="ltr" />
+                          <input placeholder="د پښتو نوم" value={newBab.name_ps} onChange={e => setNewBab(p => ({ ...p, name_ps: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="نام دری" value={newBab.name_fa} onChange={e => setNewBab(p => ({ ...p, name_fa: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="توضیحات (اختیاري)" value={newBab.description} onChange={e => setNewBab(p => ({ ...p, description: e.target.value }))} className={inputCls} dir="rtl" />
+                          {addBabError && <p className="text-xs text-red-500">{addBabError}</p>}
+                          <div className="flex gap-2">
+                            <button type="button" onClick={handleAddBab} disabled={addBabLoading}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition">
+                              {addBabLoading ? "ثبتېږي..." : "✓ ثبتول"}
+                            </button>
+                            <button type="button" onClick={() => setShowAddBab(false)}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                              لغوه
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <input type="text" placeholder="د باب لټون..." value={babSearch} onChange={e => setBabSearch(e.target.value)}
-                        className="mb-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" dir="rtl" />
+                        className={inputCls} dir="rtl" />
                       <select name="bab_id" value={formData.bab_id} onChange={handleChange}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" dir="rtl" size={4}>
+                        className={selectCls} dir="rtl" size={4}>
                         <option value="">-- باب غوره کړئ --</option>
                         {filteredBabs.map(b => <option key={b.id} value={b.id}>{b.bab_code} - {b.name_ps}</option>)}
                       </select>
                       {selectedBab && <p className="mt-1 text-xs text-blue-700 dark:text-blue-300" dir="rtl">✓ {selectedBab.bab_code} — {selectedBab.name_ps}</p>}
                     </div>
+
+                    {/* Fasl */}
                     <div>
-                      <Label>فصل (Fasl)</Label>
-                      <input type="text" placeholder="د فصل لټون..." value={faslSearch} onChange={e => setFaslSearch(e.target.value)} disabled={!formData.bab_id}
-                        className="mb-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-primary disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" dir="rtl" />
-                      <select name="fasl_id" value={formData.fasl_id} onChange={handleChange} disabled={!formData.bab_id}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-primary disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" dir="rtl" size={4}>
+                      <div className="flex items-center justify-between mb-1" dir="rtl">
+                        <Label>فصل (Fasl)</Label>
+                        {formData.bab_id && (
+                          <button type="button" onClick={() => { setShowAddFasl(v => !v); setAddFaslError(""); }}
+                            className="text-xs text-blue-600 hover:underline dark:text-blue-400">
+                            {showAddFasl ? "✕ بندول" : "+ نوی فصل"}
+                          </button>
+                        )}
+                      </div>
+                      {showAddFasl && formData.bab_id && (
+                        <div className="mb-2 rounded-lg border border-blue-200 bg-white dark:bg-gray-900 dark:border-blue-900/40 p-3 space-y-2" dir="rtl">
+                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">
+                            د نوي فصل اضافه کول — باب: {selectedBab?.bab_code}
+                          </p>
+                          <input placeholder="کود (مثلاً: 22311)" value={newFasl.fasl_code} onChange={e => setNewFasl(p => ({ ...p, fasl_code: e.target.value }))} className={inputCls} dir="ltr" />
+                          <input placeholder="د پښتو نوم" value={newFasl.name_ps} onChange={e => setNewFasl(p => ({ ...p, name_ps: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="نام دری" value={newFasl.name_fa} onChange={e => setNewFasl(p => ({ ...p, name_fa: e.target.value }))} className={inputCls} dir="rtl" />
+                          <input placeholder="توضیحات (اختیاري)" value={newFasl.description} onChange={e => setNewFasl(p => ({ ...p, description: e.target.value }))} className={inputCls} dir="rtl" />
+                          {addFaslError && <p className="text-xs text-red-500">{addFaslError}</p>}
+                          <div className="flex gap-2">
+                            <button type="button" onClick={handleAddFasl} disabled={addFaslLoading}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition">
+                              {addFaslLoading ? "ثبتېږي..." : "✓ ثبتول"}
+                            </button>
+                            <button type="button" onClick={() => setShowAddFasl(false)}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                              لغوه
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <input type="text" placeholder="د فصل لټون..." value={faslSearch} onChange={e => setFaslSearch(e.target.value)}
+                        disabled={!formData.bab_id}
+                        className={`${inputCls} disabled:opacity-40`} dir="rtl" />
+                      <select name="fasl_id" value={formData.fasl_id} onChange={handleChange}
+                        disabled={!formData.bab_id}
+                        className={`${selectCls} disabled:opacity-40`} dir="rtl" size={4}>
                         <option value="">-- فصل غوره کړئ --</option>
                         {filteredFasls.map(f => <option key={f.id} value={f.id}>{f.fasl_code} - {f.name_ps}</option>)}
                       </select>
@@ -344,6 +460,7 @@ export default function AddItem() {
                   </div>
                 </div>
 
+                {/* ── Item Details ───────────────────────────────────────── */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
                     <Label>د جنس نوم / نام جنس <span className="text-error-500">*</span></Label>
@@ -351,11 +468,24 @@ export default function AddItem() {
                   </div>
                   <div>
                     <Label>کټګوري / کتګوری <span className="text-error-500">*</span></Label>
-                    <Input name="category" value={formData.category} onChange={handleChange} required placeholder="مثلاً: قرطاسیه" />
+                    <select name="category_id" value={formData.category_id} onChange={handleChange} required className={selectCls} dir="rtl">
+                      <option value="">-- کټګوري غوره کړئ --</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name_ps}</option>)}
+                    </select>
                   </div>
                   <div>
                     <Label>واحد / واحد <span className="text-error-500">*</span></Label>
-                    <Input name="unit" value={formData.unit} onChange={handleChange} required placeholder="مثلاً: دانه، کارتن" />
+                    <select name="unit_id" value={formData.unit_id} onChange={handleChange} required className={selectCls} dir="rtl">
+                      <option value="">-- واحد غوره کړئ --</option>
+                      {units.map(u => <option key={u.id} value={u.id}>{u.name_ps}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>ګدام <span className="text-error-500">*</span></Label>
+                    <select name="warehouse_id" value={formData.warehouse_id} onChange={handleChange} required className={selectCls} dir="rtl">
+                      <option value="">-- ګدام غوره کړئ --</option>
+                      {warehouses.map(w => <option key={w.id} value={w.id}>{w.name_ps}</option>)}
+                    </select>
                   </div>
                   <div>
                     <Label>مقدار <span className="text-error-500">*</span></Label>
@@ -369,7 +499,7 @@ export default function AddItem() {
                     <Label>واحد قیمت</Label>
                     <Input type="number" name="unitPrice" value={formData.unitPrice} onChange={handleChange} min="0" />
                   </div>
-                  <div className="md:col-span-2">
+                  <div>
                     <Label>تهیه کوونکی / منبع</Label>
                     <Input name="supplierOrSource" value={formData.supplierOrSource} onChange={handleChange} placeholder="محلي بازار، مرکزی ذخیره" />
                   </div>
@@ -398,19 +528,13 @@ export default function AddItem() {
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">لومړی ګام: د اکسیل فارمټ ښکته کول</h4>
               <p className="text-xs text-gray-500 dark:text-gray-400">د فارمټ ښکته کړئ، ډک کړئ، بیا پورته کړئ.</p>
               <Button onClick={handleExportTemplate} variant="outline" className="text-sm">
-                ⬇ د اکسیل فارمټ ښکته کول / دانلود فورمت اکسیل
+                ⬇ د اکسیل فارمټ ښکته کول
               </Button>
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/40 p-4 space-y-3">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">دویم ګام: د اکسیل فایل پورته کول</h4>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileSelect} className="hidden" />
               <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="text-sm">
                 📂 د اکسیل فایل غوره کول
               </Button>
@@ -429,15 +553,9 @@ export default function AddItem() {
                   <table className="w-full text-xs" dir="rtl">
                     <thead className="bg-gray-100 dark:bg-gray-800">
                       <tr>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">#</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">نوم</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">مشخصات</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">کټګوري</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">واحد</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">ګدام</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">مقدار</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">کم حد</th>
-                        <th className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">قیمت</th>
+                        {["#","نوم","مشخصات","کټګوري","واحد","ګدام","مقدار","کم حد","قیمت"].map(h => (
+                          <th key={h} className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -446,14 +564,14 @@ export default function AddItem() {
                         return (
                           <tr key={i} className={`border-t border-gray-100 dark:border-gray-800 ${isInvalid ? "bg-red-50 dark:bg-red-900/10" : ""}`}>
                             <td className="px-3 py-2 text-gray-500">{i + 1}</td>
-                            <td className={`px-3 py-2 font-medium ${!row.name ? "text-red-500" : "text-gray-800 dark:text-white/90"}`}>{row.name || "❌ خالي"}</td>
-                            <td className={`px-3 py-2 ${!row.typeOrSpecification ? "text-red-500" : "text-gray-600 dark:text-gray-400"}`}>{row.typeOrSpecification || "❌"}</td>
-                            <td className={`px-3 py-2 ${!row.category ? "text-red-500" : "text-gray-600 dark:text-gray-400"}`}>{row.category || "❌"}</td>
-                            <td className={`px-3 py-2 ${!row.unit ? "text-red-500" : "text-gray-600 dark:text-gray-400"}`}>{row.unit || "❌"}</td>
-                            <td className={`px-3 py-2 ${!row.warehouse ? "text-red-500" : "text-gray-600 dark:text-gray-400"}`}>{row.warehouse || "❌"}</td>
-                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.initialQuantity}</td>
-                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.minimumStock}</td>
-                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.unitPrice || "-"}</td>
+                            <td className={`px-3 py-2 font-medium ${!row.name ? "text-red-500" : "text-gray-800 dark:text-white/90"}`}>{row.name || "❌"}</td>
+                            <td className={`px-3 py-2 ${!row.typeOrSpecification ? "text-red-500" : "text-gray-600"}`}>{row.typeOrSpecification || "❌"}</td>
+                            <td className={`px-3 py-2 ${!row.category ? "text-red-500" : "text-gray-600"}`}>{row.category || "❌"}</td>
+                            <td className={`px-3 py-2 ${!row.unit ? "text-red-500" : "text-gray-600"}`}>{row.unit || "❌"}</td>
+                            <td className={`px-3 py-2 ${!row.warehouse ? "text-red-500" : "text-gray-600"}`}>{row.warehouse || "❌"}</td>
+                            <td className="px-3 py-2 text-gray-600">{row.initialQuantity}</td>
+                            <td className="px-3 py-2 text-gray-600">{row.minimumStock}</td>
+                            <td className="px-3 py-2 text-gray-600">{row.unitPrice || 0}</td>
                           </tr>
                         );
                       })}
@@ -464,59 +582,44 @@ export default function AddItem() {
             )}
 
             {importResult && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <StatCard label="بریالي وارد شوي" value={importResult.imported} color="green" />
-                  <StatCard label="جوړ شوي بارکوډونه" value={importResult.generatedCodes} color="blue" />
-                  <StatCard label="تکراري (رد شوي)" value={importResult.duplicates} color="orange" />
-                  <StatCard label="ناسم (رد شوي)" value={importResult.invalid} color="red" />
-                </div>
-
+              <div className="rounded-xl border border-green-200 bg-green-50 dark:border-green-900/30 dark:bg-green-900/10 p-4 space-y-2" dir="rtl">
+                <p className="font-semibold text-green-700 dark:text-green-400">
+                  ✓ {importResult.imported} جنسونه ثبت شول
+                </p>
+                {importResult.duplicates > 0 && <p className="text-xs text-orange-600">{importResult.duplicates} تکراري جنسونه</p>}
+                {importResult.invalid > 0 && <p className="text-xs text-red-600">{importResult.invalid} ناسم کرښې</p>}
                 {importResult.errors.length > 0 && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 p-4">
-                    <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">خطاوې / ستونزې:</p>
-                    <ul className="space-y-1">
-                      {importResult.errors.map((err, i) => (
-                        <li key={i} className="text-xs text-red-600 dark:text-red-300">
-                          کرښه {err.row}: {err.reason}
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="text-xs text-red-500 space-y-0.5 max-h-32 overflow-y-auto">
+                    {importResult.errors.map((err, i) => <p key={i}>کرښه {err.row}: {err.reason}</p>)}
                   </div>
                 )}
-
-                {importResult.importedItems.length > 0 && (
-                  <div className="rounded-xl border border-green-200 bg-green-50 dark:border-green-900/30 dark:bg-green-900/10 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-green-700 dark:text-green-400">وارد شوي اجناس او بارکوډونه</p>
-                      <Button onClick={() => setShowPrintPreview(v => !v)} variant="outline" className="text-xs">
-                        🖨️ د بارکوډ چاپ ({importResult.importedItems.length})
-                      </Button>
-                    </div>
-                    {showPrintPreview && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 print-area">
-                        {printItems.map((item, i) => (
-                          <div key={i} className="flex flex-col items-center gap-1 p-2 rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 text-center">
-                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate w-full">{item.name}</p>
-                            <div className="p-1.5 bg-white rounded">
-                              <QRCode value={item.tracking_code} size={80} level="M" includeMargin={false} />
-                            </div>
-                            <p className="text-xs font-mono text-gray-500" style={{ fontSize: 9 }}>{item.tracking_code}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {showPrintPreview && (
-                      <Button onClick={() => window.print()} className="w-full text-sm">🖨️ چاپ</Button>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex gap-3 justify-end">
-                  <Button variant="outline" onClick={() => { setImportResult(null); setBulkRows([]); setBulkPreviewReady(false); setShowPrintPreview(false); if (fileInputRef.current) fileInputRef.current.value = ""; }}>
-                    بیا وارد کول
+                <div className="flex gap-3 pt-2">
+                  {printItems.length > 0 && (
+                    <Button onClick={() => setShowPrintPreview(true)} variant="outline" className="text-sm">
+                      🖨️ بارکوډونه چاپول ({printItems.length})
+                    </Button>
+                  )}
+                  <Button onClick={() => navigate("/inventory/items")} className="text-sm">
+                    د اجناسو لیست
                   </Button>
-                  <Button onClick={() => navigate("/inventory/items")}>د اجناسو لیست</Button>
+                </div>
+              </div>
+            )}
+
+            {showPrintPreview && printItems.length > 0 && (
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                <div className="flex items-center justify-between" dir="rtl">
+                  <h4 className="text-sm font-semibold">بارکوډ مخکتنه</h4>
+                  <button onClick={() => window.print()} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-white">چاپول</button>
+                </div>
+                <div className="flex flex-wrap gap-4 print:gap-2">
+                  {printItems.map(item => (
+                    <div key={item.id} className="flex flex-col items-center gap-1 p-3 border border-gray-200 rounded-lg text-center">
+                      <QRCode value={item.tracking_code} size={90} level="M" includeMargin />
+                      <p className="text-xs font-semibold text-gray-800 dark:text-white/90 max-w-[120px] truncate">{item.name}</p>
+                      <p className="text-xs font-mono text-gray-500">{item.tracking_code}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -524,20 +627,5 @@ export default function AddItem() {
         )}
       </div>
     </>
-  );
-}
-
-function StatCard({ label, value, color }: { label: string; value: number; color: "green" | "blue" | "orange" | "red" }) {
-  const colors = {
-    green: "border-green-200 bg-green-50 dark:border-green-900/30 dark:bg-green-900/10 text-green-700 dark:text-green-400",
-    blue: "border-blue-200 bg-blue-50 dark:border-blue-900/30 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400",
-    orange: "border-orange-200 bg-orange-50 dark:border-orange-900/30 dark:bg-orange-900/10 text-orange-700 dark:text-orange-400",
-    red: "border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 text-red-700 dark:text-red-400",
-  };
-  return (
-    <div className={`rounded-xl border p-3 text-center ${colors[color]}`} dir="rtl">
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs mt-1">{label}</p>
-    </div>
   );
 }

@@ -43,6 +43,8 @@ init_db() {
   else
     echo "[WMS] Database already exists, skipping schema init."
   fi
+  echo "[WMS] Applying seed data (INSERT IGNORE - safe to re-run)..."
+  mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" < /home/runner/workspace/backend/src/database/seed.sql 2>/dev/null || true
 }
 
 if [ ! -d "$MYSQL_DATA_DIR" ]; then

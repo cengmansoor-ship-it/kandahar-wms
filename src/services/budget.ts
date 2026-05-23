@@ -106,4 +106,12 @@ export const budgetService = {
 
   import: (babs: Omit<BudgetBab, 'id'>[], fasls: any[]) =>
     apiClient.post('/budget/import', { babs, fasls }),
+
+  createBab: async (data: { bab_code: string; name_ps: string; name_fa: string; description?: string }): Promise<BudgetBab> => {
+    return await apiClient.post('/budget/babs', data);
+  },
+
+  createFasl: async (data: { bab_id: number; fasl_code: string; name_ps: string; name_fa: string; description?: string }): Promise<BudgetFasl> => {
+    return await apiClient.post('/budget/fasls', data);
+  },
 };

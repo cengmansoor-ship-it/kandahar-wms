@@ -161,16 +161,21 @@ export const createItem = async (
   const initialQty = itemData.initialQuantity || 0;
 
   try {
-    const apiPayload = {
-      item_code: itemData.id || `ITEM-${Date.now()}`,
+    const anyData = itemData as any;
+    const apiPayload: any = {
+      item_code: `ITEM-${Date.now()}`,
       name_ps: itemData.name || "",
       name_fa: itemData.name || "",
-      description: itemData.description || itemData.typeOrSpecification || "",
-      category_id: 1, // Defaulting to 1 as string matching isn't robust
-      unit_id: 1,
-      warehouse_id: 1,
-      minimum_stock: itemData.minimumStockLevel || 0
+      description: itemData.description || anyData.typeOrSpecification || "",
+      category_id: Number(anyData.category_id) || 1,
+      unit_id: Number(anyData.unit_id) || 1,
+      warehouse_id: Number(anyData.warehouse_id) || 1,
+      minimum_stock: itemData.minimumStockLevel || 0,
+      unit_price: itemData.unitPrice || 0,
+      supplier_source: anyData.supplierOrSource || "",
     };
+    if (anyData.bab_id) apiPayload.bab_id = Number(anyData.bab_id);
+    if (anyData.fasl_id) apiPayload.fasl_id = Number(anyData.fasl_id);
     const response = await apiClient.post('/inventory/items', apiPayload);
     const newId = response.id?.toString() || "";
     
