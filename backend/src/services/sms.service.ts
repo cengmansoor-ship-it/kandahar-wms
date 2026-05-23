@@ -263,4 +263,53 @@ export class SmsService {
       // Fire-and-forget — never block main flow
     }
   }
+
+  /**
+   * After any stock-OUT operation, check if the affected items have fallen at or
+   * below their minimum_stock threshold. If yes — and SMS low_stock notifications
+   * are enabled — send one consolidated alert message to the admin phone.
+   * Always fire-and-forget: never throws, never blocks the caller.
+   */
+  static async checkAndNotifyLowStock(itemIds: number[]): Promise<void> {
+    try {
+      if (!itemIds || itemIds.length === 0) return;
+
+      const cfg = await SmsService.getConfig();
+      if (!cfg || !cfg.is_active || !cfg.notify_low_stock) return;
+      if (!cfg.admin_phone) return;
+
+      // Deduplicate
+      const unique = [...new Set(itemIds)];
+      const placeholders = unique.map(() => '?').join(', ');
+
+      const [rows]: any = await pool.query(
+        `SELECT name_ps, name_fa, current_stock, minimum_stock
+         FROM items
+         WHERE id IN (${placeholders})
+           AND minimum_stock > 0
+           AND current_stock <= minimum_stock
+           AND is_deleted = FALSE`,
+        unique
+      );
+
+      if (!rows || rows.length === 0) return;
+
+      const itemLines: string = rows
+        .map((r: any) => {
+          const name = r.name_ps || r.name_fa || '—';
+          return `• ${name}: موجودي ${r.current_stock} / لږترلږه ${r.minimum_stock}`;
+        })
+        .join('\n');
+
+      const message =
+        `⚠️ کندهار پوهنتون — د موجودۍ کمښت خبرتیا\n` +
+        `${rows.length} جنس(ونه) لږترلږه حده ته رسیدلي:\n` +
+        `${itemLines}\n` +
+        `مهرباني وکړئ ژر د تدارکاتو اقدام وکړئ.`;
+
+      await SmsService.sendSms(cfg.admin_phone, message);
+    } catch {
+      // Fire-and-forget — never block
+    }
+  }
 }

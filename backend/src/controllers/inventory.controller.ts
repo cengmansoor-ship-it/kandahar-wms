@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { InventoryService } from '../services/inventory.service';
+import { SmsService } from '../services/sms.service';
 
 const handleError = (res: Response, error: any) => {
   console.error(error);
@@ -93,6 +94,10 @@ export const stockOut = async (req: Request, res: Response): Promise<any> => {
     }
     const userId = 1;
     const result = await InventoryService.stockOut(req.body, userId);
+
+    // Fire-and-forget: check if this item is now at/below its minimum stock threshold
+    SmsService.checkAndNotifyLowStock([Number(item_id)]).catch(() => {});
+
     res.json({ success: true, message: 'موجودي په بریالیتوب سره کمه شوه.', data: result });
   } catch (error) {
     handleError(res, error);

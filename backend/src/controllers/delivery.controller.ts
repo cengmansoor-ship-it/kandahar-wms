@@ -48,11 +48,17 @@ export const addDeliveryItems = async (req: Request, res: Response): Promise<any
     const userId = 1;
     await DeliveryService.addDeliveryItems(Number(req.params.id), items, userId);
 
-    // Fire-and-forget SMS — never block the response
+    // Fire-and-forget: delivery confirmation SMS
     SmsService.sendIfEnabled(
       'delivered',
       `📦 کندهار پوهنتون WMS\n${items.length} ډول اجناس بریالیتوب سره تسلیم شول.\nتسلیمي شمیره: ${req.params.id}`
     ).catch(() => {});
+
+    // Fire-and-forget: check if any delivered item is now at/below minimum stock
+    const deliveredItemIds: number[] = items
+      .filter((i: any) => i.item_id)
+      .map((i: any) => Number(i.item_id));
+    SmsService.checkAndNotifyLowStock(deliveredItemIds).catch(() => {});
 
     res.json({ success: true, message: 'اجناس تسلیم او له ګدام څخه کم شول.' });
   } catch (error) {
