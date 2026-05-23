@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DeliveryService } from '../services/delivery.service';
+import { SmsService } from '../services/sms.service';
 
 const handleError = (res: Response, error: any) => {
   console.error(error);
@@ -46,6 +47,13 @@ export const addDeliveryItems = async (req: Request, res: Response): Promise<any
     }
     const userId = 1;
     await DeliveryService.addDeliveryItems(Number(req.params.id), items, userId);
+
+    // Fire-and-forget SMS — never block the response
+    SmsService.sendIfEnabled(
+      'delivered',
+      `📦 کندهار پوهنتون WMS\n${items.length} ډول اجناس بریالیتوب سره تسلیم شول.\nتسلیمي شمیره: ${req.params.id}`
+    ).catch(() => {});
+
     res.json({ success: true, message: 'اجناس تسلیم او له ګدام څخه کم شول.' });
   } catch (error) {
     handleError(res, error);

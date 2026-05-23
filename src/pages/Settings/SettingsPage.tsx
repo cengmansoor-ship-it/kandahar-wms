@@ -79,6 +79,137 @@ export default function SettingsPage() {
   const [deletingRoleId, setDeletingRoleId] = useState<number | null>(null);
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<CustomRole | null>(null);
 
+  // SMS Config state
+  interface SmsFormState {
+    provider: "twilio" | "kavenegar" | "custom";
+    sender_id: string;
+    api_key: string;
+    auth_token: string;
+    admin_phone: string;
+    custom_endpoint: string;
+    notify_received: boolean;
+    notify_delivered: boolean;
+    notify_approved: boolean;
+    notify_low_stock: boolean;
+    is_active: boolean;
+  }
+  const emptySmsForm: SmsFormState = {
+    provider: "twilio", sender_id: "", api_key: "", auth_token: "",
+    admin_phone: "", custom_endpoint: "",
+    notify_received: true, notify_delivered: true,
+    notify_approved: true, notify_low_stock: true,
+    is_active: false,
+  };
+  const [smsForm, setSmsForm] = useState<SmsFormState>(emptySmsForm);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsSaving, setSmsSaving] = useState(false);
+  const [smsTesting, setSmsTesting] = useState(false);
+  const [smsMsg, setSmsMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [smsApiKeySet, setSmsApiKeySet] = useState(false);
+  const [smsAuthTokenSet, setSmsAuthTokenSet] = useState(false);
+
+  const flashSmsMsg = (text: string, type: "success" | "error") => {
+    setSmsMsg({ text, type });
+    setTimeout(() => setSmsMsg(null), 5000);
+  };
+
+  const loadSmsConfig = async () => {
+    setSmsLoading(true);
+    try {
+      const res = await fetch("/api/sms/config");
+      const data = await res.json();
+      if (data.success && data.data) {
+        const d = data.data;
+        setSmsForm({
+          provider: d.provider || "twilio",
+          sender_id: d.sender_id || "",
+          api_key: "",
+          auth_token: "",
+          admin_phone: d.admin_phone || "",
+          custom_endpoint: d.custom_endpoint || "",
+          notify_received: Boolean(d.notify_received),
+          notify_delivered: Boolean(d.notify_delivered),
+          notify_approved: Boolean(d.notify_approved),
+          notify_low_stock: Boolean(d.notify_low_stock),
+          is_active: Boolean(d.is_active),
+        });
+        setSmsApiKeySet(Boolean(d.api_key_set));
+        setSmsAuthTokenSet(Boolean(d.auth_token_set));
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setSmsLoading(false);
+    }
+  };
+
+  const handleSmsSave = async () => {
+    if (!smsForm.admin_phone.trim()) {
+      return flashSmsMsg(pick("د ادمین د تلیفون شمیره اړینه ده.", "شماره موبایل ادمین الزامی است."), "error");
+    }
+    setSmsSaving(true);
+    try {
+      const payload: Record<string, any> = {
+        provider: smsForm.provider,
+        sender_id: smsForm.sender_id,
+        admin_phone: smsForm.admin_phone,
+        custom_endpoint: smsForm.custom_endpoint,
+        notify_received: smsForm.notify_received,
+        notify_delivered: smsForm.notify_delivered,
+        notify_approved: smsForm.notify_approved,
+        notify_low_stock: smsForm.notify_low_stock,
+        is_active: smsForm.is_active,
+      };
+      if (smsForm.api_key.trim()) payload.api_key = smsForm.api_key.trim();
+      if (smsForm.auth_token.trim()) payload.auth_token = smsForm.auth_token.trim();
+
+      const res = await fetch("/api/sms/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        flashSmsMsg(pick("د SMS تنظیمات خوندي شول.", "تنظیمات SMS ذخیره شد."), "success");
+        await loadSmsConfig();
+      } else {
+        flashSmsMsg(data.message || pick("خطا", "خطا"), "error");
+      }
+    } catch {
+      flashSmsMsg(pick("د سرور سره اتصال ونشو.", "اتصال به سرور ناموفق بود."), "error");
+    } finally {
+      setSmsSaving(false);
+    }
+  };
+
+  const handleSmsTest = async () => {
+    setSmsTesting(true);
+    setSmsMsg(null);
+    try {
+      const res = await fetch("/api/sms/config/test", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        flashSmsMsg(
+          pick(`SMS ازموینه بریالۍ شوه! SID: ${data.sid || "OK"}`, `آزمایش SMS موفق بود! SID: ${data.sid || "OK"}`),
+          "success"
+        );
+      } else {
+        const errMap: Record<string, string> = {
+          SMS_NOT_CONFIGURED: pick("SMS تنظیم نه دی.", "SMS تنظیم نشده."),
+          API_KEY_MISSING: pick("API کیلي ورکړل شوې نه ده.", "کلید API وارد نشده."),
+          NO_ADMIN_PHONE: pick("د ادمین شمیره نشته.", "شماره ادمین وارد نشده."),
+          TWILIO_CREDENTIALS_MISSING: pick("د Twilio اسناد ناقص دي.", "اطلاعات Twilio ناقص است."),
+          SMS_INACTIVE: pick("SMS غیرفعال دی. فعال کول لازم دي.", "SMS غیرفعال است. فعال‌سازی لازم است."),
+        };
+        flashSmsMsg(errMap[data.code] || data.message || pick("ازموینه ناکام شوه.", "آزمایش ناموفق بود."), "error");
+      }
+    } catch {
+      flashSmsMsg(pick("د سرور سره اتصال ونشو.", "اتصال به سرور ناموفق بود."), "error");
+    } finally {
+      setSmsTesting(false);
+    }
+  };
+
   const loadEmailConfigs = async () => {
     try {
       const res = await fetch("/api/email-config");
@@ -188,6 +319,7 @@ export default function SettingsPage() {
   useEffect(() => {
     loadEmailConfigs();
     loadCustomRoles();
+    loadSmsConfig();
   }, [loadCustomRoles]);
 
   const flashEmailMsg = (text: string, type: "success" | "error") => {
@@ -928,116 +1060,221 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* د SMS حالت کارډ */}
-          <div className="mb-5 rounded-xl border border-yellow-200 bg-yellow-50 dark:border-yellow-800/40 dark:bg-yellow-900/10 p-4 flex items-start gap-3">
-            <span className="text-yellow-500 text-xl mt-0.5">⚠️</span>
-            <div>
-              <p className="text-sm font-bold text-yellow-800 dark:text-yellow-300">
-                {pick("SMS سرویس د فعالولو لپاره چمتو دی", "سرویس SMS آماده فعال‌سازی است")}
-              </p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1 leading-relaxed">
-                {pick(
-                  "د SMS د فعالولو لپاره د لاندې برخو ډکول اړین دي. مرکزي سیستم کولای شي چې له Twilio، Kavenegar، یا نورو SMS API چمتو کوونکو سره وصل شي.",
-                  "برای فعال‌سازی SMS لطفاً اطلاعات زیر را پر کنید. سیستم می‌تواند با Twilio، کاوه‌نگار یا سایر ارائه‌دهندگان API پیامک ادغام شود."
-                )}
-              </p>
+          {/* SMS status message */}
+          {smsMsg && (
+            <div className={`mb-4 rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2 ${
+              smsMsg.type === "success"
+                ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-green-800 dark:text-green-300"
+                : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-800 dark:text-red-300"
+            }`}>
+              <span>{smsMsg.type === "success" ? "✅" : "❌"}</span>
+              <span>{smsMsg.text}</span>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {/* SMS Provider */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
-                {pick("د SMS سرویس چمتو کوونکی", "ارائه‌دهنده سرویس SMS")}
-              </label>
-              <select
-                disabled
-                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-              >
-                <option>Twilio</option>
-                <option>Kavenegar</option>
-                <option>Custom API</option>
-              </select>
+          {smsLoading ? (
+            <div className="flex items-center justify-center py-8 text-gray-400 text-sm gap-2">
+              <span className="animate-spin">⏳</span>
+              <span>{pick("د SMS تنظیمات لوستل...", "در حال بارگذاری تنظیمات SMS...")}</span>
             </div>
-
-            {/* SMS Sender Number */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
-                {pick("د لیږونکي شمیره / Sender ID", "شماره فرستنده / Sender ID")}
-              </label>
-              <input
-                type="text"
-                disabled
-                dir="ltr"
-                placeholder="+93XXXXXXXXX"
-                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed placeholder-gray-300"
-              />
-            </div>
-
-            {/* API Key */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
-                {pick("د API کیلي / Account SID", "کلید API / Account SID")}
-              </label>
-              <input
-                type="password"
-                disabled
-                dir="ltr"
-                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed placeholder-gray-300"
-              />
-            </div>
-
-            {/* Auth Token */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
-                {pick("د تصدیق ټوکن / Auth Token", "توکن احراز هویت / Auth Token")}
-              </label>
-              <input
-                type="password"
-                disabled
-                dir="ltr"
-                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                className="w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed placeholder-gray-300"
-              />
-            </div>
-          </div>
-
-          {/* د SMS خبرتیاوو ډولونه */}
-          <div className="mt-5">
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-3">
-              {pick("د SMS خبرتیاوو ډولونه", "انواع اعلانات SMS")}
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {[
-                [pick("د اجناسو رسید", "دریافت کالا"), pick("کله چې اجناس ګدام ته رسیږي", "هنگام دریافت کالا")],
-                [pick("د غوښتنې تایید", "تأیید درخواست"), pick("کله چې غوښتنه تایید شي", "هنگام تأیید درخواست")],
-                [pick("د تسلیمۍ خبر", "اطلاع تحویل"), pick("کله چې جنس تسلیم شي", "هنگام تحویل کالا")],
-                [pick("د موجودۍ کمښت", "کمبود موجودی"), pick("کله چې موجودي ټیټه شي", "هنگام کاهش موجودی")],
-              ].map(([title, desc], i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 p-3 bg-gray-50 dark:bg-white/5 opacity-60">
-                  <input type="checkbox" disabled className="h-4 w-4 accent-primary cursor-not-allowed" />
-                  <div>
-                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{title}</p>
-                    <p className="text-[11px] text-gray-400 dark:text-gray-500">{desc}</p>
-                  </div>
+          ) : (
+            <>
+              {/* Active toggle row */}
+              <div className="mb-5 flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-white/5 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {pick("SMS خبرتیا فعاله کړئ", "فعال‌سازی اطلاع‌رسانی SMS")}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {smsForm.is_active
+                      ? pick("SMS فعال دی — خبرتیاوې لیږل کیږي", "SMS فعال است — اطلاعات ارسال می‌شوند")
+                      : pick("SMS غیرفعال دی", "SMS غیرفعال است")}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
+                <button
+                  type="button"
+                  onClick={() => setSmsForm(f => ({ ...f, is_active: !f.is_active }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    smsForm.is_active ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    smsForm.is_active ? (lang === "ps" ? "-translate-x-6" : "translate-x-6") : (lang === "ps" ? "-translate-x-1" : "translate-x-1")
+                  }`} />
+                </button>
+              </div>
 
-          <div className="mt-5 flex items-center gap-3">
-            <button
-              disabled
-              className="flex items-center gap-2 rounded-xl bg-green-400 px-5 py-2.5 text-sm font-semibold text-white cursor-not-allowed opacity-50"
-            >
-              <span>📱</span>
-              {pick("د SMS تنظیمات خوندي کول", "ذخیره تنظیمات SMS")}
-            </button>
-            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-              {pick("— د فعالولو لپاره د API کیلي ډک کړئ", "— برای فعال‌سازی کلید API را وارد کنید")}
-            </span>
-          </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                {/* Provider */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                    {pick("د SMS سرویس چمتو کوونکی", "ارائه‌دهنده سرویس SMS")}
+                  </label>
+                  <select
+                    value={smsForm.provider}
+                    onChange={e => setSmsForm(f => ({ ...f, provider: e.target.value as any }))}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="twilio">Twilio</option>
+                    <option value="kavenegar">Kavenegar (کاوه‌نگار)</option>
+                    <option value="custom">{pick("ځانګړی API", "API سفارشی")}</option>
+                  </select>
+                </div>
+
+                {/* Admin Phone */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                    {pick("د ادمین تلیفون شمیره *", "شماره موبایل ادمین *")}
+                  </label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={smsForm.admin_phone}
+                    onChange={e => setSmsForm(f => ({ ...f, admin_phone: e.target.value }))}
+                    placeholder="+93XXXXXXXXX"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
+                  />
+                </div>
+
+                {/* Sender ID */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                    {pick("د لیږونکي شمیره / Sender ID", "شماره فرستنده / Sender ID")}
+                  </label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={smsForm.sender_id}
+                    onChange={e => setSmsForm(f => ({ ...f, sender_id: e.target.value }))}
+                    placeholder={smsForm.provider === "kavenegar" ? "10004346" : "+1XXXXXXXXXX"}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
+                  />
+                </div>
+
+                {/* API Key / Account SID */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                    {smsForm.provider === "twilio"
+                      ? pick("د حساب SID (Account SID)", "شناسه حساب (Account SID)")
+                      : pick("د API کیلي", "کلید API")}
+                  </label>
+                  <input
+                    type="password"
+                    dir="ltr"
+                    value={smsForm.api_key}
+                    onChange={e => setSmsForm(f => ({ ...f, api_key: e.target.value }))}
+                    placeholder={smsApiKeySet ? pick("(ذخیره شوی — بدلولو لپاره ولیکئ)", "(ذخیره شده — برای تغییر وارد کنید)") : (smsForm.provider === "twilio" ? "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" : "API_KEY")}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
+                    autoComplete="new-password"
+                  />
+                  {smsApiKeySet && !smsForm.api_key && (
+                    <p className="mt-1 text-[11px] text-green-600 dark:text-green-400">
+                      {pick("✓ API کیلي ذخیره شوې ده", "✓ کلید API ذخیره شده است")}
+                    </p>
+                  )}
+                </div>
+
+                {/* Auth Token (Twilio only) */}
+                {smsForm.provider === "twilio" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                      {pick("د تصدیق ټوکن (Auth Token)", "توکن احراز هویت (Auth Token)")}
+                    </label>
+                    <input
+                      type="password"
+                      dir="ltr"
+                      value={smsForm.auth_token}
+                      onChange={e => setSmsForm(f => ({ ...f, auth_token: e.target.value }))}
+                      placeholder={smsAuthTokenSet ? pick("(ذخیره شوی — بدلولو لپاره ولیکئ)", "(ذخیره شده — برای تغییر وارد کنید)") : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
+                      autoComplete="new-password"
+                    />
+                    {smsAuthTokenSet && !smsForm.auth_token && (
+                      <p className="mt-1 text-[11px] text-green-600 dark:text-green-400">
+                        {pick("✓ Auth Token ذخیره شوی دی", "✓ Auth Token ذخیره شده است")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Custom Endpoint */}
+                {smsForm.provider === "custom" && (
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                      {pick("ځانګړی API پته (Endpoint URL)", "آدرس API سفارشی (Endpoint URL)")}
+                    </label>
+                    <input
+                      type="url"
+                      dir="ltr"
+                      value={smsForm.custom_endpoint}
+                      onChange={e => setSmsForm(f => ({ ...f, custom_endpoint: e.target.value }))}
+                      placeholder="https://api.example.com/v1/sms/send"
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Notification types */}
+              <div className="mt-5">
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-3">
+                  {pick("د SMS خبرتیاوو ډولونه", "انواع اعلانات SMS")}
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {([
+                    ["notify_received",  pick("د اجناسو رسید", "دریافت کالا"),    pick("کله چې اجناس ګدام ته رسیږي", "هنگام دریافت کالا")],
+                    ["notify_approved",  pick("د غوښتنې تایید", "تأیید درخواست"), pick("کله چې غوښتنه تایید شي", "هنگام تأیید درخواست")],
+                    ["notify_delivered", pick("د تسلیمۍ خبر", "اطلاع تحویل"),    pick("کله چې جنس تسلیم شي", "هنگام تحویل کالا")],
+                    ["notify_low_stock", pick("د موجودۍ کمښت", "کمبود موجودی"),  pick("کله چې موجودي ټیټه شي", "هنگام کاهش موجودی")],
+                  ] as [keyof typeof smsForm, string, string][]).map(([key, title, desc]) => (
+                    <label
+                      key={key}
+                      className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 p-3 bg-gray-50 dark:bg-white/5 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={Boolean(smsForm[key])}
+                        onChange={e => setSmsForm(f => ({ ...f, [key]: e.target.checked }))}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      <div>
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{title}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSmsSave}
+                  disabled={smsSaving}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {smsSaving ? <span className="animate-spin">⏳</span> : <span>💾</span>}
+                  {smsSaving
+                    ? pick("خوندي کیږي...", "در حال ذخیره...")
+                    : pick("د SMS تنظیمات خوندي کول", "ذخیره تنظیمات SMS")}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSmsTest}
+                  disabled={smsTesting || !smsForm.is_active}
+                  title={!smsForm.is_active ? pick("لومړی SMS فعال کړئ", "ابتدا SMS را فعال کنید") : ""}
+                  className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {smsTesting ? <span className="animate-spin">📡</span> : <span>📱</span>}
+                  {smsTesting
+                    ? pick("SMS لیږل کیږي...", "در حال ارسال SMS...")
+                    : pick("د SMS ازموینه", "آزمایش SMS")}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ReceivingService } from '../services/receiving.service';
+import { SmsService } from '../services/sms.service';
 
 const handleError = (res: Response, error: any) => {
   console.error(error);
@@ -55,6 +56,13 @@ export const addReceivingItems = async (req: Request, res: Response): Promise<an
     }
     const userId = 1;
     await ReceivingService.addReceivingItems(Number(req.params.id), items, userId);
+
+    // Fire-and-forget SMS — never block the response
+    SmsService.sendIfEnabled(
+      'received',
+      `✅ کندهار پوهنتون WMS\n${items.length} ډول اجناس ګدام ته داخل شول.\nرسید شمیره: ${req.params.id}`
+    ).catch(() => {});
+
     res.json({ success: true, message: 'اجناس په بریالیتوب سره رسید او ګدام ته اضافه شول.' });
   } catch (error) {
     handleError(res, error);
