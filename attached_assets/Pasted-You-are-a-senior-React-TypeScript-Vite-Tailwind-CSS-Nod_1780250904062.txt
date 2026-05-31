@@ -1,0 +1,717 @@
+You are a senior React + TypeScript + Vite + Tailwind CSS + Node.js/Express + MySQL implementation engineer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Goal:
+Fix ONLY these 10 defense comments/problems.
+
+VERY IMPORTANT:
+Do NOT rewrite the project.
+Do NOT redesign the whole UI.
+Do NOT change official forms layout/design.
+Do NOT break existing workflow.
+Do NOT break inventory, requests, procurement, receiving, reports, traceability, authentication, or database.
+Do NOT remove localStorage/offline fallback.
+Do NOT change backend APIs unless needed for the exact requested feature.
+Do NOT add unit testing.
+Do NOT add component testing.
+Do NOT add system testing.
+Do NOT add new testing libraries.
+Do NOT create test files.
+All visible UI text must be Pashto/Dari only.
+No visible English words.
+No useless abbreviations.
+No Pashto-written English words such as “لیجر”.
+Work in small, safe, targeted changes only.
+
+==================================================
+1) FIX LANGUAGE SWITCHER TEXT IN NAVBAR
+==================================================
+
+Problem:
+In the navbar language switcher, Pashto is shown as “ps” and Dari is shown as “Dr”.
+
+Required change:
+Replace:
+- ps → پښتو
+- Dr / dr / DR → دری
+
+Rules:
+- No language abbreviation should remain visible.
+- Do not use English labels like Pashto / Dari.
+- Do not use ps / dr anywhere in visible UI.
+- Keep language switching functionality working.
+- Do not change navbar layout except this text replacement.
+
+Inspect:
+- src/layout/AppHeader.tsx
+- src/components/LanguageSwitcher*
+- src/components/header/*
+- src/context/LanguageContext.tsx
+- src/i18n/*
+- src/locales/*
+- any file containing ps, PS, dr, Dr, DR, Pashto, Dari
+
+Required result:
+- Navbar shows “پښتو” and “دری”.
+- Switching from پښتو to دری still works.
+- No ps / Dr abbreviation remains in UI.
+
+==================================================
+2) IMPLEMENT REAL FORGOT PASSWORD FLOW WITH OTP
+==================================================
+
+Problem:
+In the login form, forgot password is not implemented like a real account recovery flow.
+Currently password recovery is too simple, unsafe, or directly exposes/resets password.
+
+Required behavior:
+Implement a secure forgot password flow:
+
+Step 1:
+User clicks:
+- پټنوم مو هېر شوی؟
+- رمز عبور را فراموش کرده‌اید؟
+
+Step 2:
+User enters email or phone number.
+
+Step 3:
+System sends OTP code to the user.
+
+Use the available configured method:
+- email if email service exists
+- Firebase password reset / Firebase email if Firebase is configured
+- backend email service if available
+- SMS only if SMS service is already configured
+
+If no real email/SMS provider is configured:
+- keep the UI flow complete
+- store OTP only for local/demo mode
+- clearly show Pashto/Dari message that real sending requires email/SMS configuration
+- do NOT expose password
+- do NOT print OTP in visible UI in production mode
+
+Step 4:
+User enters OTP.
+
+Step 5:
+System verifies OTP.
+
+Step 6:
+User enters new password and confirms it.
+
+Step 7:
+Password is updated safely.
+
+Security rules:
+- Never show old password.
+- Never return password to user.
+- OTP must expire after about 5 minutes.
+- Limit repeated OTP attempts.
+- Do not allow empty password.
+- Require password confirmation.
+- Show Pashto/Dari validation messages.
+- Do not expose tokens or OTP in frontend logs.
+- If backend handles users, hash passwords safely.
+- If Firebase Auth is used, use Firebase password reset mechanism where appropriate.
+
+Inspect:
+- src/pages/AuthPages/SignIn.tsx
+- src/components/auth/*
+- src/firebase/auth.ts
+- src/context/AuthContext.tsx
+- backend/src/routes/users.routes.ts if exists
+- backend/src/controllers/users.controller.ts if exists
+- backend/src/services/users.service.ts if exists
+- backend/src/routes/auth.routes.ts if exists
+- backend/src/services/email* if exists
+- backend/src/database/schema.sql only if OTP table is absolutely required
+
+Do NOT:
+- redesign login page
+- expose demo password
+- directly return password
+- break normal login/logout
+
+Required result:
+- Forgot password flow opens correctly.
+- OTP step exists.
+- Wrong OTP is rejected.
+- Expired OTP is rejected.
+- Correct OTP allows password reset.
+- New password can be used according to the active auth mode.
+- No password is shown to user.
+
+==================================================
+3) REDUCE HEAVY LOADING / PERFORMANCE ONLY
+==================================================
+
+Problem:
+The system feels too heavy and loads slowly.
+
+Important:
+Do NOT add unit tests.
+Do NOT add component tests.
+Do NOT add system tests.
+Do NOT add testing setup.
+Do NOT add test files.
+
+Required work:
+1. Check bundle size and heavy imports.
+2. Use React.lazy / lazy loading for heavy pages where safe.
+3. Do not load all major modules at first render.
+4. Keep dashboard initial load lighter.
+5. Avoid unnecessary re-renders where obvious.
+6. Keep official forms lazy-loaded.
+7. Do not remove features.
+8. Do not change UI design.
+9. Do not break routes or protected routes.
+10. Do not break localStorage/offline fallback.
+
+Inspect:
+- package.json
+- vite.config.ts
+- src/App.tsx
+- src/routes/*
+- src/pages/*
+- src/components/*
+- src/utils/*
+- src/constants/*
+- src/components/OfficialFormViewer.tsx
+- public/forms/* only for loading behavior, not design changes
+
+Required result:
+- Initial load is lighter.
+- Heavy pages load only when opened.
+- Official forms do not load unnecessarily at first app start.
+- Navigation still works.
+- UI design remains unchanged.
+
+==================================================
+4) MAKE THE SYSTEM WORK AS A SINGLE PAGE APPLICATION
+==================================================
+
+Problem:
+The system should work as a Single Page Application so navigation does not reload the whole page repeatedly.
+
+Important:
+Do NOT merge the whole project into one huge page/file.
+This means React SPA behavior only.
+
+Required behavior:
+- Internal menu clicks must use React Router navigation, not full page reload.
+- Do not use normal <a href> for internal app routes if it causes reload.
+- Use Link/NavLink/useNavigate for internal routes.
+- Direct route refresh like /dashboard or /requests must not show 404.
+- Vite/dev/deployment must fallback to index.html for client routes.
+- Keep /api routes proxied to backend.
+- Use lazy loading/code splitting for large pages where safe.
+
+Inspect:
+- src/App.tsx
+- src/routes/*
+- src/layout/AppSidebar.tsx
+- src/layout/AppHeader.tsx
+- navigation/menu components
+- vite.config.ts
+- deployment config if present
+- public/_redirects or equivalent if used
+
+Do NOT:
+- remove routing
+- put every page into one component
+- break permissions/protected routes
+- break API proxy
+
+Required result:
+- Internal navigation does not reload the page.
+- Valid frontend routes do not show 404.
+- API routes still go to backend.
+- Protected routes still work.
+
+==================================================
+5) FULL VISIBLE LOCALIZATION — NO ENGLISH OR PASHTO-WRITTEN ENGLISH
+==================================================
+
+Problem:
+Some English words still appear in the system.
+Some English words are written in Pashto letters, such as “لیجر”.
+
+Required:
+The entire visible system must use proper Pashto/Dari terms only.
+No visible English.
+No unnecessary abbreviations.
+No Pashto-written English technical words where a proper local term exists.
+
+Examples:
+- Ledger must NOT appear as Ledger or لیجر.
+  Use:
+  Pashto: د راکړې ورکړې ثبت
+  Dari: ثبت معاملات
+
+- Dashboard:
+  Pashto: عمومي پاڼه
+  Dari: صفحه عمومی
+
+- Inventory:
+  Pashto: موجودي
+  Dari: موجودی
+
+- Reports:
+  Pashto: راپورونه
+  Dari: گزارش‌ها
+
+- Settings:
+  Pashto: تنظیمات
+  Dari: تنظیمات
+
+- Notifications:
+  Pashto: خبرتیاوې
+  Dari: اطلاعیه‌ها
+
+- User Management:
+  Pashto: د کاروونکو مدیریت
+  Dari: مدیریت کاربران
+
+- Role Management:
+  Pashto: د صلاحیتونو مدیریت
+  Dari: مدیریت صلاحیت‌ها
+
+- Traceability:
+  Pashto: د اجناسو تعقیب
+  Dari: پیگیری اجناس
+
+- Barcode / QR if visible:
+  Pashto: د تعقیب کوډ
+  Dari: کد پیگیری
+
+Search for visible strings in:
+- src/pages/*
+- src/components/*
+- src/layout/*
+- src/constants/*
+- src/locales/*
+- src/i18n/*
+- reports/export headers
+- table headers
+- buttons
+- placeholders
+- validation messages
+- toast messages
+- modal titles
+- empty states
+- loading states
+- menu names
+
+Required:
+- Move hardcoded visible text to localization dictionaries if the project uses i18n.
+- If i18n is not consistent, minimally replace visible strings in place without breaking logic.
+- Keep internal code identifiers in English if needed.
+- Do not rename database fields or API keys just for localization.
+- Only user-visible text must be localized.
+
+Required result:
+- No visible English words remain as far as detectable.
+- No ps / Dr abbreviations.
+- No “Ledger” or “لیجر”.
+- Proper Pashto/Dari administrative terms are used.
+
+==================================================
+6) DASHBOARD CHART MUST INCLUDE YEAR FILTER / YEAR LABEL
+==================================================
+
+Problem:
+In the Dashboard, there is a chart that shows items based on month and quantity, but it does not clearly show the year.
+
+Required:
+- Add year filter or year label to the Dashboard chart.
+- The chart should show:
+  - کال
+  - میاشت
+  - مقدار / تعداد
+- User should be able to select year if data supports multiple years.
+- If only one year exists, show the year clearly above or near the chart.
+- Use Hijri Shamsi year by default if the system uses Afghan calendar.
+- If Gregorian date is stored internally, keep it internal and show localized date/year.
+- Do not redesign dashboard.
+- Do not change chart style except adding year selector/label.
+
+Inspect:
+- src/pages/Dashboard/*
+- src/components/Dashboard/*
+- src/components/charts/*
+- src/utils/date*
+- src/firebase/inventory.ts
+- src/api/apiClient.ts
+- backend/src/routes/reports.routes.ts if chart uses backend
+- backend/src/services/reports.service.ts if chart uses backend
+
+Required result:
+- Dashboard chart clearly shows which year the monthly quantities belong to.
+- No English labels remain.
+- Existing dashboard layout remains unchanged.
+
+==================================================
+7) SUPER ADMIN CAN UPDATE EMAIL/PASSWORD FOR EXISTING 7 USERS AND NEW USERS
+==================================================
+
+Problem:
+The system has 7 existing users, but their emails/passwords should be editable from the Super Admin account in User Management / Role Management / Permissions section.
+Also, when creating a new user/role/permission, email and password must be provided because the user needs them in the login form.
+
+Required:
+In Super Admin account, allow editing:
+- user name
+- email
+- role
+- permissions
+- password reset/change
+
+Existing 7 users must be editable.
+
+New users must be created with:
+- name
+- email
+- password
+- role
+- permissions if applicable
+
+Login form must work with the user’s email and password.
+
+Security rules:
+- Do NOT show existing password in plain text.
+- Do NOT store plaintext passwords.
+- If backend auth is used, hash passwords.
+- If Firebase Auth is used, update password using Firebase-safe method.
+- Super Admin may set a new temporary password.
+- Password field should be blank when editing user, and only update password if Super Admin enters a new one.
+- Duplicate email must be blocked.
+- Only Super Admin can update user email/password/role.
+- Log user update in audit log if audit exists.
+
+Visible labels must be Pashto/Dari only:
+- برېښنالیک
+- پټنوم
+- نوی پټنوم
+- رول
+- صلاحیتونه
+- ذخیره
+- کاروونکی په بریالیتوب سره تازه شو
+
+Inspect:
+- src/pages/UserManagement/*
+- src/pages/RoleManagement/*
+- src/pages/Settings/*
+- src/components/users/*
+- src/firebase/auth.ts
+- src/firebase/firestore.ts
+- src/context/AuthContext.tsx
+- backend/src/routes/users.routes.ts
+- backend/src/controllers/users.controller.ts
+- backend/src/services/users.service.ts
+- backend/src/database/schema.sql
+
+Required result:
+- Existing 7 users can have email/password/role updated by Super Admin.
+- New users can be created with email/password/role.
+- No password is exposed.
+- Login still works.
+
+==================================================
+8) EVERY DELETE ACTION MUST REQUIRE CURRENT USER EMAIL/PASSWORD BEFORE MOVING TO TRASH
+==================================================
+
+Problem:
+Delete actions happen too easily.
+Before any delete action, the system must ask the current user to confirm identity using email and password.
+After verification, the deleted record should go to Trash/Bin, not be permanently removed.
+The same security confirmation must apply inside Trash/Bin actions.
+
+Required:
+For every delete action in the system:
+- Show confirmation modal.
+- Ask for current user email and password.
+- Verify credentials before delete.
+- If verified, move record to Trash/Bin using soft delete.
+- If verification fails, block delete.
+- Do not permanently delete directly.
+
+This must apply to:
+- Inventory delete
+- Request delete
+- Procurement delete if exists
+- Receiving delete if exists
+- User delete/disable if exists
+- Traceability delete if exists
+- Report/data delete if exists
+- Trash/Bin permanent delete if exists
+- Trash/Bin recovery if current policy requires confirmation
+
+Security rules:
+- Do NOT store entered password.
+- Do NOT log password.
+- Do NOT show password.
+- Use Firebase re-authentication if Firebase Auth is active.
+- Use backend credential verification if backend auth is active.
+- Use local demo verification only for demo/localStorage mode.
+- Only authorized roles can delete.
+- Super Admin-only delete actions must remain Super Admin-only.
+- Add audit log for delete/trash/recovery if audit exists.
+
+Visible messages:
+Pashto:
+- د حذف لپاره خپل برېښنالیک او پټنوم ولیکئ
+- پټنوم ناسم دی
+- معلومات حذف شوو معلوماتو ته ولېږدول شول
+- دا عمل اجازه نه لري
+
+Dari:
+- برای حذف، ایمیل و رمز عبور خود را وارد کنید
+- رمز عبور نادرست است
+- معلومات به بخش حذف‌شده‌ها منتقل شد
+- این عمل اجازه ندارد
+
+Inspect:
+- src/components/common/DeleteConfirm*
+- src/pages/Trash*
+- src/pages/Inventory/*
+- src/pages/Requests/*
+- src/pages/Procurement/*
+- src/pages/Receiving/*
+- src/pages/Traceability/*
+- src/pages/UserManagement/*
+- src/firebase/*
+- backend/src/services/*
+- backend/src/controllers/*
+- backend/src/routes/*
+
+Required result:
+- No delete happens without verified current user email/password.
+- Deleted data goes to Trash/Bin.
+- Trash/Bin actions also require proper confirmation.
+- Existing UI style remains unchanged.
+
+==================================================
+9) DATE MUST COME FROM ONLINE/SERVER SOURCE AND SHOW SHAMSI + QAMARI + GREGORIAN
+==================================================
+
+Problem:
+When printing or completing a process, the system uses the computer date.
+This is unsafe because the computer date may be wrong.
+
+Required:
+For important actions, print, forms, reports, audit, and workflow completion, date should come from a trusted online/server source, not directly from the user’s computer date.
+
+The system must support and show all three date formats:
+1. Hijri Shamsi / هجري شمسي
+2. Hijri Qamari / هجري قمري
+3. Gregorian / میلادي
+
+Required behavior:
+- Create/use a centralized date utility.
+- If backend is online, get current date/time from backend/server endpoint.
+- If backend has health/time endpoint, use it.
+- If missing, add a small safe endpoint:
+  GET /api/time/now
+
+Response should include:
+- isoDate
+- shamsiDate
+- qamariDate
+- gregorianDate
+- serverTime
+
+Frontend should use server time for important visible dates.
+
+If offline:
+- show cached/local draft date clearly as offline/local
+- do not use it for final official submission unless allowed
+
+Do not rely only on client computer date for official final records.
+
+Date display:
+- In UI/print/report where date is visible, show:
+  - شمسي: ...
+  - قمري: ...
+  - میلادي: ...
+- If space is limited, show Shamsi primary and provide Qamari/Gregorian in details.
+- Use Pashto/Dari labels only.
+
+Inspect:
+- src/utils/date*
+- src/utils/hijri*
+- src/pages/Reports/*
+- src/pages/Inventory/*
+- src/pages/Requests/*
+- src/pages/Procurement/*
+- src/pages/Receiving/*
+- src/components/OfficialFormViewer.tsx only for data injection, not layout redesign
+- backend/src/server.ts
+- backend/src/routes/*
+- backend/src/services/*
+
+Required result:
+- Important system dates come from backend/server when online.
+- Shamsi, Qamari, and Gregorian dates are available.
+- Computer date is not blindly trusted for official actions.
+- Print/process dates are consistent.
+
+==================================================
+10) BARCODE / QR SCAN RESULT MUST SHOW ORGANIZED TABULAR ITEM DETAILS
+==================================================
+
+Problem:
+When barcode/QR code of an item is scanned, item information appears in an unorganized way.
+It must be shown in a clean tabular format.
+
+Required:
+- When barcode/QR is scanned, show item details in a clear table.
+- Keep existing scanner functionality.
+- Do not redesign the whole scanner page.
+- Only organize scan result display.
+
+Table should include where data exists:
+- د تعقیب کوډ
+- د جنس نوم
+- کټګوري
+- واحد
+- مقدار
+- موجوده سټاک
+- ګدام
+- قیمت
+- د ثبت نېټه
+- وروستي حرکات / راکړه ورکړه
+- چا ته ثبت دی
+- پوهنځی
+- ډیپارټمنټ
+- شخص
+- حالت
+
+Also show transaction history in a second table if available:
+- نېټه
+- ډول: داخل / خارج
+- مقدار
+- یادښت
+- سند / مرجع
+
+Inspect:
+- src/pages/Inventory/BarcodeScanner.tsx
+- src/components/barcode/*
+- src/pages/Inventory/ItemDetails*
+- src/firebase/inventory.ts
+- backend/src/routes/inventory.routes.ts
+- backend/src/controllers/inventory.controller.ts
+- backend/src/services/inventory.service.ts
+
+Required result:
+- Scan result appears in organized table.
+- No English labels.
+- Works on desktop and mobile.
+- Existing scanner camera/manual input still works.
+- No business logic changed.
+
+==================================================
+FILES THAT MUST NOT BE CHANGED
+==================================================
+
+Do NOT change:
+- official forms design/layout
+- inventory business logic except exact delete/date/barcode display needs
+- procurement business logic
+- receiving business logic
+- progress tracking business logic
+- report calculations except visible text/year/date display
+- unrelated backend services
+- database schema unless OTP storage or /api/time endpoint requires a tiny safe addition
+
+==================================================
+BUILD CHECK ONLY
+==================================================
+
+Run:
+npm run build
+
+If backend changed:
+cd backend
+npm run build
+
+Do NOT add or run unit tests.
+Do NOT add or run component tests.
+Do NOT add or run system tests.
+Do NOT create test files.
+Only build-check the project and fix errors caused by these changes.
+
+==================================================
+FINAL REPORT REQUIRED
+==================================================
+
+Report in Pashto.
+
+Report exactly:
+
+1. Language switcher fix:
+   - files changed
+   - ps/Dr replaced with what
+   - result
+
+2. Forgot password OTP flow:
+   - files changed
+   - method used: Firebase/backend/local demo
+   - OTP expiry/rate-limit behavior
+   - password reset behavior
+   - remaining limitations
+
+3. Performance/loading:
+   - cause of heavy loading
+   - optimizations applied
+   - files changed
+   - result
+
+4. Single Page Application behavior:
+   - full reload issues found
+   - files changed
+   - 404/direct route behavior
+   - result
+
+5. Full localization:
+   - English/abbreviation terms found
+   - terms replaced
+   - examples of replacements
+   - confirmation that no visible English remains as far as detected
+
+6. Dashboard chart year fix:
+   - files changed
+   - how year is shown/selected
+   - result
+
+7. User email/password management:
+   - files changed
+   - how existing 7 users can be updated
+   - how new users get email/password
+   - password security behavior
+   - result
+
+8. Secure delete confirmation:
+   - files changed
+   - where email/password verification was added
+   - Trash/Bin behavior
+   - result
+
+9. Server/online date system:
+   - files changed
+   - how server date is fetched
+   - how Shamsi/Qamari/Gregorian are shown
+   - result
+
+10. Barcode scan tabular result:
+   - files changed
+   - table fields added
+   - result
+
+11. All changed files.
+12. Confirmation that no unrelated modules were touched.
+13. npm run build result.
+14. backend build result if backend changed.
+15. Remaining issues if any.

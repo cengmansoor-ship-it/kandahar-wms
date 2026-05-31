@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import PageMeta from "../components/common/PageMeta";
 import Breadcrumb from "../components/common/Breadcrumb";
-import { getDemoUsers, setLocalItem } from "../firebase/localStore";
+import { getDemoUsers, setLocalItem, getLocalItem } from "../firebase/localStore";
 import type { UserProfile } from "../firebase/firestore";
 import { ROLES, UserRole } from "../constants/roles";
 import { useAuth } from "../context/AuthContext";
@@ -32,14 +32,16 @@ export default function UserManagement() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState<UserProfile | null>(null);
-  const [formData, setFormData] = useState<{ name: string; email: string; role: UserRole; phone: string; active: boolean }>({ name: "", email: "", role: ROLES.REQUESTER, phone: "", active: true });
+  const [formData, setFormData] = useState<{
+    name: string; email: string; role: UserRole;
+    phone: string; active: boolean; password: string;
+  }>({ name: "", email: "", role: ROLES.REQUESTER, phone: "", active: true, password: "" });
+  const [showPass, setShowPass] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const { profile } = useAuth();
 
-  useEffect(() => {
-    setUsers(getDemoUsers());
-  }, []);
+  useEffect(() => { setUsers(getDemoUsers()); }, []);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
@@ -54,14 +56,16 @@ export default function UserManagement() {
 
   const openAdd = () => {
     setEditUser(null);
-    setFormData({ name: "", email: "", role: ROLES.REQUESTER, phone: "", active: true });
+    setFormData({ name: "", email: "", role: ROLES.REQUESTER, phone: "", active: true, password: "" });
+    setShowPass(false);
     setShowForm(true);
     setMsg("");
   };
 
   const openEdit = (u: UserProfile) => {
     setEditUser(u);
-    setFormData({ name: u.name, email: u.email, role: u.role, phone: u.phone || "", active: u.active });
+    setFormData({ name: u.name, email: u.email, role: u.role, phone: u.phone || "", active: u.active, password: "" });
+    setShowPass(false);
     setShowForm(true);
     setMsg("");
   };
@@ -69,6 +73,10 @@ export default function UserManagement() {
   const handleSave = () => {
     if (!formData.name.trim() || !formData.email.trim()) {
       setMsg("مهرباني وکړئ نوم او ایمیل ډک کړئ.");
+      return;
+    }
+    if (!editUser && !formData.password.trim()) {
+      setMsg("مهرباني وکړئ د نوي کاروونکي لپاره پټنوم ولیکئ.");
       return;
     }
     setSaving(true);
@@ -83,6 +91,13 @@ export default function UserManagement() {
       );
       setLocalItem("users", updated);
       setUsers(updated);
+
+      if (formData.password.trim()) {
+        const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+        const filtered = overrides.filter(o => o.email.toLowerCase() !== formData.email.trim().toLowerCase());
+        setLocalItem("password_overrides", [...filtered, { email: formData.email.trim().toLowerCase(), password: formData.password.trim() }]);
+      }
+
       setMsg("کاروونکی بریالیتوب سره تازه شو.");
     } else {
       const existing = allUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
@@ -98,13 +113,17 @@ export default function UserManagement() {
         role: formData.role,
         phone: formData.phone,
         active: formData.active,
-        forcePasswordChange: true,
+        forcePasswordChange: false,
         createdAt: dates.timestamp,
         updatedAt: dates.timestamp,
       };
-      const updated = [newUser, ...allUsers];
-      setLocalItem("users", updated);
-      setUsers(updated);
+      const updatedUsers = [newUser, ...allUsers];
+      setLocalItem("users", updatedUsers);
+      setUsers(updatedUsers);
+
+      const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+      setLocalItem("password_overrides", [...overrides, { email: formData.email.trim().toLowerCase(), password: formData.password.trim() }]);
+
       setMsg("کاروونکی بریالیتوب سره اضافه شو.");
     }
 
@@ -143,7 +162,6 @@ export default function UserManagement() {
             </button>
           </div>
 
-          {/* Search */}
           <div className="mb-4">
             <div className="relative">
               <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +183,7 @@ export default function UserManagement() {
               <thead>
                 <tr className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/60">
                   <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">نوم</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">ایمیل</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">برېښنالیک</th>
                   <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">رول</th>
                   <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">حالت</th>
                   <th className="px-4 py-3 font-semibold text-gray-700 dark:text-white/80 text-right text-sm">عمل</th>
@@ -221,7 +239,6 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* Add/Edit Form Modal */}
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900 shadow-xl">
@@ -240,13 +257,34 @@ export default function UserManagement() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">ایمیل *</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">برېښنالیک *</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
                   />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {editUser ? "نوی پټنوم (که بدلول غواړئ)" : "پټنوم *"}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPass ? "text" : "password"}
+                      value={formData.password}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
+                      placeholder={editUser ? "خالي پرېږدئ که بدلول نه غواړئ" : "پټنوم"}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPass ? "🙈" : "👁"}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">ټلیفون</label>
@@ -291,7 +329,7 @@ export default function UserManagement() {
                   disabled={saving}
                   className="px-4 py-2 rounded-lg bg-primary text-sm font-bold text-white hover:bg-primary/90 transition disabled:opacity-60"
                 >
-                  {saving ? "خوندي کول..." : "خوندي کول"}
+                  {saving ? "خوندي کول..." : "ذخیره"}
                 </button>
               </div>
             </div>

@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
+import SecureDeleteModal from "../../components/common/SecureDeleteModal";
+import { useAuth } from "../../context/AuthContext";
 
 interface TrashRecord {
   id: number;
@@ -16,8 +18,7 @@ function daysRemaining(deletedAt: string | null): number | null {
   if (!deletedAt) return null;
   const deleted = new Date(deletedAt).getTime();
   const expiry = deleted + 30 * 24 * 60 * 60 * 1000;
-  const remaining = Math.ceil((expiry - Date.now()) / (24 * 60 * 60 * 1000));
-  return remaining;
+  return Math.ceil((expiry - Date.now()) / (24 * 60 * 60 * 1000));
 }
 
 function Daysbadge({ deletedAt }: { deletedAt: string | null }) {
@@ -29,12 +30,13 @@ function Daysbadge({ deletedAt }: { deletedAt: string | null }) {
 }
 
 export default function TrashList() {
+  const { profile } = useAuth();
   const [records, setRecords] = useState<TrashRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<TrashRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<TrashRecord | null>(null);
 
   useEffect(() => { fetchTrash(); }, []);
 
@@ -75,7 +77,6 @@ export default function TrashList() {
   };
 
   const handlePermanentDelete = async (r: TrashRecord) => {
-    setConfirmDelete(null);
     setActionId(`del-${r.table}-${r.id}`);
     try {
       const res = await fetch(`/api/trash/${r.table}/${r.id}`, { method: "DELETE" });
@@ -104,7 +105,7 @@ export default function TrashList() {
   return (
     <>
       <PageMeta title="کثافاتو دانۍ | Kandahar University WMS" description="ټول حذف شوي ریکارډونه" />
-      <Breadcrumb pageTitle="کثافاتو دانۍ / Trash" />
+      <Breadcrumb pageTitle="کثافاتو دانۍ" />
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]" dir="rtl">
 
@@ -199,7 +200,7 @@ export default function TrashList() {
                             {actionId === `restore-${r.table}-${r.id}` ? "..." : "↩ بیا راوستل"}
                           </button>
                           <button
-                            onClick={() => setConfirmDelete(r)}
+                            onClick={() => setPendingDelete(r)}
                             disabled={actionId === `del-${r.table}-${r.id}`}
                             className="flex items-center gap-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-xs font-semibold rounded-lg px-3 py-1.5 transition"
                           >
@@ -222,30 +223,18 @@ export default function TrashList() {
         )}
       </div>
 
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4" dir="rtl">
-            <h4 className="text-base font-bold text-gray-800 dark:text-white mb-2">⚠️ تل لپاره حذف کول</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              ایا ډاډه یاست چې <span className="font-semibold text-red-600">«{confirmDelete.label}»</span> تل لپاره حذف کړئ؟
-            </p>
-            <p className="text-xs text-red-500 mb-5">دا عمل د بیرته راګرځولو وړ نه دی.</p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 text-sm transition"
-              >
-                لغوه
-              </button>
-              <button
-                onClick={() => handlePermanentDelete(confirmDelete)}
-                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition"
-              >
-                هو، تل حذف کړه
-              </button>
-            </div>
-          </div>
-        </div>
+      {pendingDelete && (
+        <SecureDeleteModal
+          title="⚠️ تل لپاره حذف کول"
+          description={`ایا ډاډه یاست چې «${pendingDelete.label}» تل لپاره حذف کړئ؟ دا عمل د بیرته راګرځولو وړ نه دی.`}
+          currentUserEmail={profile?.email || ""}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            const r = pendingDelete;
+            setPendingDelete(null);
+            handlePermanentDelete(r);
+          }}
+        />
       )}
     </>
   );

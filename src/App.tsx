@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { lazy, Suspense } from "react";
 import { ensureSeedVersion } from "./firebase/localStore";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 
@@ -10,54 +11,66 @@ import { ROLES } from "./constants/roles";
 
 import SignIn from "./pages/AuthPages/SignIn";
 import NotFound from "./pages/OtherPage/NotFound";
-import Home from "./pages/Dashboard/Home";
-import UserManagement from "./pages/UserManagement";
-import RoleManagement from "./pages/RoleManagement";
 
-import InventoryDashboard from "./pages/Inventory/Dashboard";
-import ItemList from "./pages/Inventory/ItemList";
-import AddItem from "./pages/Inventory/AddItem";
-import EditItem from "./pages/Inventory/EditItem";
-import StockIn from "./pages/Inventory/StockIn";
-import StockOut from "./pages/Inventory/StockOut";
-import InventoryLedger from "./pages/Inventory/Ledger";
-import BarcodeScanner from "./pages/Inventory/BarcodeScanner";
+const Home = lazy(() => import("./pages/Dashboard/Home"));
+const UserManagement = lazy(() => import("./pages/UserManagement"));
+const RoleManagement = lazy(() => import("./pages/RoleManagement"));
 
-import RequestList from "./pages/Requests/RequestList";
-import CreateRequest from "./pages/Requests/CreateRequest";
-import RequestDetails from "./pages/Requests/RequestDetails";
+const InventoryDashboard = lazy(() => import("./pages/Inventory/Dashboard"));
+const ItemList = lazy(() => import("./pages/Inventory/ItemList"));
+const AddItem = lazy(() => import("./pages/Inventory/AddItem"));
+const EditItem = lazy(() => import("./pages/Inventory/EditItem"));
+const StockIn = lazy(() => import("./pages/Inventory/StockIn"));
+const StockOut = lazy(() => import("./pages/Inventory/StockOut"));
+const InventoryLedger = lazy(() => import("./pages/Inventory/Ledger"));
+const BarcodeScanner = lazy(() => import("./pages/Inventory/BarcodeScanner"));
 
-import ProcurementRequestList from "./pages/Procurement/ProcurementRequestList";
-import ProcurementDetails from "./pages/Procurement/ProcurementDetails";
-import VendorOffersPage from "./pages/Procurement/VendorOffersPage";
+const RequestList = lazy(() => import("./pages/Requests/RequestList"));
+const CreateRequest = lazy(() => import("./pages/Requests/CreateRequest"));
+const RequestDetails = lazy(() => import("./pages/Requests/RequestDetails"));
 
-import WarehouseRequestList from "./pages/Receiving/WarehouseRequestList";
-import WarehouseRequestDetails from "./pages/Receiving/WarehouseRequestDetails";
+const ProcurementRequestList = lazy(() => import("./pages/Procurement/ProcurementRequestList"));
+const ProcurementDetails = lazy(() => import("./pages/Procurement/ProcurementDetails"));
+const VendorOffersPage = lazy(() => import("./pages/Procurement/VendorOffersPage"));
 
-import ReportsDashboard from "./pages/Reports/ReportsDashboard";
-import InventoryReport from "./pages/Reports/InventoryReport";
-import AnnualNeedsReport from "./pages/Reports/AnnualNeedsReport";
-import ForecastingReport from "./pages/Reports/ForecastingReport";
-import StockMovementReport from "./pages/Reports/StockMovementReport";
-import RequestReport from "./pages/Reports/RequestReport";
-import ProcurementReport from "./pages/Reports/ProcurementReport";
-import ReceivingDeliveryReport from "./pages/Reports/ReceivingDeliveryReport";
-import FacultyReport from "./pages/Reports/FacultyReport";
-import DepartmentReport from "./pages/Reports/DepartmentReport";
-import PersonAssignmentReport from "./pages/Reports/PersonAssignmentReport";
-import AuditActivityReport from "./pages/Reports/AuditActivityReport";
+const WarehouseRequestList = lazy(() => import("./pages/Receiving/WarehouseRequestList"));
+const WarehouseRequestDetails = lazy(() => import("./pages/Receiving/WarehouseRequestDetails"));
 
-import TrashList from "./pages/Maintenance/TrashList";
-import RecoveryHistory from "./pages/Maintenance/RecoveryHistory";
-import BackupExport from "./pages/Maintenance/BackupExport";
-import SystemHealth from "./pages/Maintenance/SystemHealth";
-import FinalQAChecklist from "./pages/Maintenance/FinalQAChecklist";
-import OfficialFormsPage from "./pages/OfficialForms/OfficialFormsPage";
-import NotificationsPage from "./pages/Notifications/NotificationsPage";
-import SettingsPage from "./pages/Settings/SettingsPage";
-import BudgetCodes from "./pages/Settings/BudgetCodes";
-import AboutPage from "./pages/About/AboutPage";
-import TraceabilityPage from "./pages/Traceability/TraceabilityPage";
+const ReportsDashboard = lazy(() => import("./pages/Reports/ReportsDashboard"));
+const InventoryReport = lazy(() => import("./pages/Reports/InventoryReport"));
+const AnnualNeedsReport = lazy(() => import("./pages/Reports/AnnualNeedsReport"));
+const ForecastingReport = lazy(() => import("./pages/Reports/ForecastingReport"));
+const StockMovementReport = lazy(() => import("./pages/Reports/StockMovementReport"));
+const RequestReport = lazy(() => import("./pages/Reports/RequestReport"));
+const ProcurementReport = lazy(() => import("./pages/Reports/ProcurementReport"));
+const ReceivingDeliveryReport = lazy(() => import("./pages/Reports/ReceivingDeliveryReport"));
+const FacultyReport = lazy(() => import("./pages/Reports/FacultyReport"));
+const DepartmentReport = lazy(() => import("./pages/Reports/DepartmentReport"));
+const PersonAssignmentReport = lazy(() => import("./pages/Reports/PersonAssignmentReport"));
+const AuditActivityReport = lazy(() => import("./pages/Reports/AuditActivityReport"));
+
+const TrashList = lazy(() => import("./pages/Maintenance/TrashList"));
+const RecoveryHistory = lazy(() => import("./pages/Maintenance/RecoveryHistory"));
+const BackupExport = lazy(() => import("./pages/Maintenance/BackupExport"));
+const SystemHealth = lazy(() => import("./pages/Maintenance/SystemHealth"));
+const FinalQAChecklist = lazy(() => import("./pages/Maintenance/FinalQAChecklist"));
+const OfficialFormsPage = lazy(() => import("./pages/OfficialForms/OfficialFormsPage"));
+const NotificationsPage = lazy(() => import("./pages/Notifications/NotificationsPage"));
+const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
+const BudgetCodes = lazy(() => import("./pages/Settings/BudgetCodes"));
+const AboutPage = lazy(() => import("./pages/About/AboutPage"));
+const TraceabilityPage = lazy(() => import("./pages/Traceability/TraceabilityPage"));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[300px]" dir="rtl">
+      <div className="text-center space-y-2">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm text-gray-400">بارول...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -76,59 +89,59 @@ export default function App() {
             }
           >
             <Route index path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Home />} />
+            <Route path="/dashboard" element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
 
-            <Route path="/user-management" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><UserManagement /></ProtectedRoute>} />
-            <Route path="/role-management" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><RoleManagement /></ProtectedRoute>} />
+            <Route path="/user-management" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><UserManagement /></Suspense></ProtectedRoute>} />
+            <Route path="/role-management" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><RoleManagement /></Suspense></ProtectedRoute>} />
 
-            <Route path="/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><InventoryDashboard /></ProtectedRoute>} />
-            <Route path="/inventory/items" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><ItemList /></ProtectedRoute>} />
-            <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><AddItem /></ProtectedRoute>} />
+            <Route path="/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryDashboard /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/items" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ItemList /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><AddItem /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/add-item" element={<Navigate to="/inventory/add" replace />} />
-            <Route path="/inventory/edit/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><EditItem /></ProtectedRoute>} />
-            <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
-            <Route path="/inventory/stock-in/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><StockIn /></ProtectedRoute>} />
-            <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><StockOut /></ProtectedRoute>} />
-            <Route path="/inventory/stock-out/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><StockOut /></ProtectedRoute>} />
-            <Route path="/inventory/ledger" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><InventoryLedger /></ProtectedRoute>} />
-            <Route path="/inventory/barcode-scanner" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><BarcodeScanner /></ProtectedRoute>} />
+            <Route path="/inventory/edit/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><EditItem /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><StockIn /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-in/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><StockIn /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-out/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/ledger" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryLedger /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/barcode-scanner" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><BarcodeScanner /></Suspense></ProtectedRoute>} />
 
-            <Route path="/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><RequestList /></ProtectedRoute>} />
-            <Route path="/requests/create" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.REQUESTER]}><CreateRequest /></ProtectedRoute>} />
-            <Route path="/requests/details/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><RequestDetails /></ProtectedRoute>} />
+            <Route path="/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><Suspense fallback={<PageLoader />}><RequestList /></Suspense></ProtectedRoute>} />
+            <Route path="/requests/create" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.REQUESTER]}><Suspense fallback={<PageLoader />}><CreateRequest /></Suspense></ProtectedRoute>} />
+            <Route path="/requests/details/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><Suspense fallback={<PageLoader />}><RequestDetails /></Suspense></ProtectedRoute>} />
 
-            <Route path="/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><ProcurementRequestList /></ProtectedRoute>} />
-            <Route path="/procurement/details/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><ProcurementDetails /></ProtectedRoute>} />
-            <Route path="/procurement/offers/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><VendorOffersPage /></ProtectedRoute>} />
+            <Route path="/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><Suspense fallback={<PageLoader />}><ProcurementRequestList /></Suspense></ProtectedRoute>} />
+            <Route path="/procurement/details/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><Suspense fallback={<PageLoader />}><ProcurementDetails /></Suspense></ProtectedRoute>} />
+            <Route path="/procurement/offers/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><Suspense fallback={<PageLoader />}><VendorOffersPage /></Suspense></ProtectedRoute>} />
 
-            <Route path="/receiving" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><WarehouseRequestList /></ProtectedRoute>} />
-            <Route path="/receiving/details/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><WarehouseRequestDetails /></ProtectedRoute>} />
+            <Route path="/receiving" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><WarehouseRequestList /></Suspense></ProtectedRoute>} />
+            <Route path="/receiving/details/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><WarehouseRequestDetails /></Suspense></ProtectedRoute>} />
 
-            <Route path="/official-forms" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><OfficialFormsPage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/official-forms" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><Suspense fallback={<PageLoader />}><OfficialFormsPage /></Suspense></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense></ProtectedRoute>} />
 
-            <Route path="/reports" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><ReportsDashboard /></ProtectedRoute>} />
-            <Route path="/reports/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><InventoryReport /></ProtectedRoute>} />
-            <Route path="/reports/movement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><StockMovementReport /></ProtectedRoute>} />
-            <Route path="/reports/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><RequestReport /></ProtectedRoute>} />
-            <Route path="/reports/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><ProcurementReport /></ProtectedRoute>} />
-            <Route path="/reports/delivery" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><ReceivingDeliveryReport /></ProtectedRoute>} />
-            <Route path="/reports/faculty" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><FacultyReport /></ProtectedRoute>} />
-            <Route path="/reports/department" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><DepartmentReport /></ProtectedRoute>} />
-            <Route path="/reports/person-assignment" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><PersonAssignmentReport /></ProtectedRoute>} />
-            <Route path="/reports/needs" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><AnnualNeedsReport /></ProtectedRoute>} />
-            <Route path="/reports/forecast" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><ForecastingReport /></ProtectedRoute>} />
-            <Route path="/reports/audit" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><AuditActivityReport /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ReportsDashboard /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/movement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockMovementReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><RequestReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><Suspense fallback={<PageLoader />}><ProcurementReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/delivery" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ReceivingDeliveryReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/faculty" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><FacultyReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/department" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><DepartmentReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/person-assignment" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><PersonAssignmentReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/needs" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><AnnualNeedsReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/forecast" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><ForecastingReport /></Suspense></ProtectedRoute>} />
+            <Route path="/reports/audit" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><AuditActivityReport /></Suspense></ProtectedRoute>} />
 
-            <Route path="/maintenance/trash" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><TrashList /></ProtectedRoute>} />
-            <Route path="/maintenance/recovery-history" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><RecoveryHistory /></ProtectedRoute>} />
-            <Route path="/maintenance/backup" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><BackupExport /></ProtectedRoute>} />
-            <Route path="/maintenance/health" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><SystemHealth /></ProtectedRoute>} />
-            <Route path="/maintenance/final-qa" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><FinalQAChecklist /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><SettingsPage /></ProtectedRoute>} />
-            <Route path="/settings/budget-codes" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><BudgetCodes /></ProtectedRoute>} />
-            <Route path="/traceability" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON]}><TraceabilityPage /></ProtectedRoute>} />
-            <Route path="/about" element={<AboutPage />} />
+            <Route path="/maintenance/trash" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><TrashList /></Suspense></ProtectedRoute>} />
+            <Route path="/maintenance/recovery-history" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><RecoveryHistory /></Suspense></ProtectedRoute>} />
+            <Route path="/maintenance/backup" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><BackupExport /></Suspense></ProtectedRoute>} />
+            <Route path="/maintenance/health" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><SystemHealth /></Suspense></ProtectedRoute>} />
+            <Route path="/maintenance/final-qa" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><FinalQAChecklist /></Suspense></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><SettingsPage /></Suspense></ProtectedRoute>} />
+            <Route path="/settings/budget-codes" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><BudgetCodes /></Suspense></ProtectedRoute>} />
+            <Route path="/traceability" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><TraceabilityPage /></Suspense></ProtectedRoute>} />
+            <Route path="/about" element={<Suspense fallback={<PageLoader />}><AboutPage /></Suspense>} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

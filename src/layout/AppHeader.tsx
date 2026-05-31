@@ -158,10 +158,10 @@ const AppHeader: React.FC = () => {
             
             <button
               onClick={() => setLang(lang === "ps" ? "dr" : "ps")}
-              title={lang === "ps" ? "Switch to Dari" : "Switch to Pashto"}
-              className="flex items-center justify-center h-11 w-11 rounded-full border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
+              title={lang === "ps" ? "دری ته بدلول" : "پښتو ته بدلول"}
+              className="flex items-center justify-center h-11 px-3 rounded-full border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
             >
-              {lang === "ps" ? "PS" : "DR"}
+              {lang === "ps" ? "پښتو" : "دری"}
             </button>
 
             <ThemeToggleButton />

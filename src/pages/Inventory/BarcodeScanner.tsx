@@ -312,25 +312,73 @@ export default function BarcodeScanner() {
                   </p>
                 </div>
 
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3" dir="rtl">
-                  <InfoRow label="د جنس نوم" value={scanResult.item.name_ps || scanResult.item.name_fa} />
-                  <InfoRow label="د جنس کوډ" value={scanResult.item.item_code} />
-                  <InfoRow label="ترکینګ کوډ" value={scanResult.item.tracking_code} />
-                  <InfoRow label="کټګوري" value={scanResult.item.category_name} />
-                  <InfoRow label="نوعیت / مشخصات" value={scanResult.item.description} />
-                  <InfoRow label="واحد" value={scanResult.item.unit_name} />
-                  <InfoRow label="ګدام" value={scanResult.item.warehouse_name} />
-                  <InfoRow label="اوسنۍ موجودي" value={String(scanResult.item.current_stock ?? 0)} highlight={
-                    Number(scanResult.item.current_stock) === 0 ? "red" :
-                    Number(scanResult.item.current_stock) <= Number(scanResult.item.minimum_stock) ? "orange" : "green"
-                  } />
-                  <InfoRow label="کمترین حد" value={String(scanResult.item.minimum_stock ?? 0)} />
-                  <InfoRow label="عرضه کوونکی" value={scanResult.item.supplier_source} />
-                  <InfoRow label="حالت" value={
-                    scanResult.item.current_stock === 0 ? "ختم شوی" :
-                    scanResult.item.current_stock <= scanResult.item.minimum_stock ? "کمه موجودي" : "فعال"
-                  } />
-                  <InfoRow label="د چاپ شمیر" value={String(scanResult.item.barcode_print_count ?? 0)} />
+                <div className="flex-1 overflow-x-auto" dir="rtl">
+                  <table className="w-full text-sm border-collapse">
+                    <tbody>
+                      {[
+                        { label: "د جنس نوم", value: scanResult.item.name_ps || scanResult.item.name_fa },
+                        { label: "د جنس کوډ", value: scanResult.item.item_code },
+                        { label: "ترکینګ کوډ", value: scanResult.item.tracking_code },
+                        { label: "کټګوري", value: scanResult.item.category_name },
+                        { label: "نوعیت / مشخصات", value: scanResult.item.description },
+                        { label: "واحد", value: scanResult.item.unit_name },
+                        { label: "ګدام", value: scanResult.item.warehouse_name },
+                        {
+                          label: "اوسنۍ موجودي",
+                          value: String(scanResult.item.current_stock ?? 0),
+                          highlight: Number(scanResult.item.current_stock) === 0 ? "red" as const :
+                            Number(scanResult.item.current_stock) <= Number(scanResult.item.minimum_stock) ? "orange" as const : "green" as const,
+                        },
+                        { label: "کمترین حد", value: String(scanResult.item.minimum_stock ?? 0) },
+                        {
+                          label: "قیمت",
+                          value: scanResult.item.unit_price != null
+                            ? `${Number(scanResult.item.unit_price).toLocaleString()} ؋`
+                            : "—",
+                        },
+                        {
+                          label: "د ثبت نیټه",
+                          value: scanResult.item.created_at
+                            ? new Date(scanResult.item.created_at).toLocaleDateString("fa-AF")
+                            : "—",
+                        },
+                        { label: "چا ته ثبت دی", value: scanResult.item.assigned_to || "—" },
+                        { label: "پوهنځی", value: scanResult.item.faculty || "—" },
+                        { label: "ډیپارټمنټ", value: scanResult.item.department || "—" },
+                        { label: "شخص", value: scanResult.item.person_name || "—" },
+                        {
+                          label: "وروستي حرکات",
+                          value: scanResult.transactions.length > 0
+                            ? `${scanResult.transactions[0]?.transaction_type === "IN" ? "داخل" : "خارج"} — ${scanResult.transactions[0]?.quantity} — ${scanResult.transactions[0]?.created_at ? new Date(scanResult.transactions[0].created_at).toLocaleDateString("fa-AF") : ""}`
+                            : "هیڅ حرکت ثبت نه دی",
+                        },
+                        { label: "عرضه کوونکی", value: scanResult.item.supplier_source },
+                        {
+                          label: "حالت",
+                          value: scanResult.item.current_stock === 0 ? "ختم شوی" :
+                            scanResult.item.current_stock <= scanResult.item.minimum_stock ? "کمه موجودي" : "فعال",
+                          highlight: scanResult.item.current_stock === 0 ? "red" as const :
+                            scanResult.item.current_stock <= scanResult.item.minimum_stock ? "orange" as const : "green" as const,
+                        },
+                        { label: "د چاپ شمیر", value: String(scanResult.item.barcode_print_count ?? 0) },
+                      ].map(({ label, value, highlight }) => {
+                        const valClass = highlight === "red" ? "text-red-600 dark:text-red-400 font-bold" :
+                          highlight === "orange" ? "text-orange-500 dark:text-orange-400 font-bold" :
+                          highlight === "green" ? "text-green-600 dark:text-green-400 font-bold" :
+                          "text-gray-800 dark:text-white/90";
+                        return (
+                          <tr key={label} className="border-b border-gray-100 dark:border-gray-800">
+                            <td className="py-2 pr-3 pl-4 text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap w-36 bg-gray-50/60 dark:bg-gray-800/40 border-l border-gray-100 dark:border-gray-800">
+                              {label}
+                            </td>
+                            <td className={`py-2 px-3 text-sm ${valClass}`}>
+                              {value || "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -421,16 +469,3 @@ export default function BarcodeScanner() {
   );
 }
 
-function InfoRow({ label, value, highlight }: { label: string; value?: string | null; highlight?: "red" | "orange" | "green" }) {
-  const colorClass = highlight === "red" ? "text-red-600 dark:text-red-400 font-bold" :
-    highlight === "orange" ? "text-orange-500 dark:text-orange-400 font-bold" :
-    highlight === "green" ? "text-green-600 dark:text-green-400 font-bold" :
-    "text-gray-800 dark:text-white/90";
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-      <span className={`text-sm ${colorClass}`}>{value || "-"}</span>
-    </div>
-  );
-}

@@ -68,6 +68,23 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/time/now', (req: Request, res: Response) => {
+  const now = new Date();
+  const shamsiDate = new Intl.DateTimeFormat('ps-AF-u-ca-persian', { year: 'numeric', month: 'long', day: 'numeric' }).format(now);
+  const qamariDate = new Intl.DateTimeFormat('ps-AF-u-ca-islamic-uma', { year: 'numeric', month: 'long', day: 'numeric' }).format(now);
+  const gregorianDate = new Intl.DateTimeFormat('ps-AF', { year: 'numeric', month: 'long', day: 'numeric' }).format(now);
+  res.json({
+    success: true,
+    data: {
+      isoDate: now.toISOString(),
+      shamsiDate,
+      qamariDate,
+      gregorianDate,
+      serverTime: now.getTime(),
+    },
+  });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
@@ -8,6 +8,7 @@ import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
+import { getShamsiYear } from "../../utils/dateUtils";
 
 const SHAMSI_MONTHS_PS = ["وری", "غویی", "غبرګولی", "چنګاښ", "زمری", "وږی", "تله", "لړم", "لیندۍ", "مرغومی", "سلواغه", "کب"];
 const SHAMSI_MONTHS_DR = ["حمل", "ثور", "جوزا", "سرطان", "اسد", "سنبله", "میزان", "عقرب", "قوس", "جدی", "دلو", "حوت"];
@@ -122,7 +123,43 @@ export default function Home() {
   ].filter(c => !c.roles || !profile || (c.roles as string[]).includes(profile.role));
 
   const months = lang === "dr" ? SHAMSI_MONTHS_DR : SHAMSI_MONTHS_PS;
-  const { labels: monthLabels, inData, outData } = buildMonthlyStockData(transactions, months);
+
+  const availableYears = useMemo(() => {
+    const currentYear = getShamsiYear();
+    const yearsSet = new Set<number>([currentYear]);
+    transactions.forEach(tx => {
+      if (tx.date) {
+        const y = getShamsiYear(typeof tx.date === "number" ? new Date(tx.date).toISOString() : String(tx.date));
+        if (y > 1300 && y <= currentYear + 1) yearsSet.add(y);
+      }
+    });
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [transactions]);
+
+  const [selectedYear, setSelectedYear] = useState<number>(() => getShamsiYear());
+
+  const { labels: monthLabels, inData, outData } = useMemo(() => {
+    const txForYear = transactions.filter(tx => {
+      if (!tx.date) return false;
+      const y = getShamsiYear(typeof tx.date === "number" ? new Date(tx.date).toISOString() : String(tx.date));
+      return y === selectedYear;
+    });
+    const inCounts = new Array(12).fill(0);
+    const outCounts = new Array(12).fill(0);
+    txForYear.forEach(tx => {
+      try {
+        const d = typeof tx.date === "number" ? new Date(tx.date) : new Date(tx.date!);
+        const monthStr = new Intl.DateTimeFormat('ps-AF-u-ca-persian', { month: 'numeric' }).format(d);
+        const monthIdx = parseInt(monthStr, 10) - 1;
+        if (monthIdx >= 0 && monthIdx < 12) {
+          if (tx.type === "IN") inCounts[monthIdx] += Number(tx.quantity) || 0;
+          else outCounts[monthIdx] += Number(tx.quantity) || 0;
+        }
+      } catch {}
+    });
+    return { labels: months, inData: inCounts, outData: outCounts };
+  }, [transactions, selectedYear, months]);
+
   const { labels: statusLabels, series: statusSeries } = buildRequestStatusData(requests, lang);
   const { labels: catLabels, series: catSeries } = buildCategoryData(items);
 
@@ -236,9 +273,20 @@ export default function Home() {
         {/* Charts row */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in" style={{ animationDelay: '150ms' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د ګدام داخل / خارج (وروستي ۶ میاشتې)", "ورودی / خروجی انبار (۶ ماه اخیر)")}</h2>
-              <Link to="/inventory/ledger" className="text-xs text-primary hover:underline btn-press">{pick("ټول لیجر ←", "همه دفتر کل ←")}</Link>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base font-bold text-gray-800 dark:text-white/90">{pick("د ګدام داخل / خارج", "ورودی / خروجی انبار")}</h2>
+                <select
+                  value={selectedYear}
+                  onChange={e => setSelectedYear(Number(e.target.value))}
+                  className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                >
+                  {availableYears.map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <Link to="/inventory/ledger" className="text-xs text-primary hover:underline btn-press">{pick("د راکړې ورکړې ثبت ←", "ثبت معاملات ←")}</Link>
             </div>
             {loading ? (
               <div className="space-y-3">

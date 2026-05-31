@@ -8,7 +8,7 @@ import {
 import { auth, isFirebaseConfigured } from "./firebase";
 import { ensureUserProfileExists } from "./firestore";
 import { logAuditEvent } from "./audit";
-import { getDemoUserProfile, DEMO_SEED_USERS, DEMO_LOGGED_OUT_KEY } from "./localStore";
+import { getDemoUserProfile, DEMO_SEED_USERS, DEMO_LOGGED_OUT_KEY, getLocalItem } from "./localStore";
 
 const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
 const DEMO_AUTH_EVENT = "kandahar-wms-demo-auth-change";
@@ -78,7 +78,11 @@ export const login = async (email: string, pass: string): Promise<User> => {
       throw err;
     }
 
-    if (matched.password !== pass) {
+    const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+    const override = overrides.find(o => o.email.toLowerCase() === cleanEmail);
+    const effectivePassword = override ? override.password : matched.password;
+
+    if (effectivePassword !== pass) {
       const err: any = new Error("auth/wrong-password");
       err.code = "auth/wrong-password";
       throw err;
