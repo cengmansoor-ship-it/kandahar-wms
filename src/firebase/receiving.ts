@@ -73,7 +73,7 @@ export const createFS5 = async (requestId: string, items: any[], user: { uid: st
 
   if (!isFirebaseConfigured) {
     const existing = getLocalItem<FS5Document | null>(`fs5_${requestId}`, null);
-    if (existing?.status === "Delivered") throw new Error("دغه ف س ۵ مخکې تسلیم شوی دی.");
+    if (existing?.status === "Delivered") throw new Error("دغه ف، س، ۵ مخکې تسلیم شوی دی.");
     const docData: FS5Document = {
       id: requestId,
       requestId,
@@ -89,7 +89,7 @@ export const createFS5 = async (requestId: string, items: any[], user: { uid: st
     };
     setLocalItem(`fs5_${requestId}`, docData);
     setLocalItem("fs5_documents", [docData, ...getLocalItem<FS5Document[]>("fs5_documents", []).filter((item) => item.id !== requestId)]);
-    await updateRequestStage(requestId, "FS5Created", 90, "ف س ۵ جوړ شو", user, "رسمي ف س ۵ فورم جوړ شو.");
+    await updateRequestStage(requestId, "FS5Created", 90, "ف، س، ۵ جوړ شو", user, "رسمي ف، س، ۵ فورم جوړ شو.");
     return docData;
   }
 
@@ -119,7 +119,7 @@ export const createFS5 = async (requestId: string, items: any[], user: { uid: st
   // Update request status
   const isProcurement = !!snap.data()?.procurementId;
   const progress = isProcurement ? 90 : 70;
-  await updateRequestStage(requestId, 'FS5Created', progress, 'ف س ۵ جوړ شو / فورم FS-5 ایجاد شد', user);
+  await updateRequestStage(requestId, 'FS5Created', progress, 'ف، س، ۵ جوړ شو / فورم FS-5 ایجاد شد', user);
   
   await logAuditEvent(user.uid, user.name, 'fs5_created' as any, { requestId });
   return docData;
@@ -140,10 +140,10 @@ export const finalizeDelivery = async (requestId: string, user: { uid: string, n
 
   if (!isFirebaseConfigured) {
     const fs5 = getLocalItem<FS5Document | null>(`fs5_${requestId}`, null);
-    if (!fs5) throw new Error("ف س ۵ فورم ونه موندل شو.");
+    if (!fs5) throw new Error("ف، س، ۵ فورم ونه موندل شو.");
     if (fs5.status === "Delivered") throw new Error("دا تسلیمي مخکې بشپړه شوې ده؛ موجودي بیا نه کمیږي.");
     for (const item of fs5.items) {
-      await performStockTransaction(item.itemId, "OUT", Number(item.quantity) || 0, "د ف س ۵ له مخې تسلیمي", user);
+      await performStockTransaction(item.itemId, "OUT", Number(item.quantity) || 0, "د ف، س، ۵ له مخې تسلیمي", user);
     }
     const delivered = { ...fs5, status: "Delivered" as const, submittedAt: dates.timestamp, submittedAtHijriShamsi: dates.shamsi };
     setLocalItem(`fs5_${requestId}`, delivered);

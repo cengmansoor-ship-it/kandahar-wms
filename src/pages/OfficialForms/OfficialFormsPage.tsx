@@ -68,7 +68,7 @@ const STAGE_PASHTO: Record<string, string> = {
   PurchaseOrderCreated: "آمر خریداري جوړ شو",
   ReceiptReportCreated: "راپور رسید جوړ شو",
   ReceivedToInventory: "ګدام ته داخل شو",
-  FS5Created: "ف س ۵ جوړ شو",
+  FS5Created: "ف، س، ۵ جوړ شو",
   Delivered: "تسلیم شو",
   Completed: "بشپړ شو",
 };
@@ -346,9 +346,9 @@ export default function OfficialFormsPage() {
                 requestId,
                 target,
                 90,
-                "ف س ۵ ذخیره شو",
+                "ف، س، ۵ ذخیره شو",
                 userObj,
-                "رسمي ف س ۵ فورم ذخیره شو — تسلیمي پیل شوه"
+                "رسمي ف، س، ۵ فورم ذخیره شو — تسلیمي پیل شوه"
               );
               setLocalItem(wfFlagKey, {
                 applied: true,
@@ -455,7 +455,7 @@ export default function OfficialFormsPage() {
                 <span className="text-xs text-blue-700 dark:text-blue-400">راپور رسید موجود</span>
               )}
               {fs5 && (
-                <span className="text-xs text-purple-700 dark:text-purple-400">ف س ۵ موجود</span>
+                <span className="text-xs text-purple-700 dark:text-purple-400">ف، س، ۵ موجود</span>
               )}
             </div>
           </div>

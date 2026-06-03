@@ -37,7 +37,7 @@ export default function WarehouseRequestDetails() {
         name: request.requesterName, 
         faculty: request.faculty 
       });
-      alert("ف س ۵ فورم خوندي شو.");
+      alert("ف، س، ۵ فورم خوندي شو.");
       fetchData(id);
       setActiveView('details');
     } catch (error: any) {
@@ -121,9 +121,9 @@ export default function WarehouseRequestDetails() {
 
                 {showFS5Btn && (
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                    <p className="text-blue-700 text-sm font-bold mb-3">د ویش لپاره ف س ۵ فورم ډک کړئ:</p>
+                    <p className="text-blue-700 text-sm font-bold mb-3">د ویش لپاره ف، س، ۵ فورم ډک کړئ:</p>
                     <Button onClick={() => setActiveView('fs5')} disabled={actionLoading} fullWidth>
-                      {actionLoading ? "یو لحظه..." : "+ ف س ۵ جوړول / ایجاد FS-5"}
+                      {actionLoading ? "یو لحظه..." : "+ ف، س، ۵ جوړول / ایجاد FS-5"}
                     </Button>
                   </div>
                 )}

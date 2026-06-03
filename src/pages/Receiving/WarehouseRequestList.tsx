@@ -9,7 +9,7 @@ const STATUS_LABELS: Record<string, string> = {
   StockAvailable: "جنس شتون لري — سپارل",
   ReceiptReportCreated: "راپور رسید جوړ شو",
   ReceivedToInventory: "ګدام ته داخل شو",
-  FS5Created: "ف س ۵ جوړه شوه",
+  FS5Created: "ف، س، ۵ جوړه شوه",
   Delivered: "تسلیم شو",
 };
 

@@ -16,7 +16,7 @@ const STATUS_PS: Record<string, string> = {
   TenderCreated: "داوطلبي پاڼه جوړه شوه", OffersReceived: "قیمتونه راغلل",
   ComparisonCreated: "مقایسه شوه", WinnerSelected: "ګټونکی ټاکل شو",
   PurchaseOrderCreated: "آمر خریداري", ReceiptReportCreated: "راپور رسید",
-  ReceivedToInventory: "ګدام ته داخل شو", FS5Created: "ف س ۵ جوړه شوه", Delivered: "تسلیم شو",
+  ReceivedToInventory: "ګدام ته داخل شو", FS5Created: "ف، س، ۵ جوړه شوه", Delivered: "تسلیم شو",
 };
 
 const STATUS_DR: Record<string, string> = {
@@ -27,7 +27,7 @@ const STATUS_DR: Record<string, string> = {
   TenderCreated: "مناقصه ایجاد شد", OffersReceived: "پیشنهادها دریافت شد",
   ComparisonCreated: "مقایسه انجام شد", WinnerSelected: "برنده انتخاب شد",
   PurchaseOrderCreated: "امر خرید", ReceiptReportCreated: "گزارش رسید",
-  ReceivedToInventory: "وارد انبار شد", FS5Created: "ف س ۵ ایجاد شد", Delivered: "تحویل داده شد",
+  ReceivedToInventory: "وارد انبار شد", FS5Created: "ف، س، ۵ ایجاد شد", Delivered: "تحویل داده شد",
 };
 
 const STATUS_COLORS: Record<string, string> = {

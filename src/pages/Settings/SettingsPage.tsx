@@ -496,7 +496,7 @@ export default function SettingsPage() {
         {/* Language Switcher */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "80ms" }}>
           <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90">
-            {pick("د سیستم ژبه / زبان سیستم", "زبان سیستم / د سیستم ژبه")}
+            {pick("د سیستم ژبه", "زبان سیستم")}
           </h2>
           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
             {pick(
@@ -515,7 +515,7 @@ export default function SettingsPage() {
             >
               <div className="text-base mb-1">🇦🇫</div>
               <div>پښتو</div>
-              <div className="text-xs font-normal mt-0.5 opacity-70">Pashto</div>
+              <div className="text-xs font-normal mt-0.5 opacity-70">پښتو</div>
             </button>
             <button
               onClick={() => setLang("dr")}
@@ -527,7 +527,7 @@ export default function SettingsPage() {
             >
               <div className="text-base mb-1">🇦🇫</div>
               <div>دری</div>
-              <div className="text-xs font-normal mt-0.5 opacity-70">Dari</div>
+              <div className="text-xs font-normal mt-0.5 opacity-70">دری</div>
             </button>
           </div>
           <p className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">

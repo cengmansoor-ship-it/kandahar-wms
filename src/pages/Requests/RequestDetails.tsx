@@ -91,7 +91,7 @@ export default function RequestDetails() {
   const submitRequest = async () => {
     if (!id || !user || !profile) return;
     if (!request?.formInstances.proposalId || !request?.formInstances.si9Id) {
-      alert("مهرباني وکړئ لومړی پیشنهاد او سیو ۹ فورمونه ډک کړئ. / لطفا ابتدا فورم‌های پیشنهاد و سیو ۹ را خانه پوری کنید.");
+      alert("مهرباني وکړئ لومړی پیشنهاد او ف، س، ۹ فورمونه ډک کړئ. / لطفا ابتدا فورم‌های پیشنهاد و ف، س، ۹ را پر کنید.");
       return;
     }
     try {
@@ -252,7 +252,7 @@ export default function RequestDetails() {
                     request.formInstances.si9Id ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
                   }`}
                 >
-                  <span className="font-bold text-sm">سیو ۹ / فورم SI-9</span>
+                  <span className="font-bold text-sm">ف، س، ۹</span>
                   {request.formInstances.si9Id ? '✅' : '⏳'}
                 </button>
               </div>
