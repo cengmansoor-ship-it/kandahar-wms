@@ -6,6 +6,7 @@ import Button from "../../components/ui/button/Button";
 import { getRequestById, InventoryRequest, saveFormInstance } from "../../firebase/requests";
 import { createFS5, finalizeDelivery, receiveProcurementToInventory } from "../../firebase/receiving";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import OfficialFormViewer from "../../components/OfficialFormViewer";
 
 export default function WarehouseRequestDetails() {
@@ -15,6 +16,7 @@ export default function WarehouseRequestDetails() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { user, profile } = useAuth();
+  const { pick } = useLanguage();
 
   useEffect(() => {
     if (id) fetchData(id);
@@ -87,7 +89,7 @@ export default function WarehouseRequestDetails() {
   return (
     <>
       <PageMeta title="د سپارلو مدیریت | Kandahar University WMS" description="د اجناسو سپارلو مدیریت" />
-      <Breadcrumb pageTitle="د سپارلو مدیریت / مدیریت تحویلی" />
+      <Breadcrumb pageTitle={pick("د سپارلو مدیریت", "مدیریت تحویلی")} />
 
       {activeView === 'fs5' ? (
         <div className="h-[85vh]">
@@ -114,7 +116,7 @@ export default function WarehouseRequestDetails() {
                   <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
                     <p className="text-orange-700 text-sm font-bold mb-3">لومړی تدارکاتي اجناس موجودۍ ته داخل کړئ:</p>
                     <Button onClick={handleReceiveToInventory} disabled={actionLoading} fullWidth variant="primary">
-                      {actionLoading ? "یو لحظه..." : "موجودۍ ته داخلول / ورود به گدام"}
+                      {actionLoading ? pick("یو لحظه...", "لطفا صبر کنید...") : pick("موجودۍ ته داخلول", "ورود به گدام")}
                     </Button>
                   </div>
                 )}
@@ -123,7 +125,7 @@ export default function WarehouseRequestDetails() {
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                     <p className="text-blue-700 text-sm font-bold mb-3">د ویش لپاره ف، س، ۵ فورم ډک کړئ:</p>
                     <Button onClick={() => setActiveView('fs5')} disabled={actionLoading} fullWidth>
-                      {actionLoading ? "یو لحظه..." : "+ ف، س، ۵ جوړول / ایجاد FS-5"}
+                      {actionLoading ? pick("یو لحظه...", "لطفا صبر کنید...") : pick("+ ف، س، ۵ جوړول", "+ ایجاد ف، س، ۵")}
                     </Button>
                   </div>
                 )}

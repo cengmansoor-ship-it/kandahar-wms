@@ -13,6 +13,7 @@ import {
   PipelineRecord 
 } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import OfficialFormViewer from "../../components/OfficialFormViewer";
 import PipelineTimeline from "../../components/requests/PipelineTimeline";
 import ConfirmerPanel from "../../components/requests/ConfirmerPanel";
@@ -29,6 +30,7 @@ export default function RequestDetails() {
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
+  const { pick } = useLanguage();
 
   useEffect(() => {
     if (id) fetchData(id);
@@ -80,7 +82,7 @@ export default function RequestDetails() {
     if (!id || !activeForm || !user || !profile) return;
     try {
       await saveFormInstance(id, activeForm, data, user.uid, profile.name);
-      alert("فورم په بریالیتوب سره ذخیره شو. / فورم با موفقیت ذخیره شد.");
+      alert(pick("فورم په بریالیتوب سره ذخیره شو.", "فورم با موفقیت ذخیره شد."));
       fetchData(id);
       setActiveForm(null);
     } catch (error) {
@@ -91,7 +93,7 @@ export default function RequestDetails() {
   const submitRequest = async () => {
     if (!id || !user || !profile) return;
     if (!request?.formInstances.proposalId || !request?.formInstances.si9Id) {
-      alert("مهرباني وکړئ لومړی پیشنهاد او ف، س، ۹ فورمونه ډک کړئ. / لطفا ابتدا فورم‌های پیشنهاد و ف، س، ۹ را پر کنید.");
+      alert(pick("مهرباني وکړئ لومړی پیشنهاد او ف، س، ۹ فورمونه ډک کړئ.", "لطفا ابتدا فورم‌های پیشنهاد و ف، س، ۹ را پر کنید."));
       return;
     }
     try {
@@ -103,7 +105,7 @@ export default function RequestDetails() {
         { uid: user.uid, name: profile.name, role: profile.role },
         "غوښتنه نهایي او واستول شوه."
       );
-      alert("غوښتنه په بریالیتوب سره واستول شوه. / درخواست با موفقیت ارسال شد.");
+      alert(pick("غوښتنه په بریالیتوب سره واستول شوه.", "درخواست با موفقیت ارسال شد."));
       fetchData(id);
     } catch (error) {
       console.error("Error submitting request:", error);
@@ -123,12 +125,12 @@ export default function RequestDetails() {
   return (
     <>
       <PageMeta title="د غوښتنې جزیات | Kandahar University WMS" description="د غوښتنې جزیات او فورمونه" />
-      <Breadcrumb pageTitle="د غوښتنې جزیات / جزیات درخواست" />
+      <Breadcrumb pageTitle={pick("د غوښتنې جزیات", "جزیات درخواست")} />
 
       {activeForm ? (
         <div className="h-[85vh]">
           <div className="mb-4">
-            <Button variant="outline" size="sm" onClick={() => setActiveForm(null)}>← بیرته / بازګشت</Button>
+            <Button variant="outline" size="sm" onClick={() => setActiveForm(null)}>← {pick("بیرته", "بازګشت")}</Button>
           </div>
           <OfficialFormViewer 
             templateId={activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5'} 
@@ -228,7 +230,7 @@ export default function RequestDetails() {
             )}
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-6 border-b pb-2 dark:border-gray-700">د اجرااتو تاریخچه / تاریخچه اجراات</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-6 border-b pb-2 dark:border-gray-700">{pick("د اجرااتو تاریخچه", "تاریخچه اجراات")}</h3>
               <PipelineTimeline history={pipeline} />
             </div>
           </div>
@@ -243,7 +245,7 @@ export default function RequestDetails() {
                     request.formInstances.proposalId ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
                   }`}
                 >
-                  <span className="font-bold text-sm">پیشنهاد / پروپوزل</span>
+                  <span className="font-bold text-sm">{pick("پیشنهاد", "پروپوزل")}</span>
                   {request.formInstances.proposalId ? '✅' : '⏳'}
                 </button>
                 <button 
@@ -259,7 +261,7 @@ export default function RequestDetails() {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">پرمختګ / پیشرفت</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("پرمختګ", "پیشرفت")}</h3>
               {(() => {
                 const wf = getWorkflowStage(request.status);
                 const pct = request.progress ?? wf.progressPercent;
@@ -280,13 +282,13 @@ export default function RequestDetails() {
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{wf.stage_ps}</p>
                     {wf.assignedRole_ps && !wf.workflowComplete && (
                       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3">
-                        <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">مسئول / مسؤول:</p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">{pick("مسئول:", "مسؤول:")}</p>
                         <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">{wf.assignedRole_ps}</p>
                       </div>
                     )}
                     {wf.nextAction_ps && !wf.workflowComplete && (
                       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg p-3">
-                        <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mb-1">بل ګام / اقدام بعدی:</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mb-1">{pick("بل ګام:", "اقدام بعدی:")}</p>
                         <p className="text-sm text-amber-800 dark:text-amber-300">{wf.nextAction_ps}</p>
                       </div>
                     )}
@@ -298,7 +300,7 @@ export default function RequestDetails() {
             {request.status === 'Draft' && profile?.role === ROLES.REQUESTER && (
               <div className="rounded-2xl border border-dashed border-primary bg-primary/5 p-6 text-center">
                 <p className="text-sm text-primary mb-4 font-bold">غوښتنه وروستۍ کړئ!</p>
-                <Button onClick={submitRequest} variant="primary" fullWidth>استول / ارسال</Button>
+                <Button onClick={submitRequest} variant="primary" fullWidth>{pick("استول", "ارسال")}</Button>
               </div>
             )}
           </div>

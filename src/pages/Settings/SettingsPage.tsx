@@ -76,7 +76,7 @@ export default function SettingsPage() {
   const applyFontSize = (key: string) => {
     const opt = FONT_SIZE_OPTIONS.find(o => o.key === key);
     if (!opt) return;
-    document.documentElement.style.fontSize = opt.px;
+    document.documentElement.style.setProperty("--base-font-size", opt.px);
     localStorage.setItem("wms_font_size", key);
     setFontSizeState(key);
   };

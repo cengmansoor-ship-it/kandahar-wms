@@ -17,7 +17,7 @@ const FONT_SIZE_MAP: Record<string, string> = {
   xlarge: "20px",
 };
 const savedFontSize = localStorage.getItem("wms_font_size") || "medium";
-document.documentElement.style.fontSize = FONT_SIZE_MAP[savedFontSize] ?? "16px";
+document.documentElement.style.setProperty("--base-font-size", FONT_SIZE_MAP[savedFontSize] ?? "16px");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

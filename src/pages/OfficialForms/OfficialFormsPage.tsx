@@ -84,6 +84,7 @@ interface WfFlag {
 
 export default function OfficialFormsPage() {
   const { user, profile } = useAuth();
+  const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
   const [activeTemplateId, setActiveTemplateId] = useState<OfficialTemplateId>("formTemplate0");
   const [menuFilter, setMenuFilter] = useState("ټول فورمونه");
   const [levelFilter, setLevelFilter] = useState("ټولې درجې");
@@ -461,33 +462,40 @@ export default function OfficialFormsPage() {
           </div>
         )}
 
-        {/* Form tabs */}
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
-          {visibleForms.map((form) => {
-            const isActive = activeTemplateId === form.id;
-            const hasData = !!allFormsData[form.id];
-            return (
-              <button
-                key={form.id}
-                type="button"
-                onClick={() => setActiveTemplateId(form.id)}
-                className={`rounded-xl border p-3 text-right transition ${
-                  isActive
-                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-brand-400 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300"
-                }`}
-              >
-                <span className="block text-xs font-bold">{form.title}</span>
-                <span className="mt-0.5 block text-xs opacity-60">{form.phase}</span>
-                {hasData && (
-                  <span className="mt-1 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
-                    ✓
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* Form tabs — Super Admin only */}
+        {isSuperAdmin ? (
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+            {visibleForms.map((form) => {
+              const isActive = activeTemplateId === form.id;
+              const hasData = !!allFormsData[form.id];
+              return (
+                <button
+                  key={form.id}
+                  type="button"
+                  onClick={() => setActiveTemplateId(form.id)}
+                  className={`rounded-xl border p-3 text-right transition ${
+                    isActive
+                      ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-brand-400 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300"
+                  }`}
+                >
+                  <span className="block text-xs font-bold">{form.title}</span>
+                  <span className="mt-0.5 block text-xs opacity-60">{form.phase}</span>
+                  {hasData && (
+                    <span className="mt-1 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
+                      ✓
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
+            <span>🔒</span>
+            <span>د لیدلو حالت — د فورمونو سمول یوازې د لوی مدیر لپاره دي.</span>
+          </div>
+        )}
 
         {/* ── Progress / status indicator ─────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
