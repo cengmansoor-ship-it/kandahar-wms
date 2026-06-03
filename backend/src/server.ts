@@ -17,6 +17,7 @@ import customRolesRoutes from './routes/customRoles.routes';
 import budgetRoutes from './routes/budget.routes';
 import trashRoutes from './routes/trash.routes';
 import smsRoutes from './routes/sms.routes';
+import checklistRoutes from './routes/checklist.routes';
 import { BudgetService } from './services/budget.service';
 import { TraceabilityService } from './services/traceability.service';
 import { ManagementService } from './services/management.service';
@@ -26,6 +27,7 @@ import { InventoryService } from './services/inventory.service';
 import { RequestService } from './services/request.service';
 import { TrashService } from './services/trash.service';
 import { SmsService } from './services/sms.service';
+import { ChecklistService } from './services/checklist.service';
 
 dotenv.config();
 
@@ -47,6 +49,7 @@ RequestService.runMigrations().then(() => console.log('[WMS] Request pipeline mi
 TrashService.runMigrations().then(() => console.log('[WMS] Trash migrations complete.')).catch(e => console.warn('[WMS] Trash migrations warning:', e.message));
 TrashService.purgeExpired(30).catch(e => console.warn('[WMS] Trash purge warning:', e.message));
 SmsService.runMigrations().then(() => console.log('[WMS] SMS config migrations complete.')).catch(e => console.warn('[WMS] SMS config migrations warning:', e.message));
+ChecklistService.runMigrations().then(() => console.log('[WMS] Checklist migrations & seed complete.')).catch(e => console.warn('[WMS] Checklist migrations warning:', e.message));
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/requests', requestRoutes);
@@ -63,6 +66,7 @@ app.use('/api/custom-roles', customRolesRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/trash', trashRoutes);
 app.use('/api/sms', smsRoutes);
+app.use('/api/checklist', checklistRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });

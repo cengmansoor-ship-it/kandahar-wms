@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import * as ChecklistController from '../controllers/checklist.controller';
+
+const router = Router();
+
+router.get('/', ChecklistController.getChecklist);
+router.get('/categories', ChecklistController.getChecklistCategories);
+router.get('/:id', ChecklistController.getChecklistById);
+router.post('/', ChecklistController.createChecklistItem);
+router.put('/:id', ChecklistController.updateChecklistItem);
+router.delete('/:id', ChecklistController.deleteChecklistItem);
+router.post('/validate-bulk', ChecklistController.validateChecklistBulk);
+
+export default router;

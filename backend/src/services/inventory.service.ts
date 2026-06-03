@@ -21,6 +21,18 @@ export interface StockData {
   quantity: number;
   source_type?: string;
   notes?: string;
+  unit_price?: number;
+  supplier_name?: string;
+  document_reference?: string;
+  receiver_name?: string;
+  receiver_id_no?: string;
+  faculty_id?: number;
+  department_id?: number;
+  person_id?: number;
+  linked_request_id?: number;
+  fs5_reference?: string;
+  academic_level?: string;
+  assignment_qr_payload?: object;
 }
 
 export interface BulkImportRow {
@@ -506,9 +518,12 @@ export class InventoryService {
       await connection.query(`UPDATE items SET current_stock = ? WHERE id = ?`, [newStock, data.item_id]);
 
       const [txResult] = await connection.query<ResultSetHeader>(`
-        INSERT INTO stock_transactions (item_id, transaction_type, quantity, previous_stock, new_stock, source_type, notes, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [data.item_id, 'IN', data.quantity, prevStock, newStock, data.source_type ?? null, data.notes ?? null, userId]);
+        INSERT INTO stock_transactions
+          (item_id, transaction_type, quantity, previous_stock, new_stock, source_type, notes, created_by,
+           supplier_name, document_reference, unit_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [data.item_id, 'IN', data.quantity, prevStock, newStock, data.source_type ?? null, data.notes ?? null, userId,
+          data.supplier_name ?? null, data.document_reference ?? null, data.unit_price ?? null]);
 
       await connection.query(`
         INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_value)
@@ -542,10 +557,17 @@ export class InventoryService {
 
       await connection.query(`UPDATE items SET current_stock = ? WHERE id = ?`, [newStock, data.item_id]);
 
+      const qrPayload = data.assignment_qr_payload ? JSON.stringify(data.assignment_qr_payload) : null;
       const [txResult] = await connection.query<ResultSetHeader>(`
-        INSERT INTO stock_transactions (item_id, transaction_type, quantity, previous_stock, new_stock, source_type, notes, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [data.item_id, 'OUT', data.quantity, prevStock, newStock, data.source_type ?? null, data.notes ?? null, userId]);
+        INSERT INTO stock_transactions
+          (item_id, transaction_type, quantity, previous_stock, new_stock, source_type, notes, created_by,
+           unit_price, receiver_name, receiver_id_no, faculty_id, department_id, person_id,
+           linked_request_id, fs5_reference, academic_level, assignment_qr_payload)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [data.item_id, 'OUT', data.quantity, prevStock, newStock, data.source_type ?? null, data.notes ?? null, userId,
+          data.unit_price ?? null, data.receiver_name ?? null, data.receiver_id_no ?? null,
+          data.faculty_id ?? null, data.department_id ?? null, data.person_id ?? null,
+          data.linked_request_id ?? null, data.fs5_reference ?? null, data.academic_level ?? null, qrPayload]);
 
       await connection.query(`
         INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_value)

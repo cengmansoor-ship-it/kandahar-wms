@@ -24,6 +24,7 @@ const StockIn = lazy(() => import("./pages/Inventory/StockIn"));
 const StockOut = lazy(() => import("./pages/Inventory/StockOut"));
 const InventoryLedger = lazy(() => import("./pages/Inventory/Ledger"));
 const BarcodeScanner = lazy(() => import("./pages/Inventory/BarcodeScanner"));
+const ChecklistManagement = lazy(() => import("./pages/Inventory/ChecklistManagement"));
 
 const RequestList = lazy(() => import("./pages/Requests/RequestList"));
 const CreateRequest = lazy(() => import("./pages/Requests/CreateRequest"));
@@ -105,6 +106,7 @@ export default function App() {
             <Route path="/inventory/stock-out/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/ledger" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryLedger /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/barcode-scanner" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><BarcodeScanner /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/checklist" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><ChecklistManagement /></Suspense></ProtectedRoute>} />
 
             <Route path="/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><Suspense fallback={<PageLoader />}><RequestList /></Suspense></ProtectedRoute>} />
             <Route path="/requests/create" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.REQUESTER]}><Suspense fallback={<PageLoader />}><CreateRequest /></Suspense></ProtectedRoute>} />

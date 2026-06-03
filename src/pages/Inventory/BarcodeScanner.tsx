@@ -41,6 +41,9 @@ export default function BarcodeScanner() {
   const scanningRef = useRef(false);
   const animFrameRef = useRef<number | null>(null);
 
+  const [qrPrintTx, setQrPrintTx] = useState<any | null>(null);
+  const [qrPrintCount, setQrPrintCount] = useState(1);
+
   const [searchParams] = useSearchParams();
 
   const canAccess = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN || profile?.role === ROLES.WAREHOUSE_DIRECTOR;
@@ -95,9 +98,7 @@ export default function BarcodeScanner() {
       await video.play();
       setCameraActive(true);
       setScanning(true);
-
       scanningRef.current = true;
-
       const tick = () => {
         if (!scanningRef.current) return;
         const canvas = canvasRef.current;
@@ -124,22 +125,19 @@ export default function BarcodeScanner() {
         }
         animFrameRef.current = requestAnimationFrame(tick);
       };
-
       animFrameRef.current = requestAnimationFrame(tick);
     } catch (err: any) {
       if (err.name === "NotAllowedError") {
-        setCameraError("د کیمرې اجازه ورکړل شوې نده. مهرباني وکړئ د براوزر ترتیباتو کې د کیمرې اجازه ورکړئ.");
+        setCameraError("د کیمرې اجازه ورکړل شوې نده. مهرباني وکړئ د براوزر ترتیباتو کې اجازه ورکړئ.");
       } else if (err.name === "NotFoundError") {
-        setCameraError("کیمره ونه موندل شوه. مهرباني وکړئ ترکینګ کوډ لاندې دننه کړئ.");
+        setCameraError("کیمره ونه موندل شوه. لاندې ترکینګ کوډ دننه کړئ.");
       } else {
         setCameraError("کیمره پرانیستل ونشول: " + err.message);
       }
     }
   }, [handleSearch, stopCamera]);
 
-  useEffect(() => {
-    return () => { stopCamera(); };
-  }, [stopCamera]);
+  useEffect(() => { return () => { stopCamera(); }; }, [stopCamera]);
 
   useEffect(() => {
     const codeFromUrl = searchParams.get("code");
@@ -163,14 +161,40 @@ export default function BarcodeScanner() {
     if (!window.confirm("ایا د بارکوډ بیا جوړول غواړئ؟")) return;
     try {
       const res = await apiClient.post(`/inventory/items/${scanResult.item.id}/barcode/regenerate`, {});
-      setScanResult(prev => prev ? {
-        ...prev,
-        item: { ...prev.item, tracking_code: res.tracking_code }
-      } : prev);
+      setScanResult(prev => prev ? { ...prev, item: { ...prev.item, tracking_code: res.tracking_code } } : prev);
       alert("بارکوډ بیا جوړ شو: " + res.tracking_code);
     } catch (err: any) {
       alert("خطا: " + err.message);
     }
+  };
+
+  const printQrLabels = (payload: any, count: number) => {
+    const win = window.open("", "_blank", "width=600,height=800");
+    if (!win) return;
+    const labels = Array(count).fill(0).map((_, i) => `
+      <div style="display:inline-block;text-align:center;border:1px solid #ddd;border-radius:8px;padding:12px;margin:6px;page-break-inside:avoid;">
+        <div id="qlabel-${i}"></div>
+        <div style="font-family:serif;font-size:11px;margin-top:6px;color:#333;">${payload.item_name || ""}</div>
+        <div style="font-family:monospace;font-size:9px;color:#666;">${payload.item_code || ""}</div>
+        ${payload.receiver_name ? `<div style="font-family:serif;font-size:9px;color:#888;">ترلاسه کوونکی: ${payload.receiver_name}</div>` : ""}
+        ${payload.faculty ? `<div style="font-family:serif;font-size:9px;color:#888;">پوهنځی: ${payload.faculty}</div>` : ""}
+        ${payload.date ? `<div style="font-family:serif;font-size:9px;color:#888;">${payload.date}</div>` : ""}
+      </div>`).join('');
+    const jsonStr = JSON.stringify(payload).replace(/"/g, '\\"');
+    win.document.write(`<html><head><title>QR Labels</title>
+      <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+      </head><body style="direction:rtl;">
+      <div>${labels}</div>
+      <script>
+        const d = "${jsonStr}";
+        for(let i=0;i<${count};i++){
+          QRCode.toCanvas(document.createElement('canvas'),d,{width:100},function(err,c){
+            if(!err && document.getElementById('qlabel-'+i)) document.getElementById('qlabel-'+i).appendChild(c);
+          });
+        }
+        setTimeout(()=>window.print(),1200);
+      </script></body></html>`);
+    win.document.close();
   };
 
   if (!canAccess) {
@@ -190,14 +214,47 @@ export default function BarcodeScanner() {
 
       <canvas ref={canvasRef} className="hidden" />
 
+      {qrPrintTx && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setQrPrintTx(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full" dir="rtl">
+            <h3 className="text-base font-bold text-gray-800 dark:text-white mb-3">د QR لیبل چاپ</h3>
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-white rounded-xl border border-gray-200 shadow-sm inline-block">
+                <QRCode value={JSON.stringify(qrPrintTx)} size={120} level="M" includeMargin />
+              </div>
+            </div>
+            <div className="mb-4 space-y-1 text-xs text-gray-600 dark:text-gray-400">
+              {qrPrintTx.item_name && <p><strong>جنس:</strong> {qrPrintTx.item_name}</p>}
+              {qrPrintTx.receiver_name && <p><strong>ترلاسه کوونکی:</strong> {qrPrintTx.receiver_name}</p>}
+              {qrPrintTx.faculty && <p><strong>پوهنځی:</strong> {qrPrintTx.faculty}</p>}
+              {qrPrintTx.department && <p><strong>ډیپارټمنټ:</strong> {qrPrintTx.department}</p>}
+              {qrPrintTx.date && <p><strong>نیټه:</strong> {qrPrintTx.date}</p>}
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">د چاپ شمیر:</label>
+              <input type="number" value={qrPrintCount} onChange={e => setQrPrintCount(Math.max(1, Number(e.target.value)))}
+                min="1" max="50"
+                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-center outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setQrPrintTx(null)}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">لغوه</button>
+              <button onClick={() => { printQrLabels(qrPrintTx, qrPrintCount); setQrPrintTx(null); }}
+                className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl py-2.5 text-sm font-bold transition-all">
+                🖨️ چاپ ({qrPrintCount})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-5">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90" dir="rtl">
             د بارکوډ / QR کوډ سکین یا لټون
           </h3>
-
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Manual search */}
             <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-right" dir="rtl">
                 د ترکینګ کوډ لارو پیل دننه کړئ
@@ -218,8 +275,6 @@ export default function BarcodeScanner() {
               </div>
               <p className="text-xs text-gray-400 text-right" dir="rtl">د جنس کوډ، ترکینګ کوډ، یا بارکوډ ولیکئ</p>
             </div>
-
-            {/* Camera scanning */}
             <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-right" dir="rtl">
                 د کیمرې له لارې سکین
@@ -227,14 +282,8 @@ export default function BarcodeScanner() {
               {cameraActive ? (
                 <div className="space-y-2">
                   <div className="relative">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-black"
-                      style={{ maxHeight: 220 }}
-                    />
+                    <video ref={videoRef} autoPlay playsInline muted
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-black" style={{ maxHeight: 220 }} />
                     {scanning && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="w-40 h-40 border-2 border-primary rounded-lg opacity-70">
@@ -246,19 +295,13 @@ export default function BarcodeScanner() {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-center text-gray-500 dark:text-gray-400" dir="rtl">
-                    📷 QR کوډ د کیمرې مخې ته ونیسئ...
-                  </p>
+                  <p className="text-xs text-center text-gray-500 dark:text-gray-400" dir="rtl">📷 QR کوډ د کیمرې مخې ته ونیسئ...</p>
                   <Button variant="outline" onClick={stopCamera} className="w-full">کیمره بنده کړئ</Button>
                 </div>
               ) : (
-                <Button onClick={startCamera} className="w-full" variant="outline">
-                  📷 کیمره پرانیستل
-                </Button>
+                <Button onClick={startCamera} className="w-full" variant="outline">📷 کیمره پرانیستل</Button>
               )}
-              {cameraError && (
-                <p className="text-xs text-red-500 text-right" dir="rtl">{cameraError}</p>
-              )}
+              {cameraError && <p className="text-xs text-red-500 text-right" dir="rtl">{cameraError}</p>}
             </div>
           </div>
         </div>
@@ -268,7 +311,6 @@ export default function BarcodeScanner() {
             <p className="text-blue-700 dark:text-blue-400 text-sm">لټون کیږي...</p>
           </div>
         )}
-
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 p-4 text-right" dir="rtl">
             <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
@@ -277,13 +319,12 @@ export default function BarcodeScanner() {
 
         {scanResult && (
           <div className="space-y-4 print:space-y-4">
+            {/* ═══ TABLE 1 — Item Details ═══ */}
             <div className="rounded-2xl border border-green-200 bg-white dark:border-green-900/30 dark:bg-white/[0.03] p-5 print:border print:border-gray-300 print:p-4">
               <div className="flex flex-wrap items-start justify-between gap-4 mb-4 print:hidden">
                 <h3 className="text-base font-bold text-green-700 dark:text-green-400" dir="rtl">✓ جنس وموندل شو</h3>
                 <div className="flex gap-2 flex-wrap">
-                  <Button onClick={handlePrint} variant="outline" className="text-sm">
-                    🖨️ د بارکوډ چاپ / چاپ بارکد
-                  </Button>
+                  <Button onClick={handlePrint} variant="outline" className="text-sm">🖨️ د بارکوډ چاپ</Button>
                   {isSuperAdmin && (
                     <Button onClick={handleRegenerate} variant="outline" className="text-sm text-orange-600 border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20">
                       🔄 بارکوډ بیا جوړول
@@ -291,27 +332,19 @@ export default function BarcodeScanner() {
                   )}
                 </div>
               </div>
-
               <div className="print:block print:text-center print:mb-4 hidden">
                 <p className="text-xs font-bold">د کندهار پوهنتون د عمومي ګدام مدیریت سیستم</p>
                 <p className="text-xs text-gray-500">Kandahar University WMS</p>
               </div>
-
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-shrink-0 flex flex-col items-center gap-2">
                   <div className="p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <QRCode
-                      value={scanResult.item.tracking_code || scanResult.item.item_code || "N/A"}
-                      size={120}
-                      level="M"
-                      includeMargin
-                    />
+                    <QRCode value={scanResult.item.tracking_code || scanResult.item.item_code || "N/A"} size={120} level="M" includeMargin />
                   </div>
                   <p className="text-xs font-mono text-gray-600 dark:text-gray-400 text-center font-bold">
                     {scanResult.item.tracking_code || scanResult.item.item_code}
                   </p>
                 </div>
-
                 <div className="flex-1 overflow-x-auto" dir="rtl">
                   <table className="w-full text-sm border-collapse">
                     <tbody>
@@ -332,27 +365,13 @@ export default function BarcodeScanner() {
                         { label: "کمترین حد", value: String(scanResult.item.minimum_stock ?? 0) },
                         {
                           label: "قیمت",
-                          value: scanResult.item.unit_price != null
-                            ? `${Number(scanResult.item.unit_price).toLocaleString()} ؋`
-                            : "—",
+                          value: scanResult.item.unit_price != null ? `${Number(scanResult.item.unit_price).toLocaleString()} ؋` : "—",
                         },
                         {
                           label: "د ثبت نیټه",
-                          value: scanResult.item.created_at
-                            ? new Date(scanResult.item.created_at).toLocaleDateString("fa-AF")
-                            : "—",
+                          value: scanResult.item.created_at ? new Date(scanResult.item.created_at).toLocaleDateString("fa-AF") : "—",
                         },
-                        { label: "چا ته ثبت دی", value: scanResult.item.assigned_to || "—" },
-                        { label: "پوهنځی", value: scanResult.item.faculty || "—" },
-                        { label: "ډیپارټمنټ", value: scanResult.item.department || "—" },
-                        { label: "شخص", value: scanResult.item.person_name || "—" },
-                        {
-                          label: "وروستي حرکات",
-                          value: scanResult.transactions.length > 0
-                            ? `${scanResult.transactions[0]?.transaction_type === "IN" ? "داخل" : "خارج"} — ${scanResult.transactions[0]?.quantity} — ${scanResult.transactions[0]?.created_at ? new Date(scanResult.transactions[0].created_at).toLocaleDateString("fa-AF") : ""}`
-                            : "هیڅ حرکت ثبت نه دی",
-                        },
-                        { label: "عرضه کوونکی", value: scanResult.item.supplier_source },
+                        { label: "عرضه کوونکی", value: scanResult.item.supplier_source || "—" },
                         {
                           label: "حالت",
                           value: scanResult.item.current_stock === 0 ? "ختم شوی" :
@@ -371,9 +390,7 @@ export default function BarcodeScanner() {
                             <td className="py-2 pr-3 pl-4 text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap w-36 bg-gray-50/60 dark:bg-gray-800/40 border-l border-gray-100 dark:border-gray-800">
                               {label}
                             </td>
-                            <td className={`py-2 px-3 text-sm ${valClass}`}>
-                              {value || "—"}
-                            </td>
+                            <td className={`py-2 px-3 text-sm ${valClass}`}>{value || "—"}</td>
                           </tr>
                         );
                       })}
@@ -383,50 +400,83 @@ export default function BarcodeScanner() {
               </div>
             </div>
 
+            {/* ═══ TABLE 2 — Transactions ═══ */}
             {scanResult.transactions.length > 0 && (
               <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-5 print:hidden">
                 <h4 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right" dir="rtl">
                   د موجودۍ معاملات ({scanResult.transactions.length})
                 </h4>
-                <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                <div className="overflow-x-auto max-h-72 overflow-y-auto">
                   <table className="w-full text-sm" dir="rtl">
-                    <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800">
+                    <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 z-10">
                       <tr>
-                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">نوع</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">نوع</th>
                         <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">مقدار</th>
-                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">پخوانۍ موجودي</th>
-                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">نوې موجودي</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">عرضه کوونکی</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">سند</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">ترلاسه کوونکی</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">پوهنځی / ډیپارټمنټ</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">پخوانۍ</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">نوې</th>
                         <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">یادښت</th>
                         <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">نیټه</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">QR</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {scanResult.transactions.map((tx: any, i: number) => (
-                        <tr key={i} className="border-t border-gray-100 dark:border-gray-800">
-                          <td className="px-3 py-2">
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
-                              tx.transaction_type === "IN"
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            }`}>
-                              {tx.transaction_type === "IN" ? "داخل" : "خارج"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-gray-800 dark:text-white/90 font-semibold">{tx.quantity}</td>
-                          <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{tx.previous_stock}</td>
-                          <td className="px-3 py-2 text-gray-800 dark:text-white/90">{tx.new_stock}</td>
-                          <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs max-w-xs truncate">{tx.notes || "-"}</td>
-                          <td className="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">
-                            {tx.created_at ? new Date(tx.created_at).toLocaleDateString("fa-AF") : "-"}
-                          </td>
-                        </tr>
-                      ))}
+                      {scanResult.transactions.map((tx: any, i: number) => {
+                        let qrPayload: any = null;
+                        if (tx.assignment_qr_payload) {
+                          try {
+                            qrPayload = typeof tx.assignment_qr_payload === "string"
+                              ? JSON.parse(tx.assignment_qr_payload)
+                              : tx.assignment_qr_payload;
+                          } catch (_) {}
+                        }
+                        return (
+                          <tr key={i} className="border-t border-gray-100 dark:border-gray-800">
+                            <td className="px-3 py-2">
+                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                                tx.transaction_type === "IN"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              }`}>
+                                {tx.transaction_type === "IN" ? "داخل ▲" : "خارج ▼"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-gray-800 dark:text-white/90 font-semibold">{tx.quantity}</td>
+                            <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">{tx.supplier_name || "—"}</td>
+                            <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs font-mono">{tx.document_reference || "—"}</td>
+                            <td className="px-3 py-2 text-gray-600 dark:text-gray-300 text-xs">{tx.receiver_name || "—"}</td>
+                            <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">
+                              {[tx.faculty_name, tx.department_name].filter(Boolean).join(" / ") || "—"}
+                            </td>
+                            <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">{tx.previous_stock}</td>
+                            <td className="px-3 py-2 text-gray-800 dark:text-white/90 text-xs">{tx.new_stock}</td>
+                            <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs max-w-[120px] truncate">{tx.notes || "—"}</td>
+                            <td className="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">
+                              {tx.created_at ? new Date(tx.created_at).toLocaleDateString("fa-AF") : "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              {qrPayload ? (
+                                <button
+                                  onClick={() => { setQrPrintTx(qrPayload); setQrPrintCount(1); }}
+                                  className="p-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition"
+                                  title="QR لیبل چاپ">
+                                  🖨️
+                                </button>
+                              ) : <span className="text-gray-300 dark:text-gray-700">—</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
 
+            {/* ═══ TABLE 3 — Audit Logs ═══ */}
             {scanResult.auditLogs.length > 0 && (
               <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-5 print:hidden">
                 <h4 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right" dir="rtl">
@@ -437,15 +487,21 @@ export default function BarcodeScanner() {
                     <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800">
                       <tr>
                         <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">عمل</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">کاروونکی</th>
                         <th className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400">نیټه</th>
                       </tr>
                     </thead>
                     <tbody>
                       {scanResult.auditLogs.map((log: any, i: number) => (
                         <tr key={i} className="border-t border-gray-100 dark:border-gray-800">
-                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300 text-xs font-mono">{log.action}</td>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300 text-xs font-mono">
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">{log.user_name || log.user_id || "—"}</td>
                           <td className="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">
-                            {log.created_at ? new Date(log.created_at).toLocaleDateString("fa-AF") : "-"}
+                            {log.created_at ? new Date(log.created_at).toLocaleDateString("fa-AF") : "—"}
                           </td>
                         </tr>
                       ))}
@@ -468,4 +524,3 @@ export default function BarcodeScanner() {
     </>
   );
 }
-
