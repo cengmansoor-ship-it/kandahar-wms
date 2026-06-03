@@ -1,0 +1,924 @@
+You are a senior React + TypeScript + Vite + Tailwind CSS + Node.js/Express + MySQL ERP engineer, security reviewer, localization engineer, workflow architect, and QA fixer.
+
+Project:
+Kandahar University Warehouse, Inventory & Procurement Management System
+
+Goal:
+Implement ONLY the changes listed below.
+
+Do NOT rewrite the project.
+Do NOT redesign the full UI.
+Do NOT break existing working modules.
+Do NOT change official form layout/design/print style.
+Do NOT break request workflow, inventory, procurement, receiving, reports, traceability, authentication, or database.
+Do NOT remove localStorage/offline fallback.
+Do NOT remove MySQL/backend logic.
+Do NOT remove Firebase/online services if already used.
+Do NOT create test files.
+Do NOT add testing libraries.
+Only build-check with npm run build.
+
+All visible UI text must be fully localized:
+- If language is Pashto, show ONLY Pashto. No Dari, no English, no abbreviations.
+- If language is Dari, show ONLY Dari. No Pashto, no English, no abbreviations.
+- Internal code identifiers may remain English.
+- User-visible labels, buttons, menus, tables, forms, messages, toasts, placeholders, reports, exports, print labels, dashboards, alerts, and notifications must not contain English.
+
+Work safely, incrementally, and preserve existing data.
+
+When all work is finished, share a detailed Pashto completion report explaining exactly what was done, what remains unfinished, which files changed, and the build result.
+Do not stop with only “done” or “completed”.
+A detailed final report is mandatory.
+
+==================================================
+1) COMPLETE PURE PASHTO / PURE DARI LOCALIZATION
+==================================================
+
+Fix all visible English, abbreviations, mixed Pashto/Dari labels, and Pashto-written English words.
+
+Examples:
+- د موجودي لیجر / Ledger / لیجر must become:
+  Pashto: د راکړې ورکړې ثبت
+  Dari: ثبت معاملات
+
+- Dashboard:
+  Pashto: عمومي پاڼه
+  Dari: صفحه عمومی
+
+- Traceability:
+  Pashto: د اجناسو تعقیب
+  Dari: پیگیری اجناس
+
+- Barcode / QR visible label:
+  Pashto: د تعقیب کوډ
+  Dari: کد پیگیری
+
+- SI9:
+  Everywhere write:
+  ف، س، ۹
+
+- FS5 / CS5 / سی ۵:
+  Everywhere write:
+  ف، س، ۵
+
+No mixed labels like:
+- نوعیت/ مشخصات
+- عمومي پاڼه/ غوښتنه
+- د غوښتنې علت/ دلیل
+
+If language is Pashto, show only Pashto.
+If language is Dari, show only Dari.
+
+Also ensure language switching updates all visible menus/pages, including:
+- حذف شوي معلومات
+- Trash/Bin menu
+- dashboards
+- reports
+- forms viewer
+- notification dropdown
+- settings
+- role/user management
+
+==================================================
+2) FIX LANGUAGE SWITCHER TEXT
+==================================================
+
+Navbar language button currently shows:
+- ps
+- Dr
+
+Replace with:
+- پښتو
+- دری
+
+Keep language switching working.
+Do not change navbar layout except this text.
+
+==================================================
+3) USER MANAGEMENT EDIT SAVE BUTTON
+==================================================
+
+In User Management, when editing a user, the edit form currently has only:
+- لغوه
+
+Add save button:
+Pashto:
+- ذخیره
+or
+- تایید او ذخیره
+
+Dari:
+- ذخیره
+or
+- تایید و ذخیره
+
+Super Admin must be able to edit:
+- name
+- email
+- role
+- permissions
+- password reset/change
+
+Security:
+- Do NOT show old password.
+- Password field blank on edit.
+- Update password only if Super Admin enters new password.
+- Hash password if backend auth is used.
+- Use Firebase-safe method if Firebase Auth is active.
+- Block duplicate email.
+- Only Super Admin can edit email/password/role/permissions.
+
+==================================================
+4) CHECKLIST CRUD FOR SUPER ADMIN + REQUESTER ITEM SELECTION
+==================================================
+
+Use the uploaded checklist file as official item source.
+
+Super Admin must have checklist CRUD:
+- create
+- view
+- update
+- delete/soft delete
+- search/filter
+
+Requester must select item only from checklist when creating request.
+Requester must not freely type random item names if checklist data exists.
+
+Checklist item supports:
+- item name
+- category
+- unit
+- price if available
+- specification if still needed
+- code if available
+
+If checklist already contains specification/type, do not force requester to retype it.
+
+Do not change unrelated request fields.
+
+==================================================
+5) REQUEST FORM MUST BE 100% CONNECTED TO PROPOSAL TABLE
+==================================================
+
+New request form item rows must synchronize with Proposal form table.
+
+Proposal table must receive:
+- item name
+- quantity
+- unit
+- price
+- total price if available
+- category/checklist item info
+- request reason/subject where applicable
+
+Do NOT change official form design/layout.
+Only connect data.
+
+Under “السلام علیکم” in Proposal, keep template text but dynamically replace request-specific values.
+
+==================================================
+6) ITEM PRICE + STOCK IN/OUT DETAILS + TRACEABILITY
+==================================================
+
+When adding item:
+- price field must exist and be saved.
+
+Stock In must save:
+- item
+- quantity
+- price
+- date
+- person who brought/supplied item
+- document/reference if available
+- notes
+
+Stock Out must save:
+- item
+- quantity
+- price if needed
+- date
+- receiver name
+- receiver ID
+- faculty
+- department
+- person
+- request ID if linked
+
+When item is issued/out:
+- stock decreases automatically
+- item registers under receiver in Traceability
+- prevent negative stock
+- prevent duplicate stock deduction
+
+==================================================
+7) ROLE-BASED CONTROL DASHBOARDS, NOT WRONG WORK MENUS
+==================================================
+
+Super Admin should control/monitor, not perform every operational task.
+
+Super Admin dashboard should show:
+- today’s stock-in
+- item types received
+- quantities
+- unit prices
+- total prices
+- specifications
+- requests summary
+- procurement summary
+- receiving summary
+- audit summary
+
+Operational forms belong to proper roles:
+- Requester creates requests
+- Request Confirmer confirms
+- Admin decides
+- Procurement Director handles procurement
+- Warehouse Director handles delivery/receiving
+- Warehouse Entry Person enters stock
+
+Super Admin keeps authority to view, control, approve, configure, audit, and manage.
+
+Each user must have role-specific clickable dashboard with relevant data.
+Use professional icons, not childish emojis.
+
+==================================================
+8) PER-FACULTY REQUESTER ACCOUNT ISOLATION
+==================================================
+
+Each requester must be isolated by:
+- user
+- faculty
+- department
+- level
+- name
+- email
+- password/auth ID
+- phone
+- role
+
+Computer Science requester must not see Law requester’s requests/forms/data.
+
+Apply isolation to:
+- requests
+- forms
+- traceability
+- dashboards
+- reports visible to requester
+- notifications
+- saved faculty logo/title/form header info
+
+Super Admin still has full visibility.
+
+==================================================
+9) FACULTY FORM IDENTITY SAVED PER REQUESTER
+==================================================
+
+Each faculty requester may add:
+- faculty logo
+- title
+- faculty name
+- form header data
+
+This must be saved per requester/faculty and persist after refresh/logout/login.
+
+A requester must not see another faculty requester’s header/logo data.
+
+Do not change official form layout.
+Only inject correct per-requester/per-faculty data.
+
+==================================================
+10) DATE SYSTEM SETTINGS + SERVER/ONLINE DATE SOURCE
+==================================================
+
+Add date setting in Settings menu:
+- شمسي
+- قمري
+- میلادي
+
+Super Admin can choose system-wide date format.
+
+All dates must follow selected format:
+- dashboard
+- charts
+- reports
+- requests
+- inventory
+- procurement
+- receiving
+- audit logs
+- forms data
+- print/export
+
+Months must match selected calendar.
+
+Do not blindly trust computer date.
+When online/backend available, use server time.
+
+If missing, add safe endpoint:
+GET /api/time/now
+
+Response:
+- isoDate
+- shamsiDate
+- qamariDate
+- gregorianDate
+- serverTime
+
+If offline, clearly mark local/cached date if used.
+
+==================================================
+11) DASHBOARD CHART YEAR FILTER
+==================================================
+
+Dashboard chart shows month and quantity but year is unclear.
+
+Add:
+- year label or year filter
+- کال
+- میاشت
+- مقدار / تعداد
+
+Use selected global date format from Settings.
+Months must match selected date system.
+Do not redesign chart.
+
+==================================================
+12) AUDIT LOG MUST RECORD ALL IMPORTANT USER ACTIONS
+==================================================
+
+Audit must record:
+- item create/update/delete
+- stock in/out
+- request create/update/submit/confirm/approve/reject
+- procurement actions
+- receiving actions
+- delivery actions
+- user create/update/role change/password reset
+- settings changes
+- date format changes
+- checklist CRUD
+- form editor changes
+- trash/recovery/permanent delete attempts
+- failed unauthorized access
+- failed delete credential verification
+- Excel upload errors and duplicate detection
+- QR code generation/printing
+- system alerts and important notifications
+
+Each audit record should include:
+- action type
+- user ID
+- user name
+- user role
+- target module
+- target record ID
+- old value if available
+- new value if available
+- reason if applicable
+- date/time from server date system
+- online/offline status if available
+
+Audit logs must never be deleted by normal users.
+Delete reason must remain permanently in audit log.
+
+==================================================
+13) SECURE DELETE: EMAIL + PASSWORD + REASON REQUIRED
+==================================================
+
+Before any delete:
+- ask current user email
+- ask current user password
+- ask delete reason
+- verify credentials
+- verify permission
+- if valid, move data to Trash/Bin
+- do not permanently delete directly unless user has permission and confirms again
+- write audit log with delete reason
+- delete reason must never be removed from audit log
+
+Apply to:
+- inventory
+- requests
+- procurement
+- receiving
+- traceability
+- users
+- checklist items
+- trash actions
+- permanent delete
+- recovery if policy requires
+
+Never store/log/show password.
+
+==================================================
+14) SECURITY AGAINST INJECTION AND HIJACKING
+==================================================
+
+Harden system with lightweight protections:
+- parameterized SQL queries/prepared statements
+- validate all inputs
+- sanitize user-entered HTML/text before rendering
+- prevent unsafe script injection in forms, notifications, reports, editable fields
+- avoid dangerouslySetInnerHTML unless sanitized and necessary
+- do not expose tokens in logs
+- do not store sensitive tokens in localStorage
+- validate role/permission server-side
+- safe headers where backend supports them
+- strict CORS where practical
+- prevent IDOR: users cannot access another requester’s records by changing ID
+- prevent session/profile hijack by checking current user role/ownership
+
+Do not break offline/local demo mode.
+
+==================================================
+15) EXCEL UPLOAD DUPLICATE VALIDATION
+==================================================
+
+When Excel sheet is uploaded:
+- validate before import
+- detect duplicates within sheet
+- detect duplicates against existing database/local data
+- show exact row numbers and fields
+- do not import bad rows silently
+- show Pashto/Dari alert:
+  - دا ځایونه اصلاح کړئ، تکراري معلومات پکې شته
+  - دا قطار ستونزه لري
+- allow user to fix and re-upload
+
+Apply to:
+- item import
+- checklist import
+- any relevant Excel upload
+
+==================================================
+16) AUTO UNIQUE ITEM CODE
+==================================================
+
+Every item must get automatic unique item code.
+
+Rules:
+- globally unique forever
+- no two items same code
+- user should not type item code manually
+- existing items without code get safe generated codes
+- code should be human-readable if possible
+- QR/barcode uses this code
+
+Prevent duplicates at frontend and backend/database level if possible.
+
+==================================================
+17) FONT SIZE SETTING FOR WHOLE SYSTEM
+==================================================
+
+In Settings, add Super Admin-only global font size control:
+- کوچنی
+- منځنی
+- لوی
+- ډېر لوی
+
+or slider if existing style supports it.
+
+Behavior:
+- applies to all users
+- applies to menus, dashboards, tables, forms, buttons, modals, reports
+- responsive
+- does not break layout
+- saved persistently
+
+Use CSS variables/rem scaling if practical.
+
+==================================================
+18) QR CODE PRINT RANGE
+==================================================
+
+When printing QR codes:
+- ask how many QR codes to print
+- user can enter quantity/range
+- generate that number of QR labels
+- do not duplicate item identity incorrectly
+- assignment-specific QR must represent unique assigned item/receiver/transaction
+
+==================================================
+19) UNIQUE QR PER FACULTY / DEPARTMENT / PERSON / ASSIGNMENT
+==================================================
+
+Even if item type is same, QR codes must differ per assigned item/person/faculty/department.
+
+QR must include or resolve to:
+- item code
+- item name
+- request ID
+- assignment ID
+- faculty
+- department
+- academic level
+- person/receiver
+- quantity
+- date
+- whether item was from warehouse stock or new procurement
+- delivery/FS5 reference if available
+
+When scanned:
+- show exact ownership/assignment
+- do not only show generic item type
+
+==================================================
+20) BARCODE / QR SCAN RESULT TABULAR DISPLAY
+==================================================
+
+When QR/barcode is scanned, show organized tables.
+
+Main item table:
+- د تعقیب کوډ
+- د جنس نوم
+- کټګوري
+- واحد
+- مقدار
+- موجوده سټاک
+- ګدام
+- قیمت
+- د ثبت نېټه
+- حالت
+
+Assignment table:
+- پوهنځی
+- ډیپارټمنټ
+- تحصیلي درجه
+- شخص
+- مقدار
+- د ورکړې نېټه
+- غوښتنه
+- مرجع
+
+Transaction table:
+- نېټه
+- ډول: داخل / خارج
+- مقدار
+- یادښت
+- سند / مرجع
+
+No English labels.
+Works on mobile and desktop.
+Keep scanner functionality.
+
+==================================================
+21) DOCUMENT EDITOR ONLY FOR SUPER ADMIN
+==================================================
+
+Official forms have Document Editor section.
+
+Required:
+- only Super Admin can see/use Document Editor
+- other users must not see it
+- Super Admin can edit template/document settings
+- saved edit appears for all users
+- do not break official form layout/print
+- normal users cannot edit templates
+
+==================================================
+22) FORM VALIDATION EVERYWHERE
+==================================================
+
+Validate all required fields:
+- no empty required fields
+- number fields numeric
+- no negative quantity/price
+- email valid
+- phone valid if required
+- role required
+- faculty/department required
+- request reason required
+- checklist item required
+- date required
+- duplicate prevention
+- stock cannot go negative
+- request cannot submit without required data
+
+Show Pashto/Dari validation messages only.
+Do not change design.
+
+==================================================
+23) DETAILED 15 PERMISSIONS
+==================================================
+
+The 15 permissions must have sub-permissions:
+- view
+- create
+- update
+- delete
+- print
+- export
+- approve
+- reject
+- recover
+- permanent delete
+- manage settings
+- assign roles
+- view audit
+- edit forms
+
+Example:
+Permission: د رول مدیریت
+Sub-permissions:
+- لیدل
+- اضافه کول
+- سمون
+- حذف
+- صلاحیت ورکول
+
+Role Management UI must allow Super Admin to control details.
+Enforce permissions in UI and action logic.
+Do not just hide buttons; block unauthorized actions.
+
+==================================================
+24) RETURNS / RETURNED ITEMS SYSTEM
+==================================================
+
+Add/fix return section:
+- return before final warehouse entry if applicable
+- return after assignment/delivery
+- return damaged item
+- return usable item
+- return reason
+- returned by
+- received by
+- date
+- condition
+- item code/QR
+- request reference
+
+Stock behavior:
+- usable returned item increases stock
+- damaged/rejected item marked unusable or adjusted according to type
+- do not corrupt assigned item records
+- keep traceability history
+- add audit log
+
+==================================================
+25) ADD ITEM FLOW: CATEGORY FIRST, THEN ITEM
+==================================================
+
+In Add Item:
+- first select category
+- then select/add item under that category
+- item dropdown/list depends on selected category if checklist/category data exists
+- do not allow item selection before category if dependency exists
+- keep UI style
+- do not break existing items
+
+==================================================
+26) ROLE-SPECIFIC DASHBOARDS AND PROFESSIONAL ICONS
+==================================================
+
+Do not show same global dashboard to every user.
+
+Dashboards:
+- Super Admin: global control dashboard
+- Admin: admin workflow dashboard
+- Requester: own requests/status dashboard
+- Request Confirmer: assigned confirmations dashboard
+- Procurement Director: procurement dashboard
+- Warehouse Director: receiving/delivery dashboard
+- Warehouse Entry Person: stock entry dashboard
+
+Each dashboard:
+- clickable
+- uses only that user’s scope/data
+- professional icons
+- no childish emojis
+- existing design style preserved
+
+==================================================
+27) ALL SYSTEM ALERTS MUST ALSO APPEAR IN NAVBAR NOTIFICATION BUTTON + FIX DROPDOWN POSITION
+==================================================
+
+Problem A:
+Any system alert, warning, success message, workflow update, request update, stock alert, receiving alert, delete/trash alert, audit alert, or important system notification must also appear inside the Notification button/list located on the left side of the navbar.
+
+Currently, some alerts appear only as toast/message or inside a page, but they are not stored/shown in the navbar notification list.
+
+Required:
+Every important system alert/notification must be added to the navbar Notification button list.
+
+Apply to:
+- request created
+- request submitted
+- request confirmed
+- request approved/rejected
+- progress tracking update
+- stock in
+- stock out
+- low stock alert
+- item received
+- item delivered
+- procurement update
+- comparison/winner selected
+- purchase order created
+- official form update
+- delete/trash action
+- recovery action
+- failed permission/security action
+- audit important event
+- Excel upload duplicate/error alert
+- QR/barcode generation/print alert
+- return item alert
+- user/role/permission update alert
+- system settings/date/font changes
+
+Required behavior:
+- Show notification count/badge on navbar notification button.
+- Notification list must show newest notifications first.
+- Notification must include:
+  - title
+  - message
+  - type: success / warning / error / info
+  - related module
+  - related record ID if available
+  - date/time using system date format
+  - read/unread status
+- User should be able to mark notification as read if this feature exists.
+- Do not duplicate the same notification repeatedly.
+- Keep localStorage fallback if backend is offline.
+- If backend notification API exists, use it.
+- If not, use existing local notification store safely.
+- No visible English labels.
+
+Visible labels:
+Pashto:
+- خبرتیاوې
+- نوې خبرتیا
+- لوستل شوې
+- نه لوستل شوې
+- ټولې خبرتیاوې
+
+Dari:
+- اطلاعیه‌ها
+- اطلاعیه جدید
+- خوانده‌شده
+- خوانده‌نشده
+- همه اطلاعیه‌ها
+
+Problem B:
+When clicking the navbar notification button, the opened notification dropdown/list appears too far to the left and part of it becomes hidden/cut off.
+
+Required UI fix:
+- Adjust notification dropdown position so it is fully visible.
+- Move it slightly to the right if it is currently hidden on the left side.
+- Dropdown must stay inside screen boundaries.
+- Must work on:
+  - desktop
+  - laptop
+  - tablet
+  - mobile
+  - RTL layout
+- Do not redesign the header/navbar.
+- Only fix dropdown alignment/responsiveness.
+
+Inspect:
+- src/layout/AppHeader.tsx
+- src/components/header/*
+- src/components/NotificationDropdown*
+- src/pages/Notifications/*
+- src/context/NotificationContext* if exists
+- src/firebase/notifications* if exists
+- src/api/apiClient.ts
+- backend/src/routes/notifications.routes.ts if exists
+- backend/src/controllers/notifications.controller.ts if exists
+- backend/src/services/notifications.service.ts if exists
+
+Required result:
+- Every important system alert also appears in navbar notification list.
+- Notification badge/count updates correctly.
+- Notification dropdown opens fully visible.
+- Dropdown is no longer cut off or hidden on the left.
+- RTL layout remains correct.
+- No unrelated navbar design changes.
+
+==================================================
+BUILD CHECK ONLY
+==================================================
+
+Run:
+npm run build
+
+If backend changed:
+cd backend
+npm run build
+
+Do NOT add or run unit tests.
+Do NOT add testing libraries.
+Do NOT create test files.
+
+==================================================
+FINAL COMPLETION REPORT REQUIRED
+==================================================
+
+After finishing the work, provide a clear Pashto report.
+
+The report must be honest and specific.
+Do NOT give vague summary.
+Do NOT say “everything is completed” unless it is actually completed and build passed.
+
+Use this exact structure:
+
+# د ترسره شوو اصلاحاتو بشپړ راپور
+
+## ۱) عمومي نتیجه
+- ټول غوښتل شوي Requirements: 27
+- بشپړ ترسره شوي: X / 27
+- نیمګړي ترسره شوي: X / 27
+- ترسره نه شوي: X / 27
+- Manual review ته اړتیا لري: X / 27
+
+## ۲) د هر Requirement حالت
+
+For each numbered requirement from 1 to 27, report:
+
+1. Requirement number
+2. Requirement title
+3. Status:
+   - ✅ بشپړ ترسره شو
+   - 🟡 نیمګړی ترسره شو
+   - ❌ ترسره نه شو
+   - ⚠️ Manual review ته اړتیا لري
+4. What exactly was changed
+5. Files changed
+6. How it works now
+7. Security / validation behavior if relevant
+8. Remaining limitation if any
+
+Use this format for every item:
+
+### 1) Requirement name
+- حالت:
+- بدل شوي فایلونه:
+- ترسره شوي کارونه:
+- اوس څنګه کار کوي:
+- پاتې ستونزې:
+- یادونه:
+
+### 27) Navbar notifications and dropdown position
+- حالت:
+- بدل شوي فایلونه:
+- ترسره شوي کارونه:
+- کوم alerts اوس Notification button ته اضافه کېږي:
+- Notification dropdown position څنګه اصلاح شو:
+- پاتې ستونزې:
+- یادونه:
+
+## ۳) ټول بدل شوي فایلونه
+
+List every changed file exactly.
+For each file, write one short reason:
+- why it was changed
+- which requirement it belongs to
+
+## ۴) هغه فایلونه / برخې چې قصداً ونه لمس شوې
+
+Confirm clearly:
+- Official forms design/layout/print style was not changed.
+- Unrelated modules were not changed.
+- Existing workflow was not broken intentionally.
+- Existing data was preserved.
+- No test files were created.
+- No testing libraries were added.
+
+## ۵) Build result
+
+Run:
+npm run build
+
+If backend changed, also run:
+cd backend
+npm run build
+
+Report exact result:
+- Frontend build: passed / failed
+- Backend build: passed / failed / not changed
+- If failed, paste exact error summary and explain what remains.
+
+## ۶) مهم پاتې کارونه
+
+If any requirement is not fully completed, list it clearly:
+- پاتې Requirement:
+- ولې پاتې شو:
+- د بشپړولو لپاره څه ته اړتیا لري:
+- ایا دا د سیستم دفاع ته خطر لري؟ High / Medium / Low
+
+## ۷) د دفاع لپاره لنډه نتیجه
+
+Write a short defense-ready summary in Pashto:
+- کوم مهم کمنټونه حل شول؟
+- کومې برخې اوس قوي دي؟
+- کومې برخې باید په احتیاط وښودل شي؟
+
+IMPORTANT REPORTING RULES:
+- Be honest.
+- Do not hide unfinished work.
+- Do not claim completion without evidence.
+- If quota/time/build stopped the work, say exactly where it stopped.
+- If a change was not safe to implement, explain why.
+- If a requirement needs manual testing, mark it clearly.
+- If any file was changed outside requested scope, report it clearly and explain why.
+- Do not stop with only “done” or “completed”.
+A detailed final report is mandatory.
