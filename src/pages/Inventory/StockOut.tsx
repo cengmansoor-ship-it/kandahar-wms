@@ -127,8 +127,7 @@ export default function StockOut() {
     setLoading(true);
     try {
       const qrPayload = buildQrPayload();
-      const qrJson = JSON.stringify(qrPayload);
-      await apiClient.post("/inventory/stock-out", {
+      const res: any = await apiClient.post("/inventory/stock-out", {
         item_id: Number(id),
         quantity: form.quantity,
         unit_price: form.unit_price || undefined,
@@ -144,7 +143,8 @@ export default function StockOut() {
         notes: form.notes || undefined,
         assignment_qr_payload: qrPayload,
       });
-      setAssignedQr(qrJson);
+      const finalPayload = { ...qrPayload, transaction_id: res?.transaction_id ?? null };
+      setAssignedQr(JSON.stringify(finalPayload));
     } catch (err: any) {
       setError(err.message || "خطا پیښه شوه.");
     } finally {

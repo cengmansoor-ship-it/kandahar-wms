@@ -25,6 +25,14 @@ function extractTrackingCode(raw: string): string {
   return trimmed;
 }
 
+function tryParseAssignmentQr(raw: string): any | null {
+  try {
+    const obj = JSON.parse(raw.trim());
+    if (obj && (obj.item_code || obj.receiver_name || obj.transaction_id)) return obj;
+  } catch (_) {}
+  return null;
+}
+
 export default function BarcodeScanner() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -43,6 +51,7 @@ export default function BarcodeScanner() {
 
   const [qrPrintTx, setQrPrintTx] = useState<any | null>(null);
   const [qrPrintCount, setQrPrintCount] = useState(1);
+  const [assignmentQrResult, setAssignmentQrResult] = useState<any | null>(null);
 
   const [searchParams] = useSearchParams();
 
@@ -50,11 +59,20 @@ export default function BarcodeScanner() {
   const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
 
   const handleSearch = useCallback(async (rawCode: string) => {
+    if (!rawCode?.trim()) return;
+    const assignment = tryParseAssignmentQr(rawCode);
+    if (assignment) {
+      setScanResult(null);
+      setError(null);
+      setAssignmentQrResult(assignment);
+      return;
+    }
     const code = extractTrackingCode(rawCode);
     if (!code) return;
     setLoading(true);
     setError(null);
     setScanResult(null);
+    setAssignmentQrResult(null);
     try {
       const data = await apiClient.get(`/inventory/barcode/${encodeURIComponent(code)}`);
       setScanResult(data);
@@ -314,6 +332,40 @@ export default function BarcodeScanner() {
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 p-4 text-right" dir="rtl">
             <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        {assignmentQrResult && (
+          <div className="rounded-2xl border border-purple-200 bg-white dark:border-purple-900/30 dark:bg-white/[0.03] p-5 space-y-3" dir="rtl">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-base font-bold text-purple-700 dark:text-purple-400">✓ د تسلیم QR سکین شو</h3>
+              <Button variant="outline" className="text-sm text-purple-600 border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400"
+                onClick={() => { setQrPrintTx(assignmentQrResult); setQrPrintCount(1); }}>
+                🖨️ چاپ
+              </Button>
+            </div>
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                {[
+                  { label: "د جنس کوډ", value: assignmentQrResult.item_code },
+                  { label: "د جنس نوم", value: assignmentQrResult.item_name },
+                  { label: "مقدار", value: assignmentQrResult.quantity != null ? String(assignmentQrResult.quantity) : undefined },
+                  { label: "اخیستونکی", value: assignmentQrResult.receiver_name },
+                  { label: "د هویت کارت", value: assignmentQrResult.receiver_id_no },
+                  { label: "پوهنځی", value: assignmentQrResult.faculty },
+                  { label: "برخه", value: assignmentQrResult.department },
+                  { label: "FS5 حواله", value: assignmentQrResult.fs5_reference },
+                  { label: "د غوښتنې شمیره", value: assignmentQrResult.linked_request_id != null ? String(assignmentQrResult.linked_request_id) : undefined },
+                  { label: "د معاملې ID", value: assignmentQrResult.transaction_id != null ? String(assignmentQrResult.transaction_id) : undefined },
+                  { label: "نیټه", value: assignmentQrResult.date },
+                ].filter(r => r.value).map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? "bg-gray-50 dark:bg-white/[0.02]" : ""}>
+                    <td className="py-1.5 px-3 font-medium text-gray-500 dark:text-gray-400 w-40">{row.label}</td>
+                    <td className="py-1.5 px-3 text-gray-800 dark:text-gray-200">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 

@@ -575,7 +575,7 @@ export class InventoryService {
       `, [userId, 'STOCK_OUT', 'TRANSACTION', txResult.insertId, JSON.stringify({ item_id: data.item_id, quantity: data.quantity })]);
 
       await connection.commit();
-      return { previous_stock: prevStock, new_stock: newStock };
+      return { previous_stock: prevStock, new_stock: newStock, transaction_id: txResult.insertId };
     } catch (error) {
       await connection.rollback();
       throw error;

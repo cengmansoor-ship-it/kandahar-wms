@@ -170,6 +170,11 @@ export default function CreateRequest() {
       setError(pick("مهرباني وکړئ د هر جنس نوم او مقدار ډک کړئ.", "لطفاً نام و مقدار هر جنس را وارد کنید."));
       return;
     }
+    const unselected = checklistItems.length > 0 && selectedItems.find(i => !i.checklistId);
+    if (unselected) {
+      setError(pick("مهرباني وکړئ د چکلیسټ نه جنس غوره کړئ. د خپل سري لیکل مجاز ندي.", "لطفاً جنس را از چک‌لیست انتخاب کنید. متن آزاد مجاز نیست."));
+      return;
+    }
 
     setLoading(true);
     try {
@@ -350,7 +355,7 @@ export default function CreateRequest() {
                           value={sItem.searchText}
                           onChange={e => {
                             const updated = [...selectedItems];
-                            updated[index] = { ...updated[index], searchText: e.target.value, showDropdown: true, checklistId: "", name: e.target.value };
+                            updated[index] = { ...updated[index], searchText: e.target.value, showDropdown: true, checklistId: "", name: "" };
                             setSelectedItems(updated);
                           }}
                           onFocus={() => {
