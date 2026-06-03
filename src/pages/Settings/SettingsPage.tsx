@@ -6,6 +6,14 @@ import { getLocalItem, setLocalItem } from "../../firebase/localStore";
 import { getCurrentHijriDates } from "../../utils/dateUtils";
 import { useLanguage } from "../../context/LanguageContext";
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from "../../constants/roles";
+import { useAuth } from "../../context/AuthContext";
+
+const FONT_SIZE_OPTIONS = [
+  { key: "small",  label_ps: "کوچنی",   label_dr: "کوچک",      px: "14px" },
+  { key: "medium", label_ps: "منځنی",   label_dr: "متوسط",     px: "16px" },
+  { key: "large",  label_ps: "لوی",     label_dr: "بزرگ",      px: "18px" },
+  { key: "xlarge", label_ps: "ډېر لوی", label_dr: "خیلی بزرگ", px: "20px" },
+];
 
 const limitOptions = [0, 5, 10, 20, 30];
 
@@ -58,6 +66,20 @@ export default function SettingsPage() {
   const [dailyLimit, setDailyLimit] = useState<number>(Number((saved as any).dailyLimit) || 10);
   const [message, setMessage] = useState("");
   const { lang, setLang, pick } = useLanguage();
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
+
+  const [fontSize, setFontSizeState] = useState<string>(
+    () => localStorage.getItem("wms_font_size") || "medium"
+  );
+
+  const applyFontSize = (key: string) => {
+    const opt = FONT_SIZE_OPTIONS.find(o => o.key === key);
+    if (!opt) return;
+    document.documentElement.style.fontSize = opt.px;
+    localStorage.setItem("wms_font_size", key);
+    setFontSizeState(key);
+  };
 
   const [emailConfigs, setEmailConfigs] = useState<EmailConfig[]>([]);
   const [emailForm, setEmailForm] = useState<EmailForm>(emptyForm);
@@ -514,6 +536,45 @@ export default function SettingsPage() {
               : "✓ اکنون سیستم زبان دری را استفاده می‌کند"}
           </p>
         </div>
+
+        {/* Font Size Setting — Super Admin only */}
+        {isSuperAdmin && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "120ms" }}>
+            <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90">
+              {pick("د متن اندازه", "اندازه متن")}
+            </h2>
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              {pick(
+                "د ټول سیستم د متن اندازه وټاکئ. دغه بدلون سمدستي پلي کیږي.",
+                "اندازه متن کل سیستم را انتخاب کنید. این تغییر فوری اعمال می‌شود."
+              )}
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {FONT_SIZE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => applyFontSize(opt.key)}
+                  className={`rounded-xl border-2 py-3 px-4 text-center transition-all ${
+                    fontSize === opt.key
+                      ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                  }`}
+                >
+                  <div className="font-bold" style={{ fontSize: opt.px }}>
+                    {pick(opt.label_ps, opt.label_dr)}
+                  </div>
+                  <div className="text-xs mt-1 opacity-60">{opt.px}</div>
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">
+              {pick(
+                `✓ اوس د متن اندازه "${FONT_SIZE_OPTIONS.find(o => o.key === fontSize)?.[lang === "ps" ? "label_ps" : "label_dr"] ?? fontSize}" ده`,
+                `✓ اندازه متن فعلی "${FONT_SIZE_OPTIONS.find(o => o.key === fontSize)?.[lang === "ps" ? "label_ps" : "label_dr"] ?? fontSize}" است`
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "160ms" }}>

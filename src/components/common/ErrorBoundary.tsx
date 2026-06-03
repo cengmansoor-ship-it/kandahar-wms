@@ -35,7 +35,7 @@ class ErrorBoundary extends Component<Props, State> {
           </p>
           <div className="flex gap-4">
             <Button onClick={() => window.location.reload()}>صفحه تازه کول</Button>
-            <Button variant="outline" onClick={() => window.location.href = "/"}>Dashboard ته تلل</Button>
+            <Button variant="outline" onClick={() => window.location.href = "/"}>لوحه اصلي ته تلل</Button>
           </div>
         </div>
       );

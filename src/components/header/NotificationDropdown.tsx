@@ -117,7 +117,10 @@ export default function NotificationDropdown() {
   const handleClick = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      const right = Math.max(8, window.innerWidth - rect.right);
+      const dropdownWidth = Math.min(361, window.innerWidth - 32);
+      const rightFromRight = window.innerWidth - rect.right;
+      const maxRight = window.innerWidth - dropdownWidth - 8;
+      const right = Math.max(8, Math.min(rightFromRight, maxRight));
       setDropdownPos({ top: rect.bottom + 8, right });
     }
     setIsOpen(o => !o);

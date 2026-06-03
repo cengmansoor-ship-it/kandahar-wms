@@ -10,6 +10,7 @@ import type { FS5Document } from "../../firebase/receiving";
 import { getLocalItem, setLocalItem } from "../../firebase/localStore";
 import { buildAllFormsData } from "../../utils/officialFormDataAdapter";
 import { useAuth } from "../../context/AuthContext";
+import { ROLES } from "../../constants/roles";
 
 type FormMeta = {
   id: OfficialTemplateId;
@@ -22,12 +23,12 @@ type FormMeta = {
 
 const forms: FormMeta[] = [
   { id: "formTemplate0", key: "proposal",      title: "پیشنهاد",       menu: "غوښتنې",      phase: "د غوښتنې پیل",            minProgress: 0  },
-  { id: "formTemplate5", key: "si9",           title: "سیو ۹",         menu: "غوښتنې",      phase: "د غوښتنې رسمي ضمیمه",     minProgress: 0  },
+  { id: "formTemplate5", key: "si9",           title: "ف، س، ۹",       menu: "غوښتنې",      phase: "د غوښتنې رسمي ضمیمه",     minProgress: 0  },
   { id: "formTemplate1", key: "tender",        title: "جګړه پاڼه",     menu: "تدارکات",     phase: "درې قیمتونه",              minProgress: 20 },
   { id: "formTemplate2", key: "comparison",    title: "فورم مقایسوي",  menu: "تدارکات",     phase: "د ټیټې بیې ټاکنه",        minProgress: 35 },
   { id: "formTemplate3", key: "purchaseOrder", title: "آمر خریداري",   menu: "تدارکات",     phase: "د ګټونکي شرکت امر",       minProgress: 55 },
   { id: "formTemplate4", key: "receiptReport", title: "راپور رسید",    menu: "ترلاسه کول",  phase: "ګدام ته داخلول",           minProgress: 65 },
-  { id: "formTemplate6", key: "fs5",           title: "ف س ۵",         menu: "ترلاسه کول",  phase: "تسلیمي او موجودي کمول",   minProgress: 80 },
+  { id: "formTemplate6", key: "fs5",           title: "ف، س، ۵",       menu: "ترلاسه کول",  phase: "تسلیمي او موجودي کمول",   minProgress: 80 },
 ];
 
 const menus = ["ټول فورمونه", "غوښتنې", "تدارکات", "ترلاسه کول"];
@@ -548,7 +549,8 @@ export default function OfficialFormsPage() {
             requestId={requestId || undefined}
             allFormsData={Object.keys(allFormsData).length > 0 ? allFormsData : undefined}
             initialData={allFormsData[activeTemplateId]}
-            onSave={handleSave}
+            onSave={profile?.role === ROLES.SUPER_ADMIN ? handleSave : undefined}
+            readOnly={profile?.role !== ROLES.SUPER_ADMIN}
           />
         </div>
 

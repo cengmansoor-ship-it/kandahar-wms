@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 export type OfficialTemplateId =
   | "formTemplate0"
@@ -49,6 +50,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
   onSave,
   readOnly = false,
 }) => {
+  const { pick } = useLanguage();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
   const [iframeReady, setIframeReady] = useState(false);
@@ -264,7 +266,7 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
           {/* Percentage badge — click to reset */}
           <button
             onClick={handleZoomReset}
-            title="Reset to 100%"
+            title={pick("۱۰۰٪ ته راستول", "بازگشت به ۱۰۰٪")}
             className="min-w-[3.2rem] h-7 px-2 rounded-lg border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-blue-50 hover:border-blue-400 transition tabular-nums"
           >
             {zoom}%
