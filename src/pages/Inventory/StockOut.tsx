@@ -109,6 +109,8 @@ export default function StockOut() {
       fs5_reference: form.fs5_reference || null,
       source: form.source_type,
       date: new Date().toLocaleDateString("fa-AF"),
+      assignment_id: null as number | null,
+      transaction_id: null as number | null,
     };
   };
 
@@ -143,7 +145,8 @@ export default function StockOut() {
         notes: form.notes || undefined,
         assignment_qr_payload: qrPayload,
       });
-      const finalPayload = { ...qrPayload, transaction_id: res?.transaction_id ?? null };
+      const txId = res?.transaction_id ?? null;
+      const finalPayload = { ...qrPayload, transaction_id: txId, assignment_id: txId };
       setAssignedQr(JSON.stringify(finalPayload));
     } catch (err: any) {
       setError(err.message || "خطا پیښه شوه.");
