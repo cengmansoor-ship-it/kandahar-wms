@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import PageMeta from "../../components/common/PageMeta";
@@ -263,17 +264,19 @@ export default function ForecastingReport() {
         {/* ── KPI Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label:"ټول جنسونه", value: items.length, sub:"د ګدام موجودي", color:"text-blue-600", bg:"bg-blue-50 dark:bg-blue-900/20", icon:"📦" },
-            { label:"د کم موجودۍ خبرداري", value: lowStock.length, sub:"د لږ تر لږه کچې لاندې", color:"text-red-600", bg:"bg-red-50 dark:bg-red-900/20", icon:"⚠️" },
-            { label:"روان غوښتنې", value: inProgressCount, sub:"د پروسې لاندې", color:"text-indigo-600", bg:"bg-indigo-50 dark:bg-indigo-900/20", icon:"🔄" },
-            { label:"د کال ټول مصرف", value: totalOutYear.toLocaleString(), sub:`داخل: ${totalInYear.toLocaleString()}`, color:"text-green-600", bg:"bg-green-50 dark:bg-green-900/20", icon:"📊" },
+            { label:"ټول جنسونه", value: items.length, sub:"د ګدام موجودي", color:"text-blue-600", bg:"bg-blue-50 dark:bg-blue-900/20", icon:"📦", to:"/inventory/items" },
+            { label:"د کم موجودۍ خبرداري", value: lowStock.length, sub:"د لږ تر لږه کچې لاندې", color:"text-red-600", bg:"bg-red-50 dark:bg-red-900/20", icon:"⚠️", to:"/inventory/items?filter=low" },
+            { label:"روان غوښتنې", value: inProgressCount, sub:"د پروسې لاندې", color:"text-indigo-600", bg:"bg-indigo-50 dark:bg-indigo-900/20", icon:"🔄", to:"/requests" },
+            { label:"د کال ټول مصرف", value: totalOutYear.toLocaleString(), sub:`داخل: ${totalInYear.toLocaleString()}`, color:"text-green-600", bg:"bg-green-50 dark:bg-green-900/20", icon:"📊", to:"/inventory/ledger" },
           ].map(card => (
-            <div key={card.label} className={`rounded-2xl border border-gray-200 dark:border-gray-800 ${card.bg} p-5`}>
-              <div className="text-2xl mb-1">{card.icon}</div>
-              <div className={`text-2xl font-black ${card.color}`}>{card.value}</div>
-              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">{card.label}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{card.sub}</div>
-            </div>
+            <Link key={card.label} to={card.to}>
+              <div className={`rounded-2xl border border-gray-200 dark:border-gray-800 ${card.bg} p-5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all`}>
+                <div className="text-2xl mb-1">{card.icon}</div>
+                <div className={`text-2xl font-black ${card.color}`}>{card.value}</div>
+                <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">{card.label}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{card.sub}</div>
+              </div>
+            </Link>
           ))}
         </div>
 
@@ -291,16 +294,18 @@ export default function ForecastingReport() {
               {lowStock.length === 0 ? (
                 <p className="text-sm text-green-600 text-center py-6">✅ ټول جنسونه سم دي</p>
               ) : lowStock.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-2.5 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800">
-                  <div className="text-right">
-                    <div className="text-xs font-bold text-gray-800 dark:text-white/90">{item.name}</div>
-                    <div className="text-[11px] text-gray-500">لږ تر لږه: {item.minimumStockLevel} {item.unit}</div>
+                <Link key={item.id} to={`/inventory/items?filter=low`}>
+                  <div className="flex items-center justify-between p-2.5 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer">
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-gray-800 dark:text-white/90">{item.name}</div>
+                      <div className="text-[11px] text-gray-500">لږ تر لږه: {item.minimumStockLevel} {item.unit}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base font-black text-red-600">{item.currentQuantity}</div>
+                      <div className="text-[10px] text-red-500">{item.unit}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-base font-black text-red-600">{item.currentQuantity}</div>
-                    <div className="text-[10px] text-red-500">{item.unit}</div>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -391,7 +396,7 @@ export default function ForecastingReport() {
                   const needsReorder = item.currentQuantity <= item.minimumStockLevel;
                   const soonReorder  = !needsReorder && item.currentQuantity <= Math.ceil(fc.reorderPoint) * 1.5;
                   return (
-                    <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-white/5 ${needsReorder ? "bg-red-50/50 dark:bg-red-900/10" : ""}`}>
+                    <tr key={item.id} onClick={() => window.location.href = needsReorder ? `/inventory/items?filter=low` : `/inventory/items`} className={`hover:bg-blue-50/50 dark:hover:bg-white/[0.04] cursor-pointer transition-colors ${needsReorder ? "bg-red-50/50 dark:bg-red-900/10" : ""}`}>
                       <td className="py-2.5 px-2 font-semibold text-gray-800 dark:text-white/90">{item.name}</td>
                       <td className="py-2.5 px-2 text-gray-500">{item.unit}</td>
                       <td className={`py-2.5 px-2 font-bold ${needsReorder ? "text-red-600" : "text-green-600"}`}>{item.currentQuantity}</td>

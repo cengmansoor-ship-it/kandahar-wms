@@ -4,6 +4,16 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import SecureDeleteModal from "../../components/common/SecureDeleteModal";
 import { useAuth } from "../../context/AuthContext";
 
+const TYPE_ROUTE: Record<string, string> = {
+  item: "/inventory/items",
+  items: "/inventory/items",
+  request: "/requests",
+  requests: "/requests",
+  procurement: "/procurement",
+  warehouse_request: "/receiving",
+  receiving: "/receiving",
+};
+
 interface TrashRecord {
   id: number;
   table: string;
@@ -34,6 +44,7 @@ export default function TrashList() {
   const [records, setRecords] = useState<TrashRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<TrashRecord | null>(null);
@@ -91,16 +102,27 @@ export default function TrashList() {
     }
   };
 
+  const expiringCount = useMemo(() => records.filter(r => { const d = daysRemaining(r.deleted_at); return d !== null && d <= 7 && d > 0; }).length, [records]);
+  const typeCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    records.forEach(r => { map[r.type] = (map[r.type] || 0) + 1; });
+    return map;
+  }, [records]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return records;
-    const q = search.toLowerCase();
-    return records.filter(r =>
-      r.label.toLowerCase().includes(q) ||
-      r.type.toLowerCase().includes(q) ||
-      (r.deleted_by_name || "").toLowerCase().includes(q) ||
-      (r.delete_reason || "").toLowerCase().includes(q)
-    );
-  }, [records, search]);
+    let list = records;
+    if (typeFilter) list = list.filter(r => r.type === typeFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(r =>
+        r.label.toLowerCase().includes(q) ||
+        r.type.toLowerCase().includes(q) ||
+        (r.deleted_by_name || "").toLowerCase().includes(q) ||
+        (r.delete_reason || "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [records, search, typeFilter]);
 
   return (
     <>
@@ -123,6 +145,50 @@ export default function TrashList() {
             </button>
           </div>
         </div>
+
+        {/* Stat summary cards */}
+        {!loading && records.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <div
+              onClick={() => setTypeFilter(null)}
+              className={`rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${!typeFilter ? "border-primary bg-primary/5" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.02]"}`}
+            >
+              <div className="text-2xl mb-1">🗑️</div>
+              <div className="text-xl font-black text-gray-800 dark:text-white/90">{records.length}</div>
+              <div className="text-xs text-gray-500 mt-0.5">ټول حذف شوي</div>
+            </div>
+            <div
+              onClick={() => setTypeFilter(null)}
+              className={`rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${expiringCount > 0 ? "border-orange-200 bg-orange-50 dark:bg-orange-900/10" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.02]"}`}
+            >
+              <div className="text-2xl mb-1">⏳</div>
+              <div className={`text-xl font-black ${expiringCount > 0 ? "text-orange-600" : "text-gray-800 dark:text-white/90"}`}>{expiringCount}</div>
+              <div className="text-xs text-gray-500 mt-0.5">ژر ختمیږي (۷ ورځې)</div>
+            </div>
+            {Object.entries(typeCounts).slice(0, 2).map(([type, count]) => (
+              <div
+                key={type}
+                onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+                className={`rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${typeFilter === type ? "border-primary bg-primary/5" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.02]"}`}
+              >
+                <div className="text-2xl mb-1">📄</div>
+                <div className="text-xl font-black text-gray-800 dark:text-white/90">{count}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{type}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Active type filter chip */}
+        {typeFilter && (
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-xs text-gray-500">فلتر:</span>
+            <span className="inline-flex items-center gap-1 text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
+              {typeFilter}
+              <button onClick={() => setTypeFilter(null)} className="text-primary hover:text-red-500 font-bold ml-1">✕</button>
+            </span>
+          </div>
+        )}
 
         {msg && (
           <div className={`mb-4 rounded-lg border p-3 text-sm ${msg.ok

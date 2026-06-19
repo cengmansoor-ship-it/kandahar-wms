@@ -7,9 +7,9 @@ import SuperAdminMonitoringService, {
   ReceivingRecord,
 } from "../../services/superAdminMonitoringService";
 
-function StatCard({ label, value, color, icon }: { label: string; value: string | number; color: string; icon: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+function StatCard({ label, value, color, icon, to }: { label: string; value: string | number; color: string; icon: string; to?: string }) {
+  const inner = (
+    <div className={`rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] transition-all ${to ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5" : ""}`}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl">{icon}</span>
         <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
@@ -18,6 +18,7 @@ function StatCard({ label, value, color, icon }: { label: string; value: string 
       <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90">{value}</p>
     </div>
   );
+  return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -81,10 +82,10 @@ export default function ReceivingMonitor() {
             Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton-shimmer h-24 rounded-2xl" />)
           ) : summary ? (
             <>
-              <StatCard label={pick("ترلاسه کولو شمېر", "تعداد تحویل‌گیری‌ها")} value={summary.total_receiving_records ?? 0} icon="📥" color="bg-green-500" />
-              <StatCard label={pick("ترلاسه شوي واحدونه", "واحدهای تحویل‌گرفته")} value={Number(summary.total_units_received ?? 0).toLocaleString()} icon="📊" color="bg-teal-500" />
-              <StatCard label={pick("د تسلیمۍ شمېر", "تعداد تحویل‌دهی‌ها")} value={summary.total_deliveries ?? 0} icon="🚚" color="bg-blue-500" />
-              <StatCard label={pick("تسلیم شوي واحدونه", "واحدهای تحویل‌داده‌شده")} value={Number(summary.total_units_delivered ?? 0).toLocaleString()} icon="📤" color="bg-indigo-500" />
+              <StatCard label={pick("ترلاسه کولو شمېر", "تعداد تحویل‌گیری‌ها")} value={summary.total_receiving_records ?? 0} icon="📥" color="bg-green-500" to="/receiving" />
+              <StatCard label={pick("ترلاسه شوي واحدونه", "واحدهای تحویل‌گرفته")} value={Number(summary.total_units_received ?? 0).toLocaleString()} icon="📊" color="bg-teal-500" to="/receiving" />
+              <StatCard label={pick("د تسلیمۍ شمېر", "تعداد تحویل‌دهی‌ها")} value={summary.total_deliveries ?? 0} icon="🚚" color="bg-blue-500" to="/reports/delivery" />
+              <StatCard label={pick("تسلیم شوي واحدونه", "واحدهای تحویل‌داده‌شده")} value={Number(summary.total_units_delivered ?? 0).toLocaleString()} icon="📤" color="bg-indigo-500" to="/reports/delivery" />
             </>
           ) : (
             <div className="col-span-4"><EmptyState message={pick("د ترلاسه کولو معلومات شتون نه لري", "اطلاعات تحویل‌گیری یافت نشد")} /></div>
@@ -155,7 +156,7 @@ export default function ReceivingMonitor() {
                 </thead>
                 <tbody>
                   {records.slice(0, 20).map(r => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60 dark:border-gray-800/50 dark:hover:bg-white/[0.02] transition-colors">
+                    <tr key={r.id} onClick={() => window.location.href = `/receiving/details/${r.id}`} className="border-b border-gray-50 hover:bg-blue-50/50 dark:border-gray-800/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer">
                       <td className="py-2.5 px-3 font-mono text-xs text-gray-500">#{r.id}</td>
                       <td className="py-2.5 px-3 font-mono text-xs text-gray-600 dark:text-gray-400">{r.po_number || "—"}</td>
                       <td className="py-2.5 px-3 text-primary font-mono text-xs">{r.request_tracking_id || "—"}</td>

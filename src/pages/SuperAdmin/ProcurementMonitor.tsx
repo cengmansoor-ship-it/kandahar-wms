@@ -9,9 +9,9 @@ import SuperAdminMonitoringService, {
   ProcurementRecord,
 } from "../../services/superAdminMonitoringService";
 
-function StatCard({ label, value, color, icon }: { label: string; value: string | number; color: string; icon: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+function StatCard({ label, value, color, icon, to }: { label: string; value: string | number; color: string; icon: string; to?: string }) {
+  const inner = (
+    <div className={`rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] transition-all ${to ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5" : ""}`}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl">{icon}</span>
         <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
@@ -20,6 +20,7 @@ function StatCard({ label, value, color, icon }: { label: string; value: string 
       <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90">{value}</p>
     </div>
   );
+  return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -119,10 +120,10 @@ export default function ProcurementMonitor() {
             Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton-shimmer h-24 rounded-2xl" />)
           ) : summary ? (
             <>
-              <StatCard label={pick("ټول قضیې", "همه پرونده‌ها")} value={summary.total_cases ?? 0} icon="📁" color="bg-blue-500" />
-              <StatCard label={pick("فعال تدارکات", "تدارکات فعال")} value={summary.open_count ?? 0} icon="🔓" color={Number(summary.open_count) > 0 ? "bg-amber-500" : "bg-gray-400"} />
-              <StatCard label={pick("اخیستونکی ټاکل شوی", "برنده انتخاب شده")} value={summary.winner_selected_count ?? 0} icon="🏆" color="bg-green-500" />
-              <StatCard label={pick("د آمر ارزښت (؋)", "ارزش امر خرید (؋)")} value={Number(summary.total_po_amount ?? 0).toLocaleString()} icon="💵" color="bg-purple-500" />
+              <StatCard label={pick("ټول قضیې", "همه پرونده‌ها")} value={summary.total_cases ?? 0} icon="📁" color="bg-blue-500" to="/procurement" />
+              <StatCard label={pick("فعال تدارکات", "تدارکات فعال")} value={summary.open_count ?? 0} icon="🔓" color={Number(summary.open_count) > 0 ? "bg-amber-500" : "bg-gray-400"} to="/procurement?status=OPEN" />
+              <StatCard label={pick("اخیستونکی ټاکل شوی", "برنده انتخاب شده")} value={summary.winner_selected_count ?? 0} icon="🏆" color="bg-green-500" to="/procurement?status=WINNER_SELECTED" />
+              <StatCard label={pick("د آمر ارزښت (؋)", "ارزش امر خرید (؋)")} value={Number(summary.total_po_amount ?? 0).toLocaleString()} icon="💵" color="bg-purple-500" to="/procurement?status=PO_CREATED" />
             </>
           ) : (
             <div className="col-span-4"><EmptyState message={pick("د تدارکاتو معلومات شتون نه لري", "اطلاعات تدارکات یافت نشد")} /></div>
@@ -199,7 +200,7 @@ export default function ProcurementMonitor() {
                 </thead>
                 <tbody>
                   {cases.slice(0, 20).map(c => (
-                    <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50/60 dark:border-gray-800/50 dark:hover:bg-white/[0.02] transition-colors">
+                    <tr key={c.id} onClick={() => window.location.href = `/procurement/details/${c.id}`} className="border-b border-gray-50 hover:bg-blue-50/50 dark:border-gray-800/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer">
                       <td className="py-2.5 px-3 font-mono text-xs text-gray-500">#{c.id}</td>
                       <td className="py-2.5 px-3 text-primary font-mono text-xs">{c.request_tracking_id || "—"}</td>
                       <td className="py-2.5 px-3 text-gray-600 dark:text-gray-400">{c.po_number || "—"}</td>

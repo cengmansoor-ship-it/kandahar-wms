@@ -9,9 +9,9 @@ import SuperAdminMonitoringService, {
   RequestRecord,
 } from "../../services/superAdminMonitoringService";
 
-function StatCard({ label, value, color, icon, alert }: { label: string; value: string | number; color: string; icon: string; alert?: boolean }) {
-  return (
-    <div className={`rounded-2xl border bg-white p-5 dark:bg-white/[0.03] ${alert ? "border-red-200 dark:border-red-800/50" : "border-gray-200 dark:border-gray-800"}`}>
+function StatCard({ label, value, color, icon, alert, to }: { label: string; value: string | number; color: string; icon: string; alert?: boolean; to?: string }) {
+  const inner = (
+    <div className={`rounded-2xl border bg-white p-5 dark:bg-white/[0.03] transition-all ${to ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5" : ""} ${alert ? "border-red-200 dark:border-red-800/50" : "border-gray-200 dark:border-gray-800"}`}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl">{icon}</span>
         <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
@@ -20,6 +20,7 @@ function StatCard({ label, value, color, icon, alert }: { label: string; value: 
       <p className={`mt-1 text-2xl font-bold ${alert ? "text-red-600 dark:text-red-400" : "text-gray-800 dark:text-white/90"}`}>{value}</p>
     </div>
   );
+  return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -182,14 +183,14 @@ export default function RequestsMonitor() {
             Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton-shimmer h-24 rounded-2xl" />)
           ) : summary ? (
             <>
-              <StatCard label={pick("ټولې غوښتنې", "همه درخواست‌ها")} value={summary.total_requests ?? 0} icon="📋" color="bg-purple-500" />
-              <StatCard label={pick("پاتې", "منتظر")} value={summary.pending_count ?? 0} icon="⏳" color={Number(summary.pending_count) > 0 ? "bg-amber-500" : "bg-gray-400"} />
-              <StatCard label={pick("تایید شوي", "تأیید شده")} value={summary.confirmed_count ?? 0} icon="✅" color="bg-blue-500" />
-              <StatCard label={pick("تدارکاتو ته", "به تدارکات")} value={summary.procurement_count ?? 0} icon="🛒" color="bg-indigo-500" />
-              <StatCard label={pick("د تسلیمۍ لپاره", "آماده تحویل")} value={summary.ready_count ?? 0} icon="📦" color="bg-violet-500" />
-              <StatCard label={pick("تسلیم شوي", "تحویل داده شده")} value={summary.delivered_count ?? 0} icon="🚚" color="bg-teal-500" />
-              <StatCard label={pick("بشپړ شوي", "تکمیل شده")} value={summary.completed_count ?? 0} icon="🏁" color="bg-green-500" />
-              <StatCard label={pick("رد شوي", "رد شده")} value={summary.rejected_count ?? 0} icon="🚫" color={Number(summary.rejected_count) > 0 ? "bg-red-500" : "bg-gray-400"} alert={Number(summary.rejected_count) > 0} />
+              <StatCard label={pick("ټولې غوښتنې", "همه درخواست‌ها")} value={summary.total_requests ?? 0} icon="📋" color="bg-purple-500" to="/requests" />
+              <StatCard label={pick("پاتې", "منتظر")} value={summary.pending_count ?? 0} icon="⏳" color={Number(summary.pending_count) > 0 ? "bg-amber-500" : "bg-gray-400"} to="/requests?status=PENDING" />
+              <StatCard label={pick("تایید شوي", "تأیید شده")} value={summary.confirmed_count ?? 0} icon="✅" color="bg-blue-500" to="/requests?status=CONFIRMED" />
+              <StatCard label={pick("تدارکاتو ته", "به تدارکات")} value={summary.procurement_count ?? 0} icon="🛒" color="bg-indigo-500" to="/requests?status=SENT_TO_PROCUREMENT" />
+              <StatCard label={pick("د تسلیمۍ لپاره", "آماده تحویل")} value={summary.ready_count ?? 0} icon="📦" color="bg-violet-500" to="/requests?status=READY_FOR_DELIVERY" />
+              <StatCard label={pick("تسلیم شوي", "تحویل داده شده")} value={summary.delivered_count ?? 0} icon="🚚" color="bg-teal-500" to="/requests?status=DELIVERED" />
+              <StatCard label={pick("بشپړ شوي", "تکمیل شده")} value={summary.completed_count ?? 0} icon="🏁" color="bg-green-500" to="/requests?status=COMPLETED" />
+              <StatCard label={pick("رد شوي", "رد شده")} value={summary.rejected_count ?? 0} icon="🚫" color={Number(summary.rejected_count) > 0 ? "bg-red-500" : "bg-gray-400"} alert={Number(summary.rejected_count) > 0} to="/requests?status=REJECTED" />
             </>
           ) : (
             <div className="col-span-4"><EmptyState message={pick("د غوښتنو معلومات شتون نه لري", "اطلاعات درخواست‌ها یافت نشد")} /></div>
@@ -249,7 +250,7 @@ export default function RequestsMonitor() {
                 </thead>
                 <tbody>
                   {requests.slice(0, 20).map(r => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60 dark:border-gray-800/50 dark:hover:bg-white/[0.02] transition-colors">
+                    <tr key={r.id} onClick={() => window.location.href = `/requests/details/${r.id}`} className="border-b border-gray-50 hover:bg-blue-50/50 dark:border-gray-800/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer">
                       <td className="py-2.5 px-3 font-mono text-xs text-primary">{r.tracking_id || `#${r.id}`}</td>
                       <td className="py-2.5 px-3 text-gray-600 dark:text-gray-400">{r.faculty_name || "—"}</td>
                       <td className="py-2.5 px-3 text-gray-600 dark:text-gray-400">{r.department_name || "—"}</td>

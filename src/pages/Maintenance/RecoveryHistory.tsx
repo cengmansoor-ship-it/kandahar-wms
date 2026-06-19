@@ -1,7 +1,20 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRecoveryHistory, TrashLog } from "../../firebase/maintenance";
+
+const ENTITY_ROUTE: Record<string, string> = {
+  item: "/inventory/items",
+  items: "/inventory/items",
+  request: "/requests",
+  requests: "/requests",
+  procurement: "/procurement",
+  warehouse_request: "/receiving",
+  receiving: "/receiving",
+  user: "/user-management",
+  users: "/user-management",
+};
 
 export default function RecoveryHistory() {
   const [history, setHistory] = useState<TrashLog[]>([]);
@@ -55,7 +68,15 @@ export default function RecoveryHistory() {
                       {log.action === 'soft_deleted' ? 'حذف شو' : log.action === 'restored' ? 'بیا رغول شو' : log.action}
                     </span>
                   </td>
-                  <td className="px-4 py-2 border font-bold text-primary">{log.entityType}</td>
+                  <td className="px-4 py-2 border">
+                    {ENTITY_ROUTE[log.entityType?.toLowerCase()] ? (
+                      <Link to={ENTITY_ROUTE[log.entityType.toLowerCase()]} className="font-bold text-primary hover:underline cursor-pointer">
+                        {log.entityType}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-primary">{log.entityType}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 border">{log.entityLabel}</td>
                   <td className="px-4 py-2 border text-xs">{log.performedByName} ({log.performedByRole})</td>
                   <td className="px-4 py-2 border text-xs italic text-gray-500">{log.reason}</td>
