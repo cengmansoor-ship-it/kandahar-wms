@@ -101,7 +101,7 @@ export default function ReportsDashboard() {
             <p className="text-sm text-primary/70 leading-relaxed max-w-sm">
               دا سیسټم د تیرې یوې میاشتې ډاټا په اساس ستاسو د راتلونکي کال احتمالي اړتیاوې په اتوماتیک ډول محاسبه کوي. مهرباني وکړئ د کلنۍ اړتیاوو برخې ته سر ورښکاره کړئ.
             </p>
-            <Link to="/reports/needs" className="mt-4 px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition shadow-lg btn-press">
+            <Link to="/reports/needs" className="mt-4 px-6 py-2.5 bg-primary text-gray-900 font-bold rounded-xl hover:bg-primary/90 transition shadow-lg btn-press">
               تحلیل کتل
             </Link>
           </div>

@@ -7,6 +7,8 @@ ensureSeedVersion();
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./layout/AppLayout";
+import ReportsLayout from "./layouts/ReportsLayout";
+import SettingsLayout from "./layouts/SettingsLayout";
 import { ROLES } from "./constants/roles";
 
 import SignIn from "./pages/AuthPages/SignIn";
@@ -97,9 +99,6 @@ export default function App() {
             <Route index path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
 
-            <Route path="/user-management" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><UserManagement /></Suspense></ProtectedRoute>} />
-            <Route path="/role-management" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><RoleManagement /></Suspense></ProtectedRoute>} />
-
             <Route path="/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryDashboard /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/items" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ItemList /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><AddItem /></Suspense></ProtectedRoute>} />
@@ -127,26 +126,35 @@ export default function App() {
             <Route path="/official-forms" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR, ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER]}><Suspense fallback={<PageLoader />}><OfficialFormsPage /></Suspense></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense></ProtectedRoute>} />
 
-            <Route path="/reports" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ReportsDashboard /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/movement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockMovementReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><RequestReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><Suspense fallback={<PageLoader />}><ProcurementReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/delivery" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ReceivingDeliveryReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/faculty" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><FacultyReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/department" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><DepartmentReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/person-assignment" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><PersonAssignmentReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/needs" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><AnnualNeedsReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/forecast" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><ForecastingReport /></Suspense></ProtectedRoute>} />
-            <Route path="/reports/audit" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><AuditActivityReport /></Suspense></ProtectedRoute>} />
+            {/* Reports — Tab Layout */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR]}><ReportsLayout /></ProtectedRoute>}>
+              <Route path="/reports" element={<Suspense fallback={<PageLoader />}><ReportsDashboard /></Suspense>} />
+              <Route path="/reports/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/movement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockMovementReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><RequestReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.PROCUREMENT_DIRECTOR]}><Suspense fallback={<PageLoader />}><ProcurementReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/delivery" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ReceivingDeliveryReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/faculty" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><FacultyReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/department" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><DepartmentReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/person-assignment" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><PersonAssignmentReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/needs" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><AnnualNeedsReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/forecast" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><ForecastingReport /></Suspense></ProtectedRoute>} />
+              <Route path="/reports/audit" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><AuditActivityReport /></Suspense></ProtectedRoute>} />
+            </Route>
 
-            <Route path="/maintenance/trash" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><TrashList /></Suspense></ProtectedRoute>} />
-            <Route path="/maintenance/recovery-history" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><RecoveryHistory /></Suspense></ProtectedRoute>} />
-            <Route path="/maintenance/backup" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><BackupExport /></Suspense></ProtectedRoute>} />
-            <Route path="/maintenance/health" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><SystemHealth /></Suspense></ProtectedRoute>} />
-            <Route path="/maintenance/final-qa" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><FinalQAChecklist /></Suspense></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><SettingsPage /></Suspense></ProtectedRoute>} />
-            <Route path="/settings/budget-codes" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><BudgetCodes /></Suspense></ProtectedRoute>} />
+            {/* Settings — Tab Layout (Super Admin only) */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><SettingsLayout /></ProtectedRoute>}>
+              <Route path="/user-management" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
+              <Route path="/role-management" element={<Suspense fallback={<PageLoader />}><RoleManagement /></Suspense>} />
+              <Route path="/settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
+              <Route path="/settings/budget-codes" element={<Suspense fallback={<PageLoader />}><BudgetCodes /></Suspense>} />
+              <Route path="/maintenance/trash" element={<Suspense fallback={<PageLoader />}><TrashList /></Suspense>} />
+              <Route path="/maintenance/recovery-history" element={<Suspense fallback={<PageLoader />}><RecoveryHistory /></Suspense>} />
+              <Route path="/maintenance/backup" element={<Suspense fallback={<PageLoader />}><BackupExport /></Suspense>} />
+              <Route path="/maintenance/health" element={<Suspense fallback={<PageLoader />}><SystemHealth /></Suspense>} />
+              <Route path="/maintenance/final-qa" element={<Suspense fallback={<PageLoader />}><FinalQAChecklist /></Suspense>} />
+            </Route>
+
             <Route path="/traceability" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><TraceabilityPage /></Suspense></ProtectedRoute>} />
 
             {/* Super Admin Monitoring Routes */}
