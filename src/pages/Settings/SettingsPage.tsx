@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import Button from "../../components/ui/button/Button";
-import { getLocalItem, setLocalItem } from "../../firebase/localStore";
+import { getLocalItem, setLocalItem, DEMO_SEED_USERS } from "../../firebase/localStore";
+import { isFirebaseConfigured } from "../../firebase/firebase";
 import { getCurrentHijriDates } from "../../utils/dateUtils";
 import { useLanguage } from "../../context/LanguageContext";
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from "../../constants/roles";
@@ -100,6 +101,62 @@ export default function SettingsPage() {
   const [roleMsg, setRoleMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [deletingRoleId, setDeletingRoleId] = useState<number | null>(null);
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<CustomRole | null>(null);
+
+  // Change Password state
+  const [cpForm, setCpForm] = useState({ current: "", newPass: "", confirm: "" });
+  const [cpShowCurrent, setCpShowCurrent] = useState(false);
+  const [cpShowNew, setCpShowNew] = useState(false);
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpMsg, setCpMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCpMsg(null);
+    if (!cpForm.current) return setCpMsg({ text: pick("اوسنی پاسورډ ولیکئ.", "رمز فعلی را وارد کنید."), ok: false });
+    if (cpForm.newPass.length < 6) return setCpMsg({ text: pick("نوی پاسورډ باید لږ تر لږه ۶ توري ولري.", "رمز جدید باید حداقل ۶ کاراکتر داشته باشد."), ok: false });
+    if (cpForm.newPass !== cpForm.confirm) return setCpMsg({ text: pick("نوی پاسورډونه سره برابر نه دي.", "رمزهای جدید با هم مطابقت ندارند."), ok: false });
+    if (!profile?.email) return setCpMsg({ text: pick("ایمیل پته ونه موندل شوه.", "آدرس ایمیل یافت نشد."), ok: false });
+
+    // Demo/localStorage mode
+    if (!isFirebaseConfigured) {
+      const email = profile.email.trim().toLowerCase();
+      const seedUser = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === email);
+      const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+      const override = overrides.find(o => o.email.toLowerCase() === email);
+      const effectivePass = override ? override.password : (seedUser?.password || "");
+      if (cpForm.current !== effectivePass) {
+        setCpMsg({ text: pick("اوسنی پاسورډ ناسم دی.", "رمز فعلی نادرست است."), ok: false });
+        return;
+      }
+      const filtered = overrides.filter(o => o.email.toLowerCase() !== email);
+      setLocalItem("password_overrides", [...filtered, { email, password: cpForm.newPass }]);
+      setCpForm({ current: "", newPass: "", confirm: "" });
+      setCpMsg({ text: pick("✅ پاسورډ بریالیتوب سره بدل شو.", "✅ رمز با موفقیت تغییر کرد."), ok: true });
+      return;
+    }
+
+    setCpLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: profile.email, currentPassword: cpForm.current, newPassword: cpForm.newPass }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCpForm({ current: "", newPass: "", confirm: "" });
+        setCpMsg({ text: pick("✅ پاسورډ بریالیتوب سره بدل شو.", "✅ رمز با موفقیت تغییر کرد."), ok: true });
+      } else if (data.code === "WRONG_CURRENT_PASSWORD") {
+        setCpMsg({ text: pick("اوسنی پاسورډ ناسم دی.", "رمز فعلی نادرست است."), ok: false });
+      } else {
+        setCpMsg({ text: data.message || pick("ستونزه وه.", "خطایی رخ داد."), ok: false });
+      }
+    } catch {
+      setCpMsg({ text: pick("د سرور سره اتصال نشو.", "اتصال به سرور برقرار نشد."), ok: false });
+    } finally {
+      setCpLoading(false);
+    }
+  };
 
   // SMS Config state
   interface SmsFormState {
@@ -535,6 +592,132 @@ export default function SettingsPage() {
               ? "✓ اوس سیستم پښتو ژبه کاروي"
               : "✓ اکنون سیستم زبان دری را استفاده می‌کند"}
           </p>
+        </div>
+
+        {/* ─── Change Password Section ─── */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "100ms" }}>
+          <div className="flex items-center justify-between mb-5">
+            <span className="text-2xl">🔑</span>
+            <div className="text-right">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">
+                {pick("د پاسورډ بدلول", "تغییر رمز عبور")}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {pick(
+                  `اوسنی حساب: ${profile?.email || ""}`,
+                  `حساب فعلی: ${profile?.email || ""}`
+                )}
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm mr-auto">
+            {/* Current Password */}
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-gray-600 dark:text-gray-400">
+                {pick("اوسنی پاسورډ", "رمز فعلی")} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={cpShowCurrent ? "text" : "password"}
+                  value={cpForm.current}
+                  onChange={e => { setCpForm(f => ({ ...f, current: e.target.value })); setCpMsg(null); }}
+                  placeholder={pick("اوسنی پاسورډ ولیکئ", "رمز فعلی را وارد کنید")}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-400 pr-10"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCpShowCurrent(v => !v)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  tabIndex={-1}
+                >
+                  {cpShowCurrent ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-gray-600 dark:text-gray-400">
+                {pick("نوی پاسورډ", "رمز جدید")} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={cpShowNew ? "text" : "password"}
+                  value={cpForm.newPass}
+                  onChange={e => { setCpForm(f => ({ ...f, newPass: e.target.value })); setCpMsg(null); }}
+                  placeholder={pick("نوی پاسورډ (لږ تر لږه ۶ توري)", "رمز جدید (حداقل ۶ کاراکتر)")}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-400 pr-10"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCpShowNew(v => !v)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  tabIndex={-1}
+                >
+                  {cpShowNew ? "🙈" : "👁️"}
+                </button>
+              </div>
+              {cpForm.newPass.length > 0 && (
+                <div className="mt-1.5 flex gap-1">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                      cpForm.newPass.length >= i * 3
+                        ? cpForm.newPass.length >= 10 ? "bg-green-500" : "bg-yellow-400"
+                        : "bg-gray-200 dark:bg-gray-700"
+                    }`} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-gray-600 dark:text-gray-400">
+                {pick("پاسورډ تایید کړئ", "تأیید رمز جدید")} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={cpForm.confirm}
+                onChange={e => { setCpForm(f => ({ ...f, confirm: e.target.value })); setCpMsg(null); }}
+                placeholder={pick("پاسورډ بیا ولیکئ", "رمز جدید را دوباره وارد کنید")}
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 bg-white dark:bg-gray-900 transition-colors ${
+                  cpForm.confirm && cpForm.newPass !== cpForm.confirm
+                    ? "border-red-300 focus:ring-red-300 dark:border-red-700"
+                    : cpForm.confirm && cpForm.newPass === cpForm.confirm
+                    ? "border-green-300 focus:ring-green-300 dark:border-green-700"
+                    : "border-gray-200 dark:border-gray-700 focus:ring-brand-400"
+                }`}
+                autoComplete="new-password"
+              />
+              {cpForm.confirm && cpForm.newPass !== cpForm.confirm && (
+                <p className="mt-1 text-xs text-red-500">{pick("پاسورډونه سره برابر نه دي", "رمزها با هم مطابقت ندارند")}</p>
+              )}
+            </div>
+
+            {/* Message */}
+            {cpMsg && (
+              <div className={`rounded-xl p-3 text-sm font-medium border ${cpMsg.ok
+                ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
+                : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
+              }`}>
+                {cpMsg.text}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              size="sm"
+              disabled={cpLoading || !cpForm.current || !cpForm.newPass || !cpForm.confirm}
+              className="w-full sm:w-auto"
+            >
+              {cpLoading
+                ? pick("خوندي کیږي...", "در حال ذخیره...")
+                : pick("پاسورډ خوندي کړئ", "ذخیره رمز")}
+            </Button>
+          </form>
         </div>
 
         {/* Font Size Setting — Super Admin only */}

@@ -185,6 +185,42 @@ export const verifyForgotPasswordOtp = async (req: Request, res: Response) => {
   }
 };
 
+// POST /api/auth/change-password  (logged-in user changes their own password)
+export const changePassword = async (req: Request, res: Response) => {
+  const { email, currentPassword, newPassword } = req.body;
+  if (!email || !currentPassword || !newPassword) {
+    return res.status(400).json({ success: false, code: 'MISSING_FIELDS', message: 'ټول ساحې اړینې دي.' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ success: false, code: 'WEAK_PASSWORD', message: 'نوی پاسورډ باید لږ تر لږه ۶ توري ولري.' });
+  }
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    const [users]: any = await pool.query(
+      'SELECT id, password_hash FROM users WHERE email = ? AND is_deleted = FALSE AND status = "active" LIMIT 1',
+      [cleanEmail]
+    );
+    if (!users || users.length === 0) {
+      return res.status(404).json({ success: false, code: 'USER_NOT_FOUND', message: 'کارونکی ونه موندل شو.' });
+    }
+    const user = users[0];
+    const match = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!match) {
+      return res.status(401).json({ success: false, code: 'WRONG_CURRENT_PASSWORD', message: 'اوسنی پاسورډ ناسم دی.' });
+    }
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ success: false, code: 'SAME_PASSWORD', message: 'نوی پاسورډ باید له اوسنی پاسورډ سره توپیر ولري.' });
+    }
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hash, user.id]);
+    console.log(`[Auth] Password changed for ${cleanEmail}`);
+    return res.json({ success: true, message: 'پاسورډ بریالیتوب سره بدل شو.' });
+  } catch (err: any) {
+    console.error('[Auth] Change password error:', err.message);
+    return res.status(500).json({ success: false, code: 'SERVER_ERROR', message: 'د سرور ستونزه.' });
+  }
+};
+
 // POST /api/auth/forgot-password/reset-password
 export const resetPassword = async (req: Request, res: Response) => {
   const { email, otp, newPassword } = req.body;
