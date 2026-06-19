@@ -21,6 +21,8 @@ export default function ItemList() {
   const { profile } = useAuth();
   const { pick } = useLanguage();
   const [printItem, setPrintItem] = useState<PrintItem | null>(null);
+  const [selectedCat, setSelectedCat] = useState<string>("");
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
 
   const canEdit = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN;
   const canStockIn = canEdit || profile?.role === ROLES.WAREHOUSE_ENTRY_PERSON;
@@ -51,10 +53,15 @@ export default function ItemList() {
     }
   };
 
+  const allCategories = useMemo(() => Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort(), [items]);
+  const allUnits = useMemo(() => Array.from(new Set(items.map(i => i.unit).filter(Boolean))).sort(), [items]);
+
   const filteredItems = useMemo(() => {
     let list = items;
     if (filterParam === "low") list = list.filter(i => i.currentQuantity > 0 && i.currentQuantity <= i.minimumStockLevel);
     else if (filterParam === "out") list = list.filter(i => i.currentQuantity === 0);
+    else if (filterParam === "cat" && selectedCat) list = list.filter(i => i.category === selectedCat);
+    else if (filterParam === "unit" && selectedUnit) list = list.filter(i => i.unit === selectedUnit);
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
     return list.filter(item =>
@@ -66,12 +73,16 @@ export default function ItemList() {
       ((item as any).tracking_code || "").toLowerCase().includes(q) ||
       String(item.currentQuantity).includes(q)
     );
-  }, [items, search, filterParam]);
+  }, [items, search, filterParam, selectedCat, selectedUnit]);
 
   const filterLabel = filterParam === "low"
     ? pick("کمه موجودي", "موجودی کم")
     : filterParam === "out"
     ? pick("ختم شوي اجناس", "اجناس تمام‌شده")
+    : filterParam === "cat"
+    ? pick("د کټګورۍ له مخې", "بر اساس دسته‌بندی")
+    : filterParam === "unit"
+    ? pick("د واحد له مخې", "بر اساس واحد")
     : null;
 
   const handlePrintBarcode = async (item: PrintItem) => {
@@ -106,9 +117,17 @@ export default function ItemList() {
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            {filterLabel ? filterLabel : pick("ټول اجناس", "تمام اجناس")}
-          </h3>
+          <div dir="rtl">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+              {filterLabel ? filterLabel : pick("ټول اجناس", "تمام اجناس")}
+            </h3>
+            {filterParam === "low" && (
+              <p className="text-xs text-orange-500 mt-0.5">{pick("هغه اجناس چي د کمترینه کچې سره سم دي", "اجناسی که به حداقل موجودی رسیده‌اند")}</p>
+            )}
+            {filterParam === "out" && (
+              <p className="text-xs text-red-500 mt-0.5">{pick("هغه اجناس چي بیخي ختم شوي دي", "اجناسی که کاملاً تمام شده‌اند")}</p>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             {filterParam && (
               <Link to="/inventory/items" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 transition">
@@ -130,6 +149,58 @@ export default function ItemList() {
             )}
           </div>
         </div>
+
+        {/* Category filter chips */}
+        {filterParam === "cat" && !loading && (
+          <div className="mb-4" dir="rtl">
+            <p className="text-xs text-gray-500 mb-2">{pick("د کټګورۍ غوره کول:", "انتخاب دسته:")}</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCat("")}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${!selectedCat ? "bg-primary text-white border-primary" : "border-gray-300 text-gray-600 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-400"}`}
+              >
+                {pick("ټولې", "همه")} ({items.length})
+              </button>
+              {allCategories.map(cat => {
+                const count = items.filter(i => i.category === cat).length;
+                return (
+                  <button key={cat}
+                    onClick={() => setSelectedCat(cat)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${selectedCat === cat ? "bg-primary text-white border-primary" : "border-gray-300 text-gray-600 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-400"}`}
+                  >
+                    {cat} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Unit filter chips */}
+        {filterParam === "unit" && !loading && (
+          <div className="mb-4" dir="rtl">
+            <p className="text-xs text-gray-500 mb-2">{pick("د واحد غوره کول:", "انتخاب واحد:")}</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedUnit("")}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${!selectedUnit ? "bg-primary text-white border-primary" : "border-gray-300 text-gray-600 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-400"}`}
+              >
+                {pick("ټول", "همه")} ({items.length})
+              </button>
+              {allUnits.map(unit => {
+                const count = items.filter(i => i.unit === unit).length;
+                return (
+                  <button key={unit}
+                    onClick={() => setSelectedUnit(unit)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${selectedUnit === unit ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 text-gray-600 hover:border-indigo-500 hover:text-indigo-600 dark:border-gray-600 dark:text-gray-400"}`}
+                  >
+                    {unit} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mb-4">
           <div className="relative">
@@ -180,9 +251,17 @@ export default function ItemList() {
                         )}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium">
+                        <button
+                          onClick={() => {
+                            if (item.category) {
+                              window.location.href = `/inventory/items?filter=cat`;
+                              setSelectedCat(item.category);
+                            }
+                          }}
+                          className="inline-flex items-center px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium hover:bg-purple-100 hover:text-purple-700 dark:hover:bg-purple-900/30 dark:hover:text-purple-300 transition-colors cursor-pointer"
+                        >
                           {item.category || "-"}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-4 py-4 text-gray-500 dark:text-gray-400 text-right text-xs">{item.typeOrSpecification || "-"}</td>
                       <td className="px-4 py-4 text-right font-bold">
@@ -195,7 +274,19 @@ export default function ItemList() {
                           {item.currentQuantity}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-gray-600 dark:text-gray-400 text-right text-sm">{item.unit}</td>
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            if (item.unit) {
+                              window.location.href = `/inventory/items?filter=unit`;
+                              setSelectedUnit(item.unit);
+                            }
+                          }}
+                          className="text-gray-600 dark:text-gray-400 text-sm hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                        >
+                          {item.unit}
+                        </button>
+                      </td>
                       <td className="px-4 py-4 text-gray-500 dark:text-gray-500 text-right text-sm">{item.minimumStockLevel}</td>
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center gap-1.5 justify-end flex-wrap">
@@ -234,6 +325,12 @@ export default function ItemList() {
             </table>
           )}
         </div>
+
+        {!loading && filteredItems.length > 0 && (
+          <p className="mt-3 text-xs text-gray-400 text-right" dir="rtl">
+            {filteredItems.length} {pick("جنسونه ښودل کیږي", "جنس نمایش داده می‌شود")}
+          </p>
+        )}
       </div>
     </>
   );
