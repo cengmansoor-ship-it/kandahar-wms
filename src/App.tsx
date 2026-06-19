@@ -61,6 +61,11 @@ const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
 const BudgetCodes = lazy(() => import("./pages/Settings/BudgetCodes"));
 const AboutPage = lazy(() => import("./pages/About/AboutPage"));
 const TraceabilityPage = lazy(() => import("./pages/Traceability/TraceabilityPage"));
+const SuperAdminDashboard = lazy(() => import("./pages/SuperAdmin/SuperAdminDashboard"));
+const InventoryMonitor = lazy(() => import("./pages/SuperAdmin/InventoryMonitor"));
+const RequestsMonitor = lazy(() => import("./pages/SuperAdmin/RequestsMonitor"));
+const ProcurementMonitor = lazy(() => import("./pages/SuperAdmin/ProcurementMonitor"));
+const ReceivingMonitor = lazy(() => import("./pages/SuperAdmin/ReceivingMonitor"));
 
 function PageLoader() {
   return (
@@ -143,6 +148,13 @@ export default function App() {
             <Route path="/settings" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><SettingsPage /></Suspense></ProtectedRoute>} />
             <Route path="/settings/budget-codes" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><BudgetCodes /></Suspense></ProtectedRoute>} />
             <Route path="/traceability" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><TraceabilityPage /></Suspense></ProtectedRoute>} />
+
+            {/* Super Admin Monitoring Routes */}
+            <Route path="/superadmin" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><SuperAdminDashboard /></Suspense></ProtectedRoute>} />
+            <Route path="/superadmin/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><InventoryMonitor /></Suspense></ProtectedRoute>} />
+            <Route path="/superadmin/requests" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><RequestsMonitor /></Suspense></ProtectedRoute>} />
+            <Route path="/superadmin/procurement" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><ProcurementMonitor /></Suspense></ProtectedRoute>} />
+            <Route path="/superadmin/receiving" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><ReceivingMonitor /></Suspense></ProtectedRoute>} />
             <Route path="/about" element={<Suspense fallback={<PageLoader />}><AboutPage /></Suspense>} />
           </Route>
 

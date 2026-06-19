@@ -43,6 +43,12 @@ export const canAccessMenu = (role: UserRole | undefined, menuId: string): boole
       return ['Super Admin'].includes(role);
     case 'traceability':
       return ['Admin', 'Warehouse Director', 'Warehouse Entry Person'].includes(role);
+    case 'superadmin_home':
+    case 'superadmin_inventory':
+    case 'superadmin_requests':
+    case 'superadmin_procurement':
+    case 'superadmin_receiving':
+      return false;
     case 'about_us':
       return true;
     default:

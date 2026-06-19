@@ -1,0 +1,217 @@
+Super Admin Dashboard Restructuring & Monitoring-Oriented Architecture
+مهمه لارښوونه:
+دا بدلونونه باید په ډېر احتیاط سره ترسره شي. د سیستم موجوده Database، Backend Logic، APIs، Permissions، User Roles، Business Rules او موجود فعالیتونه باید هېڅ ډول زیان ونه ویني. یوازې د Super Admin Interface، Navigation Structure او Dashboard Experience باید اصلاح او ساده شي.
+________________________________________
+اصلي هدف
+زه نه غواړم چې Super Admin د عادي کاروونکو په څېر ورځني عملیاتي کارونه ترسره کړي.
+Super Admin باید د:
+•	Supervisor
+•	Controller
+•	Monitor
+•	Decision Maker
+په توګه عمل وکړي.
+هغه باید د سیستم د ټولو کارمندانو، عملیاتو او فعالیتونو څارنه وکړي، نه دا چې د هغوی پر ځای کارونه ترسره کړي.
+نو ځکه د Super Admin انٹرفېس باید له Data Entry System څخه Executive Monitoring Dashboard ته واوړي.
+هدف:
+Super Admin = Monitoring + Control + Oversight + Analytics
+نه:
+Super Admin = Operational User
+________________________________________
+1. د موجودۍ (Inventory) برخه
+اوسني ټول فرعي Menuګانې چې د موجودۍ پورې تړاو لري باید په یوه واحد Menu کې مدغم شي:
+موجودي (Inventory)
+کله چې Super Admin پر دې Menu کلیک وکړي، نو باید لاندې معلومات د مناسبو Dashboards، Graphs، Charts، KPIs او Tables په بڼه وویني:
+عمومي موجودي
+•	د موجودۍ عمومي وضعیت
+•	د اجناسو ټول شمېر
+•	د فعالو اجناسو شمېر
+•	د کمېدونکي سټاک شمېر
+•	د ختمېدونکي سټاک شمېر
+•	د ګدامونو وضعیت
+د اجناسو لیست
+•	نوي اضافه شوي اجناس
+•	وروستي ثبت شوي اجناس
+•	د اجناسو کټګورۍ
+د اجناسو داخلې او خارجې
+•	داخل شوي اجناس
+•	خارج شوي اجناس
+•	د داخلېدو او خارجېدو احصایې
+•	د وخت له مخې حرکت
+راکړه ورکړه
+•	ټول Transactions
+•	وروستي فعالیتونه
+•	د فعالیتونو Trend Analysis
+بارکوډونه
+•	چاپ شوي بارکوډونه
+•	د کومو اجناسو لپاره چاپ شوي
+•	د چاپ تاریخچه
+چیک لیست
+•	د موجودۍ د چیک لیست وضعیت
+•	بشپړ شوي موارد
+•	نیمګړي موارد
+مهم شرط
+Super Admin باید د دې برخې له لارې:
+•	اجناس ثبت نه کړي
+•	اجناس حذف نه کړي
+•	اجناس تعدیل نه کړي
+•	سټاک داخل نه کړي
+•	سټاک خارج نه کړي
+بلکې یوازې معلومات مشاهده او تحلیل کړي.
+________________________________________
+2. ترلاسه کول (Receiving)
+دا برخه باید Dashboard شي.
+ښکاره کړي:
+•	ټول ترلاسه شوي توکي
+•	وروستي رسیدونه
+•	Pending Receivings
+•	Completed Receivings
+•	Receiving Trends
+•	Receiving Statistics
+________________________________________
+3. تدارکات (Procurement)
+دا برخه باید مدیریتي Dashboard وي.
+ښکاره کړي:
+•	فعال تدارکات
+•	بشپړ شوي تدارکات
+•	Pending Orders
+•	Supplier Performance
+•	Procurement Statistics
+•	Procurement Trends
+________________________________________
+4. غوښتنې (Requests)
+ښکاره کړي:
+•	نوې غوښتنې
+•	Pending Requests
+•	Approved Requests
+•	Rejected Requests
+•	Request Trends
+•	Request Statistics
+Super Admin باید یوازې نظارت وکړي.
+________________________________________
+5. فورمونه (Forms)
+دا Menu باید موجود وي.
+یوازې Super Admin ته باید:
+Document Editor Access
+ورکړل شي.
+نور رولونه باید دې برخې ته لاسرسی ونه لري.
+________________________________________
+6. خبرتیاوې (Notifications)
+دا برخه باید ساده او مدیریتي شي.
+ښکاره کړي:
+•	نوې خبرتیاوې
+•	مهم Alerts
+•	Critical Events
+•	Notification Statistics
+•	Notification Trends
+________________________________________
+7. راپورونه (Reports)
+دا برخه باید د راپورونو مرکزي مرکز وي.
+ښکاره کړي:
+•	Inventory Reports
+•	Receiving Reports
+•	Procurement Reports
+•	Request Reports
+•	Performance Reports
+د Charts، Graphs او Tables له لارې.
+________________________________________
+8. تنظیمات (Settings)
+یوازې د Super Admin صلاحیت وي.
+پکې شامل وي:
+•	User Management
+•	Role Management
+•	Permissions
+•	System Configuration
+•	Security Settings
+•	Backup Settings
+________________________________________
+9. د اجناسو تعقیب (Item Tracking)
+دا برخه باید Monitoring Dashboard وي.
+ښکاره کړي:
+•	د اجناسو حرکت
+•	د اجناسو موقعیت
+•	وروستي بدلونونه
+•	Tracking Timeline
+•	Tracking Statistics
+________________________________________
+10. د مینیوګانو ادغام
+هغه Menuګانې چې یو بل ته نږدې اړیکه لري باید مدغم شي.
+هدف:
+•	Navigation ساده کول
+•	غیر ضروري Menuګانې کمول
+•	د Dashboard تمرکز زیاتول
+•	د Super Admin لپاره د معلوماتو موندل اسانه کول
+________________________________________
+11. د کارمندانو څارنه
+Super Admin باید وکولای شي:
+•	د ټولو یوزرانو فعالیتونه وویني
+•	د هر رول Performance تعقیب کړي
+•	د سیستم عمومي وضعیت وڅاري
+•	د کارمندانو فعالیتونه تحلیل کړي
+•	د تصمیم نیولو لپاره معلومات ترلاسه کړي
+خو باید د هغوی پر ځای د هغوی ورځني کارونه ترسره نه کړي.
+________________________________________
+12. د Dashboardونو او Graphونو د اعتبار شرط
+دا یو اجباري او حیاتي شرط دی.
+ټول:
+•	Dashboards
+•	Charts
+•	Graphs
+•	KPIs
+•	Statistics
+•	Tables
+•	Summary Cards
+باید یوازې د سیستم له حقیقي معلوماتو (Real Data) څخه تولید شي.
+هیڅ Dashboard Element باید:
+•	Dummy Data
+•	Static Data
+•	Placeholder Data
+•	Fake Statistics
+•	Artificial Metrics
+•	Generated Numbers
+ونه کاروي.
+که معلومات موجود نه وي نو باید:
+•	No Data Available
+•	No Activity Recorded Yet
+•	Waiting For Data
+•	Empty State
+وښودل شي.
+________________________________________
+13. د بې ضرورته Graphونو او Dashboardونو مخنیوی
+AI باید هېڅ داسې:
+•	Chart
+•	Graph
+•	KPI
+•	Dashboard Widget
+•	Statistic
+•	Counter
+•	Summary Card
+جوړ نه کړي چې د سیستم له حقیقي فعالیتونو سره مستقیمه اړیکه ونه لري.
+یعنې:
+هر Graph، Chart او Dashboard باید د یوزرانو د حقیقي کارونو او ثبت شویو عملیاتو له امله رامنځته شي.
+د مثال په ډول:
+•	که Transaction نه وي ثبت شوی → Graph باید خالي وي.
+•	که Barcode نه وي چاپ شوی → Barcode Statistics باید خالي وي.
+•	که Receiving نه وي ترسره شوی → Receiving Dashboard باید خالي وي.
+•	که Request نه وي ثبت شوې → Request Statistics باید خالي وي.
+هیڅ نمایشي، اضافي، پالتو یا مصنوعي Graph او Dashboard مه جوړوه.
+________________________________________
+14. UI/UX Design Principle
+د Super Admin Interface باید د Executive Management Dashboard په بڼه وي.
+تمرکز باید پر:
+•	Monitoring
+•	Analytics
+•	Oversight
+•	Visibility
+•	Reporting
+•	Decision Making
+وي.
+نه پر:
+•	Data Entry
+•	Manual Operations
+•	Transaction Processing
+________________________________________
+وروستی شرط
+د موجوده سیستم هېڅ Business Logic، Database Structure، API Integration، User Permissions او Workflow ته زیان مه رسوه.
+یوازې Navigation، Dashboard Experience او Monitoring Architecture اصلاح کړه.
+هدف دا دی چې Super Admin د سیستم د ټولو کارمندانو او فعالیتونو ناظر وي، نه دا چې د هر یوزر کارونه په خپله ترسره کړي.
+
