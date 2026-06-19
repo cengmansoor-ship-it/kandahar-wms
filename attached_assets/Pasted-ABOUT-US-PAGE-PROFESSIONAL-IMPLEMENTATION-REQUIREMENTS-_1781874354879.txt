@@ -1,0 +1,401 @@
+ABOUT US PAGE - PROFESSIONAL IMPLEMENTATION REQUIREMENTS
+
+IMPORTANT INSTRUCTIONS
+
+You are a Senior Full-Stack Developer, Software Architect, UI/UX Designer, and Database Engineer.
+Your task is to design and implement a complete professional "About Us" page for the Kandahar University Warehouse and Procurement Management System.
+⚠️ CRITICAL RULE
+This task MUST ONLY affect the About Us page and its related components.
+DO NOT modify:
+
+Authentication System
+
+User Management
+
+Inventory Module
+
+Procurement Module
+
+Dashboard
+
+Reporting Module
+
+Approval Workflow
+
+Existing APIs
+
+Existing Database Collections
+
+Existing Business Logic
+
+Existing UI Components
+
+The implementation must be isolated and must not break any existing functionality.
+
+PROJECT INFORMATION
+
+Project Name: Kandahar University Warehouse and Procurement Management System
+Project Type: Final Year Project
+University: Kandahar University
+Faculty: Computer Science
+Year: 2026
+
+TEAM MEMBERS
+
+Display the following team members:
+
+Enayatullah Mansoor
+
+Fazalrahman Mayar
+
+Shamsurahman Mushfiq
+
+Abdulhadi Rahimi
+
+Nazir Ahmad Bashari
+
+SUPERVISOR
+
+Name: Hikmatullah Omid
+Faculty: Computer Science
+Department: Network Department
+Role: Academic Supervisor
+
+TEAM IMAGE MANAGEMENT SYSTEM
+
+Implement a secure and permanent image management system ONLY for team members.
+
+Upload Rules
+
+Images must be uploaded from the local computer.
+
+Upload is allowed only once.
+
+Only administrators can perform the initial upload.
+
+After the first upload, the image becomes permanently locked.
+
+Permanent Image Policy
+
+Team member photos are considered official project records.
+After a photo is uploaded:
+✅ Display allowed
+❌ Update not allowed
+❌ Replace not allowed
+❌ Delete not allowed
+❌ Re-upload not allowed
+❌ Modification not allowed
+The image cannot be changed by:
+
+Admin
+
+Staff
+
+Student
+
+Super Admin
+
+Any authenticated user
+
+Backend Enforcement
+
+The restriction must be enforced in the backend.
+Example Logic:
+if (member.imageUrl) { return res.status(403).json({ success: false, message: "Profile photo already exists and cannot be modified." }); }
+Block:
+
+PUT Requests
+
+PATCH Requests
+
+DELETE Requests
+
+Image Replacement Requests
+
+Database Rule
+
+The imageUrl field must become immutable after the first successful save.
+Future write operations must be rejected.
+Example Concept:
+imageUrl: { type: String, immutable: true }
+or equivalent database-level protection.
+
+Storage Requirements
+
+Store uploaded images permanently.
+Recommended:
+Option 1: Cloudinary Storage
+Option 2: AWS S3
+Option 3: Secure Local Storage
+Store only image references inside the database.
+
+Team Member Data Model
+
+TeamMember { _id: ObjectId, fullName: String, role: String, bio: String, skills: [String], imageUrl: String, createdAt: Date, updatedAt: Date }
+
+SUPERVISOR RULES
+
+Hikmatullah Omid MUST NOT have:
+❌ Image Upload
+❌ Image Storage
+❌ Image Database Field
+❌ Image Display
+The Supervisor Section must contain ONLY:
+
+Name
+
+Faculty
+
+Department
+
+Role
+
+Academic Biography
+
+Professional Quote
+
+Quote:
+"This project demonstrates a modern and practical implementation of a warehouse management system and reflects strong teamwork and technical skills."
+
+ABOUT US PAGE STRUCTURE
+
+1. Project Introduction
+
+Section Title: About the Project
+Provide a professional description explaining:
+
+Warehouse Management
+
+Procurement Management
+
+Inventory Tracking
+
+Transparency
+
+Operational Efficiency
+
+Resource Management
+
+2. Project Objectives
+
+Display professional objective cards:
+
+Inventory Management
+
+Procurement Management
+
+Transparency
+
+Automation
+
+Reporting
+
+Accountability
+
+Resource Optimization
+
+3. Key Features
+
+Create modern feature cards:
+
+Inventory Management
+
+Procurement Request System
+
+Approval Workflow
+
+Procurement Tracking
+
+Reporting System
+
+Dashboard Analytics
+
+Role-Based Access Control
+
+Audit Logging
+
+4. Team Section
+
+Create professional profile cards.
+Each card must contain:
+
+Circular Profile Image
+
+Full Name
+
+Assigned Role
+
+Short Biography
+
+Skills List
+
+Example Roles:
+
+Project Lead
+
+Full Stack Developer
+
+Frontend Developer
+
+Backend Developer
+
+System Analyst
+
+Team Card Requirements
+
+Responsive
+
+Modern Design
+
+Smooth Hover Animation
+
+Soft Shadow
+
+Rounded Corners
+
+Professional Appearance
+
+Image Requirements:
+
+Aspect Ratio 1:1
+
+Circular Avatar
+
+Lazy Loading
+
+Responsive
+
+Fallback:
+If image does not exist:
+Show Default Avatar
+
+5. Supervisor Section
+
+Create a highlighted premium card WITHOUT IMAGE.
+Display:
+
+Full Name
+
+Faculty
+
+Department
+
+Role
+
+Academic Biography
+
+Professional Quote
+
+Make this section visually distinguished.
+
+6. Technology Stack
+
+Auto-detect technologies if available.
+Otherwise display:
+Backend: Node.js + Express.js
+Frontend: React.js
+Database: MongoDB
+Authentication: JWT
+Hosting: Auto Detect
+
+7. Future Scope
+
+Display future improvements:
+
+Mobile Application
+
+AI Integration
+
+Predictive Analytics
+
+Multi-language Support
+
+Cloud Deployment
+
+Advanced Reporting
+
+Smart Inventory Forecasting
+
+UI/UX REQUIREMENTS
+
+Design must be:
+
+Modern
+
+Professional
+
+Elegant
+
+Responsive
+
+Production Ready
+
+Responsive Layout:
+Mobile: 1 Column
+Tablet: 2 Columns
+Desktop: 3 Columns
+Include:
+
+Soft Shadows
+
+Glassmorphism (optional)
+
+Rounded Corners
+
+Consistent Spacing
+
+Accessibility Support
+
+Smooth Animations
+
+Hover Effects
+
+Loading States
+
+Error States
+
+COMPONENT ARCHITECTURE
+
+Create reusable components:
+
+AboutHero
+
+ObjectivesSection
+
+FeaturesSection
+
+ProfileCard
+
+TeamSection
+
+SupervisorCard
+
+TechnologyStack
+
+FutureScope
+
+Use clean architecture and reusable code.
+
+OUTPUT REQUIREMENTS
+
+Generate:
+
+Complete UI Implementation
+
+Backend API Implementation
+
+Database Schema
+
+Upload Logic
+
+Image Locking Logic
+
+Component Structure
+
+Folder Structure
+
+Responsive Design
+
+Production-Ready Code
+
+Final result must be fully professional, scalable, secure, and ready for deployment without affecting any existing module of the system.
