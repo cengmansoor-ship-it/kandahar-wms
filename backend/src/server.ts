@@ -18,6 +18,7 @@ import budgetRoutes from './routes/budget.routes';
 import trashRoutes from './routes/trash.routes';
 import smsRoutes from './routes/sms.routes';
 import checklistRoutes from './routes/checklist.routes';
+import authRoutes from './routes/auth.routes';
 import { BudgetService } from './services/budget.service';
 import { TraceabilityService } from './services/traceability.service';
 import { ManagementService } from './services/management.service';
@@ -67,6 +68,7 @@ app.use('/api/budget', budgetRoutes);
 app.use('/api/trash', trashRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/checklist', checklistRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });

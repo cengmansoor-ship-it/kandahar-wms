@@ -17,6 +17,59 @@ function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+
+async function apiSendOtp(email: string): Promise<{ success: boolean; code?: string; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/forgot-password/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, code: "NETWORK_ERROR", message: "د شبکې ستونزه." };
+  }
+}
+
+async function apiVerifyOtp(email: string, otp: string): Promise<{ success: boolean; code?: string; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/forgot-password/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, code: "NETWORK_ERROR", message: "د شبکې ستونزه." };
+  }
+}
+
+async function apiResetPassword(email: string, otp: string, newPassword: string): Promise<{ success: boolean; code?: string; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/forgot-password/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp, newPassword }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, code: "NETWORK_ERROR", message: "د شبکې ستونزه." };
+  }
+}
+
+function friendlySmtpError(code?: string): string {
+  if (code === "SMTP_NOT_CONFIGURED")
+    return "د ایمیل سرور کنفیګ نه دی. مهرباني وکړئ لومړی د تنظیماتو کې د ایمیل اپ پاسورډ ولیکئ.";
+  if (code === "GMAIL_BAD_CREDENTIALS")
+    return "د ایمیل اپ پاسورډ ناسم دی. مهرباني وکړئ د تنظیماتو کې اپ پاسورډ بیا وچیک کړئ.";
+  if (code === "TOO_MANY_REQUESTS")
+    return "ډیرې غوښتنې. ۱۰ دقیقې وروسته بیا هڅه وکړئ.";
+  if (code === "USER_NOT_FOUND")
+    return "دا ایمیل پته د سیستم کې نه موندل کیږي. مهرباني وکړئ د سیستم مدیر سره اړیکه ونیسئ.";
+  return "";
+}
+
 export default function SignInForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -28,15 +81,19 @@ export default function SignInForm() {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState<OtpStep>("email");
   const [forgotEmail, setForgotEmail] = useState("");
-  const [otpCode, setOtpCode] = useState("");
   const [otpInput, setOtpInput] = useState("");
   const [otpExpiry, setOtpExpiry] = useState(0);
+
+  // demo-mode only
+  const [demoOtpCode, setDemoOtpCode] = useState("");
   const [otpAttempts, setOtpAttempts] = useState(0);
+
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
   const [showNewPass, setShowNewPass] = useState(false);
   const [forgotMsg, setForgotMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [forgotDone, setForgotDone] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,7 +114,7 @@ export default function SignInForm() {
     setForgotStep("email");
     setForgotEmail(email);
     setOtpInput("");
-    setOtpCode("");
+    setDemoOtpCode("");
     setOtpExpiry(0);
     setOtpAttempts(0);
     setNewPass("");
@@ -66,7 +123,7 @@ export default function SignInForm() {
     setForgotDone(false);
   };
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleaned = forgotEmail.trim().toLowerCase();
     if (!cleaned) {
@@ -75,53 +132,96 @@ export default function SignInForm() {
     }
 
     if (isFirebaseConfigured) {
-      setForgotMsg({ text: "د Firebase له لارې د پټنوم بیا رغونې لینک ستاسې ایمیل ته ولېږل شو.", ok: true });
+      setForgotMsg({ text: "د Firebase له لارې د پټنوم بیا رغونې لینک ستاسې ایمیل ته ولیږل شو.", ok: true });
       return;
     }
 
-    const allUsers = [
-      ...DEMO_SEED_USERS,
-      ...getLocalItem<{ email: string; password: string }[]>("extra_users", []),
-    ];
-    const found = allUsers.find(u => u.email.toLowerCase() === cleaned);
-    if (!found) {
-      setForgotMsg({ text: "دا ایمیل پته د سیستم کې نه موندل کېږي. مهرباني وکړئ د سیستم مدیر سره اړیکه ونیسئ.", ok: false });
+    setForgotLoading(true);
+    setForgotMsg(null);
+
+    const result = await apiSendOtp(cleaned);
+    setForgotLoading(false);
+
+    if (result.success) {
+      setOtpExpiry(Date.now() + OTP_TTL_MS);
+      setOtpAttempts(0);
+      setForgotStep("otp");
+      setForgotMsg({ text: "✅ تایید کوډ (OTP) ستاسې ایمیل ته ولیږل شو. ایمیل وچیک کړئ.", ok: true });
       return;
     }
 
-    const code = generateOtp();
-    setOtpCode(code);
-    setOtpExpiry(Date.now() + OTP_TTL_MS);
-    setOtpAttempts(0);
-    setForgotStep("otp");
-    setForgotMsg({
-      text: `د نمایشي حالت کې: ستاسې تایید کوډ (OTP) — ${code} — دی. د ریښتیني سیستم کې به دا کوډ ستاسې ایمیل ته ولېږل شي.`,
-      ok: true,
-    });
+    // SMTP not configured — fall back to demo mode for localStorage users
+    if (result.code === "SMTP_NOT_CONFIGURED" || result.code === "NETWORK_ERROR") {
+      const allUsers = [
+        ...DEMO_SEED_USERS,
+        ...getLocalItem<{ email: string; password: string }[]>("extra_users", []),
+      ];
+      const found = allUsers.find(u => u.email.toLowerCase() === cleaned);
+      if (!found) {
+        setForgotMsg({ text: "دا ایمیل پته د سیستم کې نه موندل کیږي. مهرباني وکړئ د سیستم مدیر سره اړیکه ونیسئ.", ok: false });
+        return;
+      }
+      const code = generateOtp();
+      setDemoOtpCode(code);
+      setOtpExpiry(Date.now() + OTP_TTL_MS);
+      setOtpAttempts(0);
+      setForgotStep("otp");
+      setForgotMsg({
+        text: `⚠️ د ایمیل کنفیګ نشته — د نمایشي حالت کوډ: ${code}`,
+        ok: true,
+      });
+      return;
+    }
+
+    const friendly = friendlySmtpError(result.code);
+    setForgotMsg({ text: friendly || result.message || "د ایمیل لیږلو کې ستونزه وه.", ok: false });
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (Date.now() > otpExpiry) {
       setForgotMsg({ text: "د تایید کوډ وخت ختم شوی. مهرباني وکړئ بیا هڅه وکړئ.", ok: false });
       setForgotStep("email");
       return;
     }
-    if (otpAttempts >= MAX_OTP_ATTEMPTS) {
-      setForgotMsg({ text: "ډیرې ناسمې هڅې. مهرباني وکړئ بیا د پیل کولو هڅه وکړئ.", ok: false });
-      setForgotStep("email");
+
+    // Demo fallback mode (OTP was generated locally)
+    if (demoOtpCode) {
+      if (otpAttempts >= MAX_OTP_ATTEMPTS) {
+        setForgotMsg({ text: "ډیرې ناسمې هڅې. مهرباني وکړئ بیا د پیل کولو هڅه وکړئ.", ok: false });
+        setForgotStep("email");
+        return;
+      }
+      if (otpInput.trim() !== demoOtpCode) {
+        setOtpAttempts(a => a + 1);
+        setForgotMsg({ text: "تایید کوډ ناسم دی. بیا هڅه وکړئ.", ok: false });
+        return;
+      }
+      setForgotMsg(null);
+      setForgotStep("newpass");
       return;
     }
-    if (otpInput.trim() !== otpCode) {
-      setOtpAttempts(a => a + 1);
-      setForgotMsg({ text: "تایید کوډ ناسم دی. بیا هڅه وکړئ.", ok: false });
-      return;
-    }
+
+    // Real backend verification
+    setForgotLoading(true);
     setForgotMsg(null);
-    setForgotStep("newpass");
+    const result = await apiVerifyOtp(forgotEmail.trim().toLowerCase(), otpInput.trim());
+    setForgotLoading(false);
+
+    if (result.success) {
+      setForgotMsg(null);
+      setForgotStep("newpass");
+      return;
+    }
+
+    if (result.code === "OTP_EXPIRED") {
+      setForgotStep("email");
+    }
+    setForgotMsg({ text: result.message || "تایید کوډ ناسم دی.", ok: false });
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPass.trim()) {
       setForgotMsg({ text: "مهرباني وکړئ نوی پټنوم ولیکئ.", ok: false });
@@ -136,18 +236,41 @@ export default function SignInForm() {
       return;
     }
 
-    const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
-    const filtered = overrides.filter(o => o.email.toLowerCase() !== forgotEmail.trim().toLowerCase());
-    setLocalItem("password_overrides", [...filtered, { email: forgotEmail.trim().toLowerCase(), password: newPass }]);
+    // Demo fallback (localStorage)
+    if (demoOtpCode) {
+      const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+      const filtered = overrides.filter(o => o.email.toLowerCase() !== forgotEmail.trim().toLowerCase());
+      setLocalItem("password_overrides", [...filtered, { email: forgotEmail.trim().toLowerCase(), password: newPass }]);
+      setForgotDone(true);
+      setForgotMsg({ text: "پټنوم بریالیتوب سره بدل شو. اوس کولی شئ نوي پټنوم سره ننوځئ.", ok: true });
+      setTimeout(() => {
+        setShowForgot(false);
+        setForgotDone(false);
+        setEmail(forgotEmail.trim().toLowerCase());
+        setPassword("");
+      }, 2500);
+      return;
+    }
 
-    setForgotDone(true);
-    setForgotMsg({ text: "پټنوم بریالیتوب سره بدل شو. اوس کولی شئ نوي پټنوم سره ننوځئ.", ok: true });
-    setTimeout(() => {
-      setShowForgot(false);
-      setForgotDone(false);
-      setEmail(forgotEmail.trim().toLowerCase());
-      setPassword("");
-    }, 2500);
+    // Real backend reset
+    setForgotLoading(true);
+    setForgotMsg(null);
+    const result = await apiResetPassword(forgotEmail.trim().toLowerCase(), otpInput.trim(), newPass);
+    setForgotLoading(false);
+
+    if (result.success) {
+      setForgotDone(true);
+      setForgotMsg({ text: "✅ پټنوم بریالیتوب سره بدل شو. اوس کولی شئ نوي پټنوم سره ننوځئ.", ok: true });
+      setTimeout(() => {
+        setShowForgot(false);
+        setForgotDone(false);
+        setEmail(forgotEmail.trim().toLowerCase());
+        setPassword("");
+      }, 2500);
+      return;
+    }
+
+    setForgotMsg({ text: result.message || "د پټنوم بدلولو کې ستونزه وه.", ok: false });
   };
 
   const secondsLeft = Math.max(0, Math.ceil((otpExpiry - Date.now()) / 1000));
@@ -239,8 +362,8 @@ export default function SignInForm() {
                   🔑 د پټنوم بیا رغونه
                 </p>
                 <p className="text-xs text-brand-600 dark:text-brand-400">
-                  {forgotStep === "email" && "خپل ایمیل ولیکئ — یو تایید کوډ به درته ولېږل شي."}
-                  {forgotStep === "otp" && "ستاسې ایمیل ته لېږل شوی تایید کوډ ولیکئ."}
+                  {forgotStep === "email" && "خپل ایمیل ولیکئ — یو تایید کوډ (OTP) به ستاسې ایمیل ته ولیږل شي."}
+                  {forgotStep === "otp" && "ستاسې ایمیل ته لیږل شوی ۶ رقمه تایید کوډ ولیکئ."}
                   {forgotStep === "newpass" && "نوی پټنوم وټاکئ."}
                 </p>
               </div>
@@ -265,8 +388,8 @@ export default function SignInForm() {
                       onChange={(e) => { setForgotEmail(e.target.value); setForgotMsg(null); }}
                     />
                   </div>
-                  <Button className="w-full" size="sm" type="submit">
-                    تایید کوډ ولېږئ
+                  <Button className="w-full" size="sm" type="submit" disabled={forgotLoading}>
+                    {forgotLoading ? "لیږل کیږي..." : "تایید کوډ ولیږئ"}
                   </Button>
                 </form>
               )}
@@ -283,20 +406,21 @@ export default function SignInForm() {
                       maxLength={6}
                     />
                     {secondsLeft > 0 && (
-                      <p className="mt-1 text-xs text-gray-400">
-                        د پاتې وخت: {secondsLeft} ثانیې — بیا هڅه: {MAX_OTP_ATTEMPTS - otpAttempts} ځله پاتې
+                      <p className="mt-1 text-xs text-gray-400 text-right">
+                        د پاتې وخت: {secondsLeft} ثانیې
+                        {demoOtpCode && ` — بیا هڅه: ${MAX_OTP_ATTEMPTS - otpAttempts} ځله پاتې`}
                       </p>
                     )}
                   </div>
-                  <Button className="w-full" size="sm" type="submit">
-                    تایید
+                  <Button className="w-full" size="sm" type="submit" disabled={forgotLoading}>
+                    {forgotLoading ? "تایید کیږي..." : "تایید"}
                   </Button>
                   <button
                     type="button"
-                    onClick={() => { setForgotStep("email"); setForgotMsg(null); setOtpInput(""); }}
+                    onClick={() => { setForgotStep("email"); setForgotMsg(null); setOtpInput(""); setDemoOtpCode(""); }}
                     className="w-full text-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
                   >
-                    بیا کوډ ولېږئ
+                    بیا کوډ ولیږئ
                   </button>
                 </form>
               )}
@@ -331,8 +455,8 @@ export default function SignInForm() {
                       onChange={(e) => { setConfirmPass(e.target.value); setForgotMsg(null); }}
                     />
                   </div>
-                  <Button className="w-full" size="sm" type="submit">
-                    پټنوم خوندي کړئ
+                  <Button className="w-full" size="sm" type="submit" disabled={forgotLoading}>
+                    {forgotLoading ? "خوندي کیږي..." : "پټنوم خوندي کړئ"}
                   </Button>
                 </form>
               )}
