@@ -317,19 +317,19 @@ export default function UserManagement() {
                   />
                 </div>
               </div>
-              <div className="mt-5 flex justify-end gap-3">
-                <button
-                  onClick={() => { setShowForm(false); setMsg(""); }}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 transition"
-                >
-                  لغوه
-                </button>
+              <div className="mt-5 flex gap-3" dir="ltr">
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg bg-primary text-sm font-bold text-white hover:bg-primary/90 transition disabled:opacity-60"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold transition-all shadow-sm"
                 >
-                  {saving ? "خوندي کول..." : "ذخیره"}
+                  {saving ? "⏳ خوندي کول..." : "✔ ثبت / ذخیره"}
+                </button>
+                <button
+                  onClick={() => { setShowForm(false); setMsg(""); }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  لغوه
                 </button>
               </div>
             </div>
