@@ -272,6 +272,12 @@ export default function SignInForm() {
     setForgotLoading(false);
 
     if (result.success) {
+      // Also update localStorage password_overrides so demo-mode login works immediately
+      const cleanForgotEmail = forgotEmail.trim().toLowerCase();
+      const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+      const filtered = overrides.filter(o => o.email.toLowerCase() !== cleanForgotEmail);
+      setLocalItem("password_overrides", [...filtered, { email: cleanForgotEmail, password: newPass }]);
+
       setForgotDone(true);
       setForgotMsg({ text: "✅ پټنوم بریالیتوب سره بدل شو. اوس کولی شئ نوي پټنوم سره ننوځئ.", ok: true });
       setTimeout(() => {
