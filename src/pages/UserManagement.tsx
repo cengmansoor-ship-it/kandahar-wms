@@ -92,6 +92,7 @@ export default function UserManagement() {
       );
       setLocalItem("users", updated);
       setUsers(updated);
+      window.dispatchEvent(new Event("wms_profile_updated"));
 
       const oldEmail = editUser.email.trim().toLowerCase();
       const newEmail = formData.email.trim().toLowerCase();
@@ -152,6 +153,7 @@ export default function UserManagement() {
       const updatedUsers = [newUser, ...allUsers];
       setLocalItem("users", updatedUsers);
       setUsers(updatedUsers);
+      window.dispatchEvent(new Event("wms_profile_updated"));
 
       const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
       setLocalItem("password_overrides", [...overrides, { email: formData.email.trim().toLowerCase(), password: formData.password.trim() }]);
@@ -169,6 +171,7 @@ export default function UserManagement() {
     const updated = all.map(u => u.uid === uid ? { ...u, active: !u.active } : u);
     setLocalItem("users", updated);
     setUsers(updated);
+    window.dispatchEvent(new Event("wms_profile_updated"));
   };
 
   return (

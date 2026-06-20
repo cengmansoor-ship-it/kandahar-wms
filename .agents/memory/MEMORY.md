@@ -1,2 +1,4 @@
 - [Jalaali date conversion](jalaali-date.md) — use jalaali-js npm package for Shamsi dates; custom algorithms give wrong results.
 - [CurrentDateBadge coverage](date-badge-coverage.md) — badge added to 30+ pages; pattern: import + `<div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>` after Breadcrumb.
+- [Qamari date locale](qamari-locale.md) — use `ar-SA-u-ca-islamic-umalqura` + fallback chain for correct Hijri (1448/1/5 for June 20 2026); `islamic-uma` returns Gregorian.
+- [Demo profile live update](demo-profile-update.md) — getDemoUserProfile checks localStorage `users` first; UserManagement dispatches `wms_profile_updated`; AuthContext listens to refresh nav name live.

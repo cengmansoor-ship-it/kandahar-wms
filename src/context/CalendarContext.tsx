@@ -58,22 +58,43 @@ function _getShamsiMonthIndex(d: Date): number {
   return jm - 1;
 }
 
+function _getIntlHijri(d: Date): { year: number; month: number; day: number } | null {
+  const LOCALES = [
+    "ar-SA-u-ca-islamic-umalqura",
+    "ar-u-ca-islamic-umalqura",
+    "en-u-ca-islamic-umalqura",
+    "ar-SA-u-ca-islamic",
+    "en-u-ca-islamic",
+  ];
+  for (const loc of LOCALES) {
+    try {
+      const fmt = new Intl.DateTimeFormat(loc, { year: "numeric", month: "numeric", day: "numeric" });
+      const parts = fmt.formatToParts(d);
+      const get = (type: string) => {
+        const p = parts.find(x => x.type === type);
+        return p ? _parseIntlNum(p.value) : NaN;
+      };
+      const year = get("year");
+      const month = get("month");
+      const day = get("day");
+      if (year > 1000 && year < 1600 && month >= 1 && month <= 12 && day >= 1 && day <= 30) {
+        return { year, month, day };
+      }
+    } catch {}
+  }
+  return null;
+}
+
 function _getQamariYear(d: Date): number {
-  try {
-    const s = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-uma", { year: "numeric" }).format(d);
-    const n = _parseIntlNum(s);
-    if (n > 1000 && n < 1600) return n;
-  } catch {}
+  const r = _getIntlHijri(d);
+  if (r) return r.year;
   const [hy] = _gregorianToHijri(d.getFullYear(), d.getMonth() + 1, d.getDate());
   return hy;
 }
 
 function _getQamariMonthIndex(d: Date): number {
-  try {
-    const s = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-uma", { month: "numeric" }).format(d);
-    const n = _parseIntlNum(s);
-    if (n >= 1 && n <= 12) return n - 1;
-  } catch {}
+  const r = _getIntlHijri(d);
+  if (r) return r.month - 1;
   const [, hm] = _gregorianToHijri(d.getFullYear(), d.getMonth() + 1, d.getDate());
   return hm - 1;
 }
@@ -85,12 +106,14 @@ function _formatShamsi(d: Date): string {
 }
 
 function _formatQamari(d: Date): string {
-  const year = _getQamariYear(d);
-  const monthIdx = _getQamariMonthIndex(d);
-  const monthName = QAMARI_MONTHS[Math.max(0, Math.min(11, monthIdx))];
-  const [, , hd] = _gregorianToHijri(d.getFullYear(), d.getMonth() + 1, d.getDate());
-  const day = hd >= 1 && hd <= 30 ? hd : d.getDate();
-  return `${year} د ${monthName} ${day}`;
+  const intl = _getIntlHijri(d);
+  if (intl) {
+    const monthName = QAMARI_MONTHS[Math.max(0, Math.min(11, intl.month - 1))];
+    return `${intl.year} د ${monthName} ${intl.day}`;
+  }
+  const [hy, hm, hd] = _gregorianToHijri(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  const monthName = QAMARI_MONTHS[Math.max(0, Math.min(11, hm - 1))];
+  return `${hy} د ${monthName} ${hd}`;
 }
 
 function _formatGregorian(d: Date): string {

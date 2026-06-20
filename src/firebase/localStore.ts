@@ -157,6 +157,14 @@ export function ensureSeedVersion(): void {
 
 export function getDemoUserProfile(email?: string | null): UserProfile {
   const normalized = (email || "").trim().toLowerCase();
+  // Check localStorage-saved users first (may have been updated via UserManagement)
+  const savedUsers = getLocalItem<UserProfile[]>("users", []);
+  const fromSaved = savedUsers.find(u => u.email.toLowerCase() === normalized);
+  if (fromSaved) {
+    setLocalItem("demo_profile", fromSaved);
+    return fromSaved;
+  }
+  // Fall back to seed users
   const matched = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === normalized);
   const profile = matched || { ...DEMO_USER_PROFILE, email: email || DEMO_USER_PROFILE.email, updatedAt: now() };
   setLocalItem("demo_profile", profile);
