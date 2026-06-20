@@ -5,6 +5,7 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { safeSortByCreatedAt } from "../../firebase/safeQuery";
 import { useCalendar } from "../../context/CalendarContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const STATUS_LABELS: Record<string, string> = {
   StockAvailable: "جنس شتون لري — سپارل",
@@ -68,7 +69,10 @@ export default function WarehouseRequestList() {
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">د سپارلو او ویش مدیریت</h3>
-          <span className="text-xs text-gray-400">{requests.length} ټولې</span>
+          <div className="flex items-center gap-3">
+            <CurrentDateBadge />
+            <span className="text-xs text-gray-400">{requests.length} ټولې</span>
+          </div>
         </div>
 
         {/* Search */}

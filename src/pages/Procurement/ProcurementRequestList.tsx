@@ -5,6 +5,7 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { safeSortByCreatedAt } from "../../firebase/safeQuery";
 import { useCalendar } from "../../context/CalendarContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const STATUS_LABELS: Record<string, string> = {
   StockNotAvailable: "جنس نشته — تدارکاتو ته",
@@ -74,7 +75,10 @@ export default function ProcurementRequestList() {
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">تدارکاتو ته راجع شوې غوښتنې</h3>
-          <span className="text-xs text-gray-400 dark:text-gray-500">{requests.length} ټولې / کل</span>
+          <div className="flex items-center gap-3">
+            <CurrentDateBadge />
+            <span className="text-xs text-gray-400 dark:text-gray-500">{requests.length} ټولې / کل</span>
+          </div>
         </div>
 
         {/* Search */}

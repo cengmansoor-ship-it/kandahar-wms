@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import PageMeta from "../components/common/PageMeta";
 import Breadcrumb from "../components/common/Breadcrumb";
-import { getDemoUsers, setLocalItem, getLocalItem } from "../firebase/localStore";
+import { getDemoUsers, setLocalItem, getLocalItem, DEMO_SEED_USERS } from "../firebase/localStore";
 import type { UserProfile } from "../firebase/firestore";
 import { ROLES, UserRole } from "../constants/roles";
 import { useAuth } from "../context/AuthContext";
@@ -92,12 +92,43 @@ export default function UserManagement() {
       setLocalItem("users", updated);
       setUsers(updated);
 
-      if (formData.password.trim()) {
-        const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
-        const filtered = overrides.filter(o => o.email.toLowerCase() !== formData.email.trim().toLowerCase());
-        setLocalItem("password_overrides", [...filtered, { email: formData.email.trim().toLowerCase(), password: formData.password.trim() }]);
+      const oldEmail = editUser.email.trim().toLowerCase();
+      const newEmail = formData.email.trim().toLowerCase();
+      let overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
+
+      if (oldEmail !== newEmail) {
+        // Migrate password override from old email to new email
+        const oldOverride = overrides.find(o => o.email.toLowerCase() === oldEmail);
+        overrides = overrides.filter(o => o.email.toLowerCase() !== oldEmail && o.email.toLowerCase() !== newEmail);
+        if (oldOverride && !formData.password.trim()) {
+          overrides = [...overrides, { email: newEmail, password: oldOverride.password }];
+        } else if (!oldOverride && !formData.password.trim()) {
+          // Old email was a seed user — migrate its seed password
+          const seedByUid = DEMO_SEED_USERS.find(s => s.uid === editUser.uid);
+          if (seedByUid) {
+            overrides = [...overrides, { email: newEmail, password: seedByUid.password }];
+          }
+        }
+        // Update stored auth session if the currently logged-in user changed their own email
+        if (typeof window !== "undefined") {
+          const raw = window.localStorage.getItem("kandahar_wms_demo_auth_user");
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed.uid === editUser.uid) {
+                window.localStorage.setItem("kandahar_wms_demo_auth_user", JSON.stringify({ ...parsed, email: newEmail }));
+              }
+            } catch { /* ignore */ }
+          }
+        }
       }
 
+      if (formData.password.trim()) {
+        overrides = overrides.filter(o => o.email.toLowerCase() !== newEmail);
+        overrides = [...overrides, { email: newEmail, password: formData.password.trim() }];
+      }
+
+      setLocalItem("password_overrides", overrides);
       setMsg("کاروونکی بریالیتوب سره تازه شو.");
     } else {
       const existing = allUsers.find(u => u.email.toLowerCase() === formData.email.toLowerCase());

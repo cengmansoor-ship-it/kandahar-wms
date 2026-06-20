@@ -106,10 +106,10 @@ export default function SignInForm() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
       if (!isFirebaseConfigured) {
         const users = getDemoUsers();
-        const found = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+        const found = users.find(u => u.uid === loggedInUser.uid);
         navigate(found?.role === ROLES.SUPER_ADMIN ? "/superadmin" : "/dashboard", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });

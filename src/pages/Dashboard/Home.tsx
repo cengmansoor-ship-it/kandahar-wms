@@ -74,7 +74,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
   const { pick, lang } = useLanguage();
-  const { calendarType, getMonthNames, getCurrentYear, getYearFromDate, getMonthIndexFromDate } = useCalendar();
+  const { calendarType, getMonthNames, getCurrentYear, getYearFromDate, getMonthIndexFromDate, getCurrentDateString } = useCalendar();
+  const calLabel = calendarType === "shamsi" ? "شمسي" : calendarType === "qamari" ? "قمري" : "میلادي";
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
@@ -245,6 +246,11 @@ export default function Home() {
               {pick("ښه راغلاست،", "خوش آمدید،")} <span className="font-bold">{profile.name}</span> — <span className="opacity-70">{profile.role}</span>
             </p>
           )}
+          <div className="mt-3 relative z-10">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-white/70 dark:bg-white/5 px-3 py-1 text-xs font-medium text-primary dark:text-primary/80" dir="rtl">
+              📅 {getCurrentDateString()} <span className="opacity-60">({calLabel})</span>
+            </span>
+          </div>
         </div>
 
         {/* Stat cards */}

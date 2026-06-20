@@ -8,6 +8,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useCalendar } from "../../context/CalendarContext";
 import { ROLES } from "../../constants/roles";
 import { safeSortByCreatedAt } from "../../firebase/safeQuery";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const STATUS_PS: Record<string, string> = {
   Draft: "مسوده", Submitted: "لیږل شوی", ConfirmedByRequestConfirmer: "تایید شوی",
@@ -124,6 +125,7 @@ export default function RequestList() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{pick("د غوښتنو لړۍ", "فهرست درخواست‌ها")}</h3>
           <div className="flex items-center gap-2">
+            <CurrentDateBadge />
             {filterParam && (
               <Link to="/requests" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 transition">
                 ✕ {pick("فلتر لرې کول", "حذف فیلتر")}

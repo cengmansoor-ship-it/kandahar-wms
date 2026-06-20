@@ -42,6 +42,18 @@ function _formatGregorian(d: Date): string {
   } catch { return d.toLocaleDateString(); }
 }
 
+function _formatShamsi(d: Date): string {
+  try {
+    return new Intl.DateTimeFormat("ps-AF-u-ca-persian", { year: "numeric", month: "long", day: "numeric" }).format(d);
+  } catch { return d.toLocaleDateString(); }
+}
+
+function _formatQamari(d: Date): string {
+  try {
+    return new Intl.DateTimeFormat("ps-AF-u-ca-islamic-uma", { year: "numeric", month: "long", day: "numeric" }).format(d);
+  } catch { return d.toLocaleDateString(); }
+}
+
 interface CalendarContextType {
   calendarType: CalendarType;
   setCalendarType: (t: CalendarType) => void;
@@ -51,6 +63,7 @@ interface CalendarContextType {
   getCurrentYear: () => number;
   getYearFromDate: (d: Date) => number;
   getMonthIndexFromDate: (d: Date) => number;
+  getCurrentDateString: () => string;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(undefined);
@@ -103,12 +116,20 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return d.getMonth();
   };
 
+  const getCurrentDateString = (): string => {
+    const now = new Date();
+    if (calendarType === "shamsi") return _formatShamsi(now);
+    if (calendarType === "qamari") return _formatQamari(now);
+    return _formatGregorian(now);
+  };
+
   return (
     <CalendarContext.Provider value={{
       calendarType, setCalendarType,
       pickDate, pickDateTs,
       getMonthNames, getCurrentYear,
       getYearFromDate, getMonthIndexFromDate,
+      getCurrentDateString,
     }}>
       {children}
     </CalendarContext.Provider>

@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { performHealthCheck } from "../../firebase/maintenance";
 import { useAuth } from "../../context/AuthContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function SystemHealth() {
   const [health, setHealth] = useState<any>(null);
@@ -35,7 +36,10 @@ export default function SystemHealth() {
         <div className="rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="flex items-center justify-between mb-8 border-b pb-4 dark:border-gray-700">
             <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">د سیسټم د روغتیا معاینه</h3>
-            <button onClick={checkHealth} className="text-primary text-sm font-bold hover:underline">بیا چک کول 🔄</button>
+            <div className="flex items-center gap-3">
+              <CurrentDateBadge />
+              <button onClick={checkHealth} className="text-primary text-sm font-bold hover:underline">بیا چک کول 🔄</button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

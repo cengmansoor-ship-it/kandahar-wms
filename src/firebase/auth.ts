@@ -8,7 +8,7 @@ import {
 import { auth, isFirebaseConfigured } from "./firebase";
 import { ensureUserProfileExists } from "./firestore";
 import { logAuditEvent } from "./audit";
-import { getDemoUserProfile, DEMO_SEED_USERS, DEMO_LOGGED_OUT_KEY, getLocalItem } from "./localStore";
+import { getDemoUserProfile, getDemoUsers, DEMO_SEED_USERS, DEMO_LOGGED_OUT_KEY, getLocalItem } from "./localStore";
 
 const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
 const DEMO_AUTH_EVENT = "kandahar-wms-demo-auth-change";
@@ -70,7 +70,11 @@ export const login = async (email: string, pass: string): Promise<User> => {
   const cleanEmail = email.trim().toLowerCase();
 
   if (!isFirebaseConfigured) {
-    const matched = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === cleanEmail);
+    // Check localStorage users first (handles updated emails), then fallback to DEMO_SEED_USERS
+    const localUsers = getDemoUsers();
+    const localUser = localUsers.find(u => u.email.toLowerCase() === cleanEmail);
+    const seedUser = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === cleanEmail);
+    const matched = localUser || seedUser;
 
     if (!matched) {
       const err: any = new Error("auth/user-not-found");
@@ -78,9 +82,28 @@ export const login = async (email: string, pass: string): Promise<User> => {
       throw err;
     }
 
+    // Check if user is active
+    if ("active" in matched && matched.active === false) {
+      const err: any = new Error("auth/user-not-found");
+      err.code = "auth/user-not-found";
+      throw err;
+    }
+
     const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
     const override = overrides.find(o => o.email.toLowerCase() === cleanEmail);
-    const effectivePassword = override ? override.password : matched.password;
+
+    let effectivePassword: string;
+    if (override) {
+      effectivePassword = override.password;
+    } else if (seedUser) {
+      // Find seed user by UID (handles case where localStorage user was originally a seed user)
+      const seedByUid = DEMO_SEED_USERS.find(s => s.uid === matched.uid);
+      effectivePassword = seedByUid ? seedByUid.password : "";
+    } else {
+      const err: any = new Error("auth/wrong-password");
+      err.code = "auth/wrong-password";
+      throw err;
+    }
 
     if (effectivePassword !== pass) {
       const err: any = new Error("auth/wrong-password");
@@ -88,7 +111,7 @@ export const login = async (email: string, pass: string): Promise<User> => {
       throw err;
     }
 
-    const user = createDemoUser(matched.email, matched.uid, matched.name);
+    const user = createDemoUser(matched.email, matched.uid, matched.name || "");
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(DEMO_LOGGED_OUT_KEY);
       window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({

@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getReportSummary } from "../../firebase/reports";
 import { Link } from "react-router";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function ReportsDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -47,6 +48,11 @@ export default function ReportsDashboard() {
       <Breadcrumb pageTitle="د راپورونو عمومي پاڼه / داشبورد گزارش‌ها" />
 
       <div className="space-y-6 page-enter">
+
+        {/* Date badge */}
+        <div className="flex justify-end" dir="rtl">
+          <CurrentDateBadge />
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

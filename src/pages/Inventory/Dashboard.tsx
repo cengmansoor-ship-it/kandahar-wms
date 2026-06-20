@@ -3,8 +3,10 @@ import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getItems } from "../../firebase/inventory";
+import { useCalendar } from "../../context/CalendarContext";
 
 export default function InventoryDashboard() {
+  const { getCurrentDateString, calendarType } = useCalendar();
   const [stats, setStats] = useState({
     totalItems: 0,
     totalQuantity: 0,
@@ -15,6 +17,7 @@ export default function InventoryDashboard() {
     totalUnits: 0,
   });
   const [loading, setLoading] = useState(true);
+  const calLabel = calendarType === "shamsi" ? "شمسي" : calendarType === "qamari" ? "قمري" : "میلادي";
 
   useEffect(() => { fetchStats(); }, []);
 
@@ -134,6 +137,12 @@ export default function InventoryDashboard() {
       <Breadcrumb pageTitle="د موجودۍ ډشبورډ / داشبورد موجودی" />
 
       <div className="space-y-6 page-enter">
+        {/* Date badge */}
+        <div className="flex justify-end" dir="rtl">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary dark:border-primary/30 dark:bg-primary/10">
+            📅 {getCurrentDateString()} <span className="opacity-60">({calLabel})</span>
+          </span>
+        </div>
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
           {loading

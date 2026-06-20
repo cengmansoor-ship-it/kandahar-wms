@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCalendar } from "../../context/CalendarContext";
 import { useSuperAdminMonitoring } from "../../hooks/useSuperAdminMonitoring";
 
 interface KpiCardProps {
@@ -43,8 +44,12 @@ function EmptyState({ message }: { message: string }) {
 export default function SuperAdminDashboard() {
   const { profile } = useAuth();
   const { pick } = useLanguage();
+  const { getCurrentDateString, calendarType } = useCalendar();
   const { inventorySummary, requestSummary, procurementSummary, receivingSummary, loading, error, refresh } =
     useSuperAdminMonitoring();
+
+  const calLabel = calendarType === "shamsi" ? "شمسي" : calendarType === "qamari" ? "قمري" : "میلادي";
+  const todayStr = getCurrentDateString();
 
   const sections = [
     {
@@ -131,9 +136,14 @@ export default function SuperAdminDashboard() {
 
         {/* KPI Cards */}
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {pick("د سیستم عمومي شاخصونه", "شاخص‌های عمومی سیستم")}
-          </h2>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {pick("د سیستم عمومي شاخصونه", "شاخص‌های عمومی سیستم")}
+            </h2>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary dark:border-primary/30 dark:bg-primary/10" dir="rtl">
+              📅 {todayStr} <span className="opacity-60">({calLabel})</span>
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => (
