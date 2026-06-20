@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import { checkDbConnection } from './config/db';
 import inventoryRoutes from './routes/inventory.routes';
@@ -106,10 +107,17 @@ app.get('/api/time/now', (req: Request, res: Response) => {
 
 // Serve built frontend in production
 const distPath = path.join(__dirname, '../../dist');
-app.use(express.static(distPath));
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(distPath, 'index.html'));
-});
+const indexHtml = path.join(distPath, 'index.html');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req: Request, res: Response) => {
+    if (fs.existsSync(indexHtml)) {
+      res.sendFile(indexHtml);
+    } else {
+      res.status(404).json({ success: false, message: 'Frontend not built' });
+    }
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
