@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "TS_NODE_CACHE=false node_modules/.bin/nodemon --exec node_modules/.bin/ts-node src/server.ts",
+    "dev": "cross-env TS_NODE_CACHE=false node_modules/.bin/nodemon --exec node_modules/.bin/ts-node src/server.ts",
     "build": "tsc"
   },
   "ts-node": {
@@ -31,6 +31,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.4",
     "@types/node-cron": "^3.0.11",
+    "cross-env": "^10.1.0",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
