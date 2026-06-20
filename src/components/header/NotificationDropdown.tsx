@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
+import { getItems, WarehouseItem } from "../../firebase/inventory";
 import { getInAppNotifications, markAllNotificationsRead, InAppNotification } from "../../firebase/localStore";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
@@ -31,19 +32,12 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const NOTIF_TYPE_COLOR: Record<string, string> = {
-  received: "bg-teal-500",
-  delivered: "bg-purple-500",
-  approved: "bg-emerald-500",
-  rejected: "bg-red-500",
-  info: "bg-blue-500",
+  received: "bg-teal-500", delivered: "bg-purple-500",
+  approved: "bg-emerald-500", rejected: "bg-red-500", info: "bg-blue-500",
 };
 
 const NOTIF_TYPE_ICON: Record<string, string> = {
-  received: "📦",
-  delivered: "✅",
-  approved: "👍",
-  rejected: "❌",
-  info: "ℹ️",
+  received: "📦", delivered: "✅", approved: "👍", rejected: "❌", info: "ℹ️",
 };
 
 function timeAgo(ts: number, lang: string): string {
@@ -69,10 +63,20 @@ const AVATAR_COLORS = [
   "bg-orange-500", "bg-rose-500", "bg-teal-500",
 ];
 
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide px-1">
+      {label}
+    </p>
+  );
+}
+
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
   const [inAppNotifs, setInAppNotifs] = useState<InAppNotification[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<WarehouseItem[]>([]);
+  const [outOfStockItems, setOutOfStockItems] = useState<WarehouseItem[]>([]);
   const [seen, setSeen] = useState(false);
   const [query, setQuery] = useState("");
   const [dropdownPos, setDropdownPos] = useState({ top: 72, right: 16 });
@@ -82,16 +86,29 @@ export default function NotificationDropdown() {
   const btnRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const canSeeInventory = profile && [
+    ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR, ROLES.WAREHOUSE_ENTRY_PERSON
+  ].includes(profile.role as any);
+
   const loadData = () => {
     getRequests().then(all => {
       let filtered = all;
       if (profile?.role === ROLES.REQUESTER) {
         filtered = all.filter((r: InventoryRequest) => r.requesterId === profile.uid || r.requesterName === profile.name);
+      } else if (profile?.role === ROLES.REQUEST_CONFIRMER) {
+        filtered = all.filter((r: InventoryRequest) => r.status === "Submitted");
       }
       filtered.sort((a: InventoryRequest, b: InventoryRequest) => b.createdAt - a.createdAt);
-      setRequests(filtered.slice(0, 20));
+      setRequests(filtered.slice(0, 15));
     });
     setInAppNotifs(getInAppNotifications().slice(0, 10));
+
+    if (canSeeInventory) {
+      getItems().then(items => {
+        setLowStockItems(items.filter(i => i.currentQuantity > 0 && i.currentQuantity <= i.minimumStockLevel).slice(0, 8));
+        setOutOfStockItems(items.filter(i => i.currentQuantity === 0).slice(0, 8));
+      });
+    }
   };
 
   useEffect(() => { loadData(); }, [profile]);
@@ -102,9 +119,7 @@ export default function NotificationDropdown() {
       if (
         panelRef.current && !panelRef.current.contains(e.target as Node) &&
         btnRef.current && !btnRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
+      ) setIsOpen(false);
     };
     document.addEventListener("mousedown", handle);
     setTimeout(() => searchRef.current?.focus(), 80);
@@ -112,12 +127,14 @@ export default function NotificationDropdown() {
   }, [isOpen]);
 
   const unreadNotifs = inAppNotifs.filter(n => !n.read).length;
-  const unread = !seen && (requests.length > 0 || unreadNotifs > 0);
+  const totalAlerts = lowStockItems.length + outOfStockItems.length;
+  const totalBadge = unreadNotifs + totalAlerts;
+  const unread = !seen && (requests.length > 0 || unreadNotifs > 0 || totalAlerts > 0);
 
   const handleClick = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      const dropdownWidth = Math.min(361, window.innerWidth - 32);
+      const dropdownWidth = Math.min(380, window.innerWidth - 32);
       const rightFromRight = window.innerWidth - rect.right;
       const maxRight = window.innerWidth - dropdownWidth - 8;
       const right = Math.max(8, Math.min(rightFromRight, maxRight));
@@ -133,9 +150,8 @@ export default function NotificationDropdown() {
   };
 
   const statusMap = lang === "dr" ? STATUS_DR : STATUS_PS;
-
   const q = query.trim().toLowerCase();
-  const filtered = q
+  const filteredReqs = q
     ? requests.filter(r =>
         r.faculty?.toLowerCase().includes(q) ||
         r.departmentOrPerson?.toLowerCase().includes(q) ||
@@ -145,6 +161,8 @@ export default function NotificationDropdown() {
         r.requesterName?.includes(query.trim())
       )
     : requests;
+
+  const hasAny = inAppNotifs.length > 0 || lowStockItems.length > 0 || outOfStockItems.length > 0 || requests.length > 0;
 
   return (
     <>
@@ -159,9 +177,9 @@ export default function NotificationDropdown() {
             <span className="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 animate-ping"></span>
           </span>
         )}
-        {unreadNotifs > 0 && !seen && (
+        {totalBadge > 0 && !seen && (
           <span className="absolute -right-1 -top-1 z-20 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[9px] font-bold text-white">
-            {unreadNotifs > 9 ? "9+" : unreadNotifs}
+            {totalBadge > 9 ? "9+" : totalBadge}
           </span>
         )}
         <svg className="fill-current" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -177,18 +195,19 @@ export default function NotificationDropdown() {
           style={{
             top: dropdownPos.top,
             right: dropdownPos.right,
-            width: "min(361px, calc(100vw - 32px))",
-            maxHeight: "min(560px, calc(100vh - 90px))",
+            width: "min(380px, calc(100vw - 32px))",
+            maxHeight: "min(620px, calc(100vh - 90px))",
           }}
         >
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
             <div className="flex items-center gap-2">
               <h5 className="text-base font-bold text-gray-800 dark:text-gray-200">
-                {pick("خبرتیاوې", "اعلانات")}
+                {pick("خبرتیاوې او الرټونه", "اعلانات و هشدارها")}
               </h5>
-              {(requests.length > 0 || inAppNotifs.length > 0) && (
+              {hasAny && (
                 <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
-                  {requests.length + inAppNotifs.length}
+                  {inAppNotifs.length + lowStockItems.length + outOfStockItems.length + requests.length}
                 </span>
               )}
             </div>
@@ -199,122 +218,194 @@ export default function NotificationDropdown() {
             </button>
           </div>
 
-          {/* In-app notifications for received items */}
-          {inAppNotifs.length > 0 && (
-            <div className="px-3 pt-3 pb-1">
-              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide">
-                {pick("د ګدام خبرتیاوې", "اعلانات انبار")}
-              </p>
-              <ul className="flex flex-col gap-1.5 mb-2">
-                {inAppNotifs.map(n => (
-                  <li key={n.id}
-                    className={`flex gap-2.5 items-start rounded-xl p-2.5 transition-colors ${
-                      n.read ? "bg-gray-50 dark:bg-white/5" : "bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/40"
-                    }`}
-                  >
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm ${NOTIF_TYPE_COLOR[n.type] || "bg-gray-400"} text-white`}>
-                      {NOTIF_TYPE_ICON[n.type] || "📌"}
-                    </span>
-                    <span className="flex flex-col min-w-0 flex-1 gap-0.5">
-                      <span className="text-xs font-bold text-gray-800 dark:text-white/90">
-                        {lang === "dr" ? n.titleDr : n.titlePs}
-                      </span>
-                      <span className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
-                        {lang === "dr" ? n.bodyDr : n.bodyPs}
-                      </span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-                        {timeAgo(n.createdAt, lang)}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="border-t border-gray-100 dark:border-gray-800 mb-2" />
-            </div>
-          )}
+          <div className="overflow-y-auto flex-1 custom-scrollbar">
 
-          <div className="px-3 pt-2 pb-1">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide">
-              {pick("د غوښتنو حالت", "وضعیت درخواست‌ها")}
-            </p>
-            <div className="relative flex items-center">
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
-                width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchRef}
-                type="text"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder={pick("پوهنځی، ډیپارتمنټ یا غوښتونکی...", "پوهنکده، دیپارتمنت یا درخواست‌کننده...")}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-9 pl-8 text-sm text-right text-gray-700 placeholder-gray-400 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 transition-all"
-                dir="rtl"
-              />
-              {query && (
-                <button onClick={() => { setQuery(""); searchRef.current?.focus(); }}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6 6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+            {/* ── OUT OF STOCK ALERTS ── */}
+            {outOfStockItems.length > 0 && (
+              <div className="px-3 pt-3 pb-1">
+                <SectionHeader label={pick("⛔ ختم شوي اجناس", "⛔ اجناس تمام‌شده")} />
+                <ul className="flex flex-col gap-1.5 mb-2">
+                  {outOfStockItems.map(item => (
+                    <li key={item.id}>
+                      <Link
+                        to="/inventory/items?filter=out"
+                        onClick={() => setIsOpen(false)}
+                        className="flex gap-2.5 items-center rounded-xl p-2.5 bg-red-50 border border-red-100 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800/40 dark:hover:bg-red-900/30 transition-colors"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500 text-white text-sm">❌</span>
+                        <span className="flex flex-col min-w-0 flex-1">
+                          <span className="text-xs font-bold text-red-800 dark:text-red-200 truncate">{item.name}</span>
+                          <span className="text-[11px] text-red-600 dark:text-red-400">
+                            {pick("موجودي: ۰", "موجودی: ۰")} — {item.category || pick("نامعلوم", "نامشخص")}
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-red-500 dark:text-red-400 font-bold shrink-0">←</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-gray-100 dark:border-gray-800 mb-1" />
+              </div>
+            )}
+
+            {/* ── LOW STOCK ALERTS ── */}
+            {lowStockItems.length > 0 && (
+              <div className="px-3 pt-2 pb-1">
+                <SectionHeader label={pick("⚠️ کمه موجودي", "⚠️ موجودی کم")} />
+                <ul className="flex flex-col gap-1.5 mb-2">
+                  {lowStockItems.map(item => (
+                    <li key={item.id}>
+                      <Link
+                        to="/inventory/items?filter=low"
+                        onClick={() => setIsOpen(false)}
+                        className="flex gap-2.5 items-center rounded-xl p-2.5 bg-orange-50 border border-orange-100 hover:bg-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40 dark:hover:bg-orange-900/30 transition-colors"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-400 text-white text-sm">⚠️</span>
+                        <span className="flex flex-col min-w-0 flex-1">
+                          <span className="text-xs font-bold text-orange-800 dark:text-orange-200 truncate">{item.name}</span>
+                          <span className="text-[11px] text-orange-600 dark:text-orange-400">
+                            {pick("پاتې:", "باقی‌مانده:")} {item.currentQuantity} {item.unit} / {pick("لږترلږه:", "حداقل:")} {item.minimumStockLevel}
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-orange-500 dark:text-orange-400 font-bold shrink-0">←</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-gray-100 dark:border-gray-800 mb-1" />
+              </div>
+            )}
+
+            {/* ── IN-APP NOTIFICATIONS ── */}
+            {inAppNotifs.length > 0 && (
+              <div className="px-3 pt-2 pb-1">
+                <SectionHeader label={pick("🔔 د سیستم خبرتیاوې", "🔔 اعلانات سیستم")} />
+                <ul className="flex flex-col gap-1.5 mb-2">
+                  {inAppNotifs.map(n => (
+                    <li key={n.id}>
+                      <Link
+                        to="/notifications"
+                        onClick={() => setIsOpen(false)}
+                        className={`flex gap-2.5 items-start rounded-xl p-2.5 transition-colors ${
+                          n.read
+                            ? "bg-gray-50 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
+                            : "bg-teal-50 border border-teal-100 hover:bg-teal-100 dark:bg-teal-900/20 dark:border-teal-800/40 dark:hover:bg-teal-900/30"
+                        }`}
+                      >
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm ${NOTIF_TYPE_COLOR[n.type] || "bg-gray-400"} text-white`}>
+                          {NOTIF_TYPE_ICON[n.type] || "📌"}
+                        </span>
+                        <span className="flex flex-col min-w-0 flex-1 gap-0.5">
+                          <span className="text-xs font-bold text-gray-800 dark:text-white/90">
+                            {lang === "dr" ? n.titleDr : n.titlePs}
+                          </span>
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
+                            {lang === "dr" ? n.bodyDr : n.bodyPs}
+                          </span>
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                            {timeAgo(n.createdAt, lang)}
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-bold shrink-0">←</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-gray-100 dark:border-gray-800 mb-1" />
+              </div>
+            )}
+
+            {/* ── REQUESTS SECTION ── */}
+            <div className="px-3 pt-2 pb-1">
+              <SectionHeader label={pick("📋 د غوښتنو حالت", "📋 وضعیت درخواست‌ها")} />
+              <div className="relative flex items-center mb-2">
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder={pick("لټون...", "جستجو...")}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pr-8 pl-7 text-sm text-right text-gray-700 placeholder-gray-400 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 transition-all"
+                  dir="rtl"
+                />
+                {query && (
+                  <button onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              <ul className="flex flex-col gap-1">
+                {filteredReqs.length === 0 ? (
+                  <li className="flex flex-col items-center justify-center py-6 text-center">
+                    {q ? (
+                      <>
+                        <span className="text-xl mb-1">🔍</span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{pick("پایله ونه موندله", "نتیجه‌ای پیدا نشد")}</p>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-2xl mb-1">📋</span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{pick("کومه غوښتنه نشته", "هیچ درخواستی وجود ندارد")}</p>
+                      </>
+                    )}
+                  </li>
+                ) : (
+                  filteredReqs.map((req, i) => {
+                    const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                    const statusLabel = statusMap[req.status] || req.status;
+                    const statusCls = STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
+                    return (
+                      <li key={req.id}>
+                        <Link to="/requests" onClick={() => setIsOpen(false)}
+                          className="flex gap-3 rounded-xl border border-gray-100 p-2.5 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 transition-colors">
+                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${color}`}>
+                            {initials(req.requesterName)}
+                          </span>
+                          <span className="flex flex-col gap-0.5 min-w-0 flex-1">
+                            <span className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate">{req.requesterName}</span>
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusCls}`}>{statusLabel}</span>
+                            </span>
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                              {req.faculty}{req.departmentOrPerson ? ` — ${req.departmentOrPerson}` : ""}
+                            </span>
+                            <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
+                              <span>{req.currentRequestLevel}</span>
+                              <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                              <span>{timeAgo(req.createdAt, lang)}</span>
+                            </span>
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
             </div>
+
+            {/* Empty state */}
+            {!hasAny && (
+              <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                <span className="text-4xl mb-3">🔔</span>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{pick("ټول سیستم سم دی", "همه چیز در سیستم سالم است")}</p>
+              </div>
+            )}
           </div>
 
-          <ul className="flex flex-col overflow-y-auto custom-scrollbar gap-1 p-3 pt-2">
-            {filtered.length === 0 ? (
-              <li className="flex flex-col items-center justify-center py-8 text-center">
-                {q ? (
-                  <>
-                    <span className="text-2xl mb-2">🔍</span>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{pick("پایله ونه موندله", "نتیجه‌ای پیدا نشد")}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">«{query}»</p>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-3xl mb-2">🔔</span>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{pick("هیڅ خبرتیا نشته", "هیچ اعلانی وجود ندارد")}</p>
-                  </>
-                )}
-              </li>
-            ) : (
-              filtered.map((req, i) => {
-                const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-                const statusLabel = statusMap[req.status] || req.status;
-                const statusCls = STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
-                return (
-                  <li key={req.id}>
-                    <Link to="/requests" onClick={() => setIsOpen(false)}
-                      className="flex gap-3 rounded-xl border border-gray-100 p-3 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 transition-colors">
-                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
-                        {initials(req.requesterName)}
-                      </span>
-                      <span className="flex flex-col gap-0.5 min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate">{req.requesterName}</span>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${statusCls}`}>{statusLabel}</span>
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {req.faculty}{req.departmentOrPerson ? ` — ${req.departmentOrPerson}` : ""}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                          <span>{req.currentRequestLevel}</span>
-                          <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                          <span>{timeAgo(req.createdAt, lang)}</span>
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-
-          <div className="p-3 pt-0">
+          {/* Footer */}
+          <div className="p-3 border-t border-gray-100 dark:border-gray-800 shrink-0">
             <Link to="/notifications" onClick={() => setIsOpen(false)}
               className="block px-4 py-2 text-sm font-medium text-center text-brand-600 bg-brand-50 border border-brand-200 rounded-lg hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/30 transition-colors">
-              {pick("ټولې خبرتیاوې وګورئ", "مشاهده همه اعلانات")}
+              {pick("ټولې خبرتیاوې وګورئ ←", "مشاهده همه اعلانات ←")}
             </Link>
           </div>
         </div>
