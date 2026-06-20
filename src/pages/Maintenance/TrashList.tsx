@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import SecureDeleteModal from "../../components/common/SecureDeleteModal";
 import { useAuth } from "../../context/AuthContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const TYPE_ROUTE: Record<string, string> = {
   item: "/inventory/items",
@@ -128,6 +129,7 @@ export default function TrashList() {
     <>
       <PageMeta title="کثافاتو دانۍ | Kandahar University WMS" description="ټول حذف شوي ریکارډونه" />
       <Breadcrumb pageTitle="کثافاتو دانۍ" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]" dir="rtl">
 

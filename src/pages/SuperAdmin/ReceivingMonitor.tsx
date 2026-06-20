@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import { useLanguage } from "../../context/LanguageContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 import SuperAdminMonitoringService, {
   ReceivingSummary,
   ReceivingRecord,
@@ -61,6 +62,7 @@ export default function ReceivingMonitor() {
   return (
     <>
       <PageMeta title={pick("ترلاسه کول نظارت", "نظارت تحویل‌گیری") + " | Kandahar WMS"} description="" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
       <div className="space-y-6" dir="rtl">
 
         {/* Header */}

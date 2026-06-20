@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getDepartmentReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function DepartmentReport() {
   const [data, setData] = useState<any[]>([]);
@@ -40,6 +41,7 @@ export default function DepartmentReport() {
     <>
       <PageMeta title="د ډیپارټمنټ راپور | Kandahar University WMS" description="د پوهنتون په ډیپارټمنټونو کې د اجناسو د ویش وضعیت." />
       <Breadcrumb pageTitle="د ډیپارټمنټ راپور / گزارش دیپارتمنت" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 no-print">

@@ -1,0 +1,2 @@
+- [Jalaali date conversion](jalaali-date.md) — use jalaali-js npm package for Shamsi dates; custom algorithms give wrong results.
+- [CurrentDateBadge coverage](date-badge-coverage.md) — badge added to 30+ pages; pattern: import + `<div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>` after Breadcrumb.

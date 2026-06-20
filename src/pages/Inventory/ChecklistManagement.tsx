@@ -6,6 +6,7 @@ import { apiClient } from "../../api/apiClient";
 import { useAuth } from "../../context/AuthContext";
 import { ROLES } from "../../constants/roles";
 import { useNavigate } from "react-router";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 interface ChecklistItem {
   id: number;
@@ -153,6 +154,7 @@ export default function ChecklistManagement() {
     <>
       <PageMeta title="د اجناسو چکلیسټ | Kandahar University WMS" description="د رسمي اجناسو چکلیسټ مدیریت" />
       <Breadcrumb pageTitle="د اجناسو چکلیسټ / چک‌لیست اجناس" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       {deleteConfirm !== null && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">

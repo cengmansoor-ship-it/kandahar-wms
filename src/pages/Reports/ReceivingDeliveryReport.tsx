@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getReceivingDeliveryReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function ReceivingDeliveryReport() {
   const [receiving, setReceiving] = useState<any[]>([]);
@@ -55,6 +56,7 @@ export default function ReceivingDeliveryReport() {
     <>
       <PageMeta title="د ترلاسه کولو او سپارلو راپور | Kandahar University WMS" description="د اجناسو د ترلاسه کولو او هغو د ویش بشپړ لړۍ." />
       <Breadcrumb pageTitle="د ترلاسه کولو او سپارلو راپور / گزارش تحویلی" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 no-print">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { calculateAnnualNeeds } from "../../firebase/reports";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function AnnualNeedsReport() {
   const [data, setData] = useState<any[]>([]);
@@ -22,6 +23,7 @@ export default function AnnualNeedsReport() {
     <>
       <PageMeta title="کلنۍ اړتیاوې | Kandahar University WMS" description="د اجناسو د کلنۍ اړتیاوو تحلیل" />
       <Breadcrumb pageTitle="د کلنۍ اړتیاوو تحلیل / تحلیل نیازمندی سالانه" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="mb-6 bg-primary/5 p-4 rounded-xl border border-primary/10">

@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getProcurementReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 type QuickFilter = "all" | "today" | "month" | "year";
 
@@ -83,6 +84,7 @@ export default function ProcurementReport() {
     <>
       <PageMeta title="د تدارکاتو راپور | Kandahar University WMS" description="د تدارکاتي پروسو، د نرخونو د ورکړې او د ګټونکو شرکتونو بشپړ راپور." />
       <Breadcrumb pageTitle="د تدارکاتو راپور / گزارش تدارکات" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4 no-print">

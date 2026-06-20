@@ -4,6 +4,7 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequestReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
 import { useCalendar } from "../../context/CalendarContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'انتظار',
@@ -97,6 +98,7 @@ export default function RequestReport() {
     <>
       <PageMeta title="د غوښتنو راپور | Kandahar University WMS" description="د ټولو موجودو غوښتنو د حالت او پرمختګ عمومي لړۍ." />
       <Breadcrumb pageTitle="د غوښتنو راپور / گزارش درخواست‌ها" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4 no-print">

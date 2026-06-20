@@ -4,6 +4,7 @@ import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import PageMeta from "../../components/common/PageMeta";
 import { useLanguage } from "../../context/LanguageContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 import SuperAdminMonitoringService, {
   RequestSummary,
   RequestRecord,
@@ -162,6 +163,7 @@ export default function RequestsMonitor() {
   return (
     <>
       <PageMeta title={pick("غوښتنې نظارت", "نظارت درخواست‌ها") + " | Kandahar WMS"} description="" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
       <div className="space-y-6" dir="rtl">
 
         {/* Header */}

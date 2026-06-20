@@ -4,6 +4,7 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import { getQAChecklist, updateQAChecklist, QAChecklistItem } from "../../firebase/maintenance";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/ui/button/Button";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function FinalQAChecklist() {
   const [items, setItems] = useState<QAChecklistItem[]>([]);
@@ -40,6 +41,7 @@ export default function FinalQAChecklist() {
     <>
       <PageMeta title="وروستی بررسی | Kandahar University WMS" description="د سیسټم د بشپړېدو وروستی امنیتي او تخنیکي چک لیست." />
       <Breadcrumb pageTitle="وروستی بررسی / بررسی نهایی QA" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="space-y-8">
         {loading ? (

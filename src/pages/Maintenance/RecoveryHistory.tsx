@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRecoveryHistory, TrashLog } from "../../firebase/maintenance";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const ENTITY_ROUTE: Record<string, string> = {
   item: "/inventory/items",
@@ -35,6 +36,7 @@ export default function RecoveryHistory() {
     <>
       <PageMeta title="د بیا رغونې تاریخچه | Kandahar University WMS" description="د سیسټم د معلوماتو د حذف او بېرته راګرځولو تاریخچه." />
       <Breadcrumb pageTitle="د بیا رغونې تاریخچه / تاریخچه بازیابی" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-6 border-b pb-2 dark:border-gray-700">د حذف او بیا رغونې بشپړ تاریخچه</h3>

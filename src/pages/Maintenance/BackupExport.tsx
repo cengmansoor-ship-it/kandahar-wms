@@ -5,6 +5,7 @@ import { generateFullBackup } from "../../firebase/maintenance";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/ui/button/Button";
 import { getCurrentHijriDates } from "../../utils/dateUtils";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const escapeCell = (value: unknown) =>
   String(value ?? "")
@@ -53,6 +54,7 @@ export default function BackupExport() {
     <>
       <PageMeta title="بیکپ او صادرات" description="د سیستم د معلوماتو بیکپ" />
       <Breadcrumb pageTitle="بیکپ او صادرات" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-white/[0.03]">

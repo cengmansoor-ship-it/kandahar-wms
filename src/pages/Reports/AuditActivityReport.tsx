@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getAuditLogs, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function AuditActivityReport() {
   const [data, setData] = useState<any[]>([]);
@@ -44,6 +45,7 @@ export default function AuditActivityReport() {
     <>
       <PageMeta title="د سیسټم فعالیتونه | Kandahar University WMS" description="د سیسټم د ټولو امنیتي او کاري فعالیتونو تاریخچه (Audit Log)." />
       <Breadcrumb pageTitle="د سیسټم فعالیتونه / فعالیتهای سیستم" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 no-print">

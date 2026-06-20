@@ -3,6 +3,7 @@ import PageMeta from "../components/common/PageMeta";
 import Breadcrumb from "../components/common/Breadcrumb";
 import { useLanguage } from "../context/LanguageContext";
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from "../constants/roles";
+import CurrentDateBadge from "../components/common/CurrentDateBadge";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface CustomRole {
@@ -162,6 +163,7 @@ export default function RoleManagement() {
     <>
       <PageMeta title="د صلاحیتونو مدیریت | Kandahar University WMS" description="د صلاحیتونو مدیریت" />
       <Breadcrumb pageTitle={pick("د صلاحیتونو مدیریت", "مدیریت صلاحیت‌ها")} />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="space-y-6" dir="rtl">
 

@@ -6,6 +6,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { seedDemoItems, getDemoTransactions, getDemoRequests } from "../../firebase/localStore";
 import { useCalendar } from "../../context/CalendarContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 // ── Shamsi month labels for 12-month span ──
 const MONTH_LABELS = [
@@ -258,6 +259,7 @@ export default function ForecastingReport() {
     <>
       <PageMeta title="وړاندوینه | د کندهار پوهنتون WMS" description="د اجناسو د راتلونکي اړتیاوو وړاندوینه او د ۱ کال ډیټا تحلیل" />
       <Breadcrumb pageTitle="د وړاندوینې راپور / گزارش پیشبینی" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="space-y-6">
 

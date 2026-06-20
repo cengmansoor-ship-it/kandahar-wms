@@ -7,6 +7,7 @@ import { getEmailLogs, saveEmailDraft } from "../../firebase/notifications";
 import type { DemoEmailLog } from "../../firebase/localStore";
 import { useLanguage } from "../../context/LanguageContext";
 import { useCalendar } from "../../context/CalendarContext";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const LEVELS_PS = ["ډېر عاجل", "ډېر مهم", "متوسط", "عادي", "لږ مهم"];
 const LEVELS_DR = ["بسیار عاجل", "بسیار مهم", "متوسط", "عادی", "کم‌اهمیت"];
@@ -141,6 +142,7 @@ export default function NotificationsPage() {
     <>
       <PageMeta title={pick("خبرتیاوې", "اعلانات") + " | Kandahar University WMS"} description="" />
       <Breadcrumb pageTitle="خبرتیاوې / اعلانات" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="space-y-6 page-enter" dir="rtl">
         {msg && (

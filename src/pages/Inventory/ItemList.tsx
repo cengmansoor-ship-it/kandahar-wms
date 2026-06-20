@@ -8,6 +8,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { ROLES } from "../../constants/roles";
 import { apiClient } from "../../api/apiClient";
 import { QRCodeSVG as QRCode } from "qrcode.react";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 interface PrintItem extends WarehouseItem {
   tracking_code?: string;
@@ -97,6 +98,7 @@ export default function ItemList() {
     <>
       <PageMeta title={pick("د اجناسو لیست", "لیست اجناس") + " | Kandahar University WMS"} description="" />
       <Breadcrumb pageTitle="د موجودۍ لیست / لیست موجودی" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       {printItem && (
         <div className="hidden print:block fixed inset-0 bg-white z-50 p-8 text-center" dir="rtl">

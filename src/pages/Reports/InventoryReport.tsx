@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getInventoryReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 export default function InventoryReport() {
   const [items, setItems] = useState<any[]>([]);
@@ -44,6 +45,7 @@ export default function InventoryReport() {
     <>
       <PageMeta title="د موجودۍ راپور | Kandahar University WMS" description="د اجناسو لیست او ارزښت" />
       <Breadcrumb pageTitle="د موجودۍ راپور / گزارش موجودی" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 no-print">

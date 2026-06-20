@@ -6,6 +6,7 @@ import type { UserProfile } from "../firebase/firestore";
 import { ROLES, UserRole } from "../constants/roles";
 import { useAuth } from "../context/AuthContext";
 import { getCurrentHijriDates } from "../utils/dateUtils";
+import CurrentDateBadge from "../components/common/CurrentDateBadge";
 
 const ALL_ROLES = [
   ROLES.SUPER_ADMIN,
@@ -174,6 +175,7 @@ export default function UserManagement() {
     <>
       <PageMeta title="د کاروونکو مدیریت | Kandahar University WMS" description="د کاروونکو مدیریت" />
       <Breadcrumb pageTitle="د کاروونکو مدیریت / مدیریت کاربران" />
+      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       <div className="space-y-4 page-enter" dir="rtl">
         {msg && (
