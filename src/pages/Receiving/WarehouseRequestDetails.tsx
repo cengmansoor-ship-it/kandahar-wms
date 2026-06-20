@@ -102,7 +102,7 @@ export default function WarehouseRequestDetails() {
               receiver_name: request.requesterName,
               faculty: request.faculty,
               items: request.items.map(i => ({ name: i.name, qty: i.quantity, unit: i.unit }))
-            }}
+            } as any}
             onSave={handleSaveFS5}
           />
         </div>

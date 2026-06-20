@@ -93,9 +93,9 @@ function StatCard({ label, value, icon, color, to }: { label: string; value: str
   );
 }
 
-function SectionCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function SectionCard({ children, className = "", style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in ${className}`}>
+    <div style={style} className={`rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-fade-in ${className}`}>
       {children}
     </div>
   );
@@ -112,7 +112,7 @@ export default function Home() {
   const { profile } = useAuth();
   const { pick, lang } = useLanguage();
   const { calendarType, getMonthNames, getCurrentYear, getYearFromDate, getMonthIndexFromDate, getCurrentDateString } = useCalendar();
-  const calLabel = calendarType === "shamsi" ? "شمسي" : calendarType === "قمري" ? "قمري" : "میلادي";
+  const calLabel = calendarType === "shamsi" ? "شمسي" : calendarType === "qamari" ? "قمري" : "میلادي";
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);

@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
 import dotenv from 'dotenv';
 import { checkDbConnection } from './config/db';
 import inventoryRoutes from './routes/inventory.routes';
@@ -99,6 +100,13 @@ app.get('/api/time/now', (req: Request, res: Response) => {
       serverTime: now.getTime(),
     },
   });
+});
+
+// Serve built frontend in production
+const distPath = path.join(__dirname, '../../dist');
+app.use(express.static(distPath));
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 const PORT = process.env.PORT || 3001;

@@ -202,8 +202,7 @@ function MemberCard({ member, delay }: { member: typeof TEAM[0]; delay: number }
                 className={`absolute inset-0 rounded-full bg-gradient-to-br ${member.gradient} blur-lg opacity-30`}
                 style={{ transform: "scale(1.25)" }}
               />
-              <div className={`relative w-28 h-28 rounded-full ring-3 ${member.ring} ring-offset-2 ring-offset-white dark:ring-offset-gray-900 overflow-hidden shadow-xl`}
-                style={{ ring: "3px" }}>
+              <div className={`relative w-28 h-28 rounded-full ring-[3px] ${member.ring} ring-offset-2 ring-offset-white dark:ring-offset-gray-900 overflow-hidden shadow-xl`}>
                 <img
                   src={member.photo}
                   alt={member.nameEn}

@@ -140,6 +140,7 @@ export interface RequestItem {
   name: string;
   unit: string;
   quantity: number;
+  specifications?: string;
 }
 
 export interface InventoryRequest {

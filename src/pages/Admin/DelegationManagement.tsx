@@ -223,12 +223,12 @@ export default function DelegationManagement() {
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setShowForm(false)}
-                  className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 transition">
+                  className="flex-1 rounded-xl border border-gray-300 bg-white py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 transition">
                   {pick("لغوه", "انصراف")}
                 </button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60 transition">
-                  {saving ? pick("ثبتیږي...", "در حال ثبت...") : pick("✓ کفیل تعیین کول", "✓ تعیین کفیل")}
+                  className="flex-1 rounded-xl bg-green-600 hover:bg-green-700 py-2.5 text-sm font-bold text-white shadow-md disabled:opacity-60 transition">
+                  {saving ? pick("⏳ ثبتیږي...", "⏳ در حال ثبت...") : pick("✅ کفیل ثبت کول", "✅ ثبت کفیل")}
                 </button>
               </div>
             </form>

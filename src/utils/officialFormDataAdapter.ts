@@ -117,7 +117,7 @@ export function selectWinningVendor(offers: VendorOffer[]): VendorOffer | null {
 }
 
 export function mapRequestToProposal(request: InventoryRequest): OfficialFormSharedData {
-  const items = extractSharedItemRows(request.items);
+  const items = extractSharedItemRows(request.items ?? []) ?? [];
   const grandTotal = items.reduce((s, item) => {
     const n = parseFloat(item.totalPrice || "0");
     return s + (isFinite(n) ? n : 0);

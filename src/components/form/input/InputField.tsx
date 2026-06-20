@@ -13,6 +13,7 @@ interface InputProps {
   max?: string | number;
   step?: number;
   disabled?: boolean;
+  maxLength?: number;
   success?: boolean;
   error?: boolean;
   hint?: string;

@@ -100,6 +100,7 @@ export interface StockTransaction {
   createdAt: number;
   createdAtHijriShamsi: string;
   createdAtHijriQamari: string;
+  date?: number | string;
 }
 
 // --- Collections ---

@@ -105,8 +105,8 @@ export default function NotificationDropdown() {
 
     if (canSeeInventory) {
       getItems().then(items => {
-        setLowStockItems(items.filter(i => i.currentQuantity > 0 && i.currentQuantity <= i.minimumStockLevel).slice(0, 8));
-        setOutOfStockItems(items.filter(i => i.currentQuantity === 0).slice(0, 8));
+        setLowStockItems(items.filter((i: WarehouseItem) => i.currentQuantity > 0 && i.currentQuantity <= i.minimumStockLevel).slice(0, 8));
+        setOutOfStockItems(items.filter((i: WarehouseItem) => i.currentQuantity === 0).slice(0, 8));
       });
     }
   };

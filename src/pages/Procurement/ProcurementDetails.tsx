@@ -108,17 +108,17 @@ export default function ProcurementDetails() {
       ) : activeView === 'comparison' ? (
         <div className="h-[85vh]">
           <div className="mb-4"><Button variant="outline" size="sm" onClick={() => setActiveView('details')}>← بیرته</Button></div>
-          <OfficialFormViewer templateId="formTemplate2" initialData={{ vendors: offers.map(o => ({ name: o.vendorName, total: o.totalOfferPrice })) }} onSave={() => alert("فورم مقایسوي خوندي شو.")} />
+          <OfficialFormViewer templateId="formTemplate2" initialData={{ vendors: offers.map(o => ({ name: o.vendorName, total: o.totalOfferPrice })) } as any} onSave={() => alert("فورم مقایسوي خوندي شو.")} />
         </div>
       ) : activeView === 'po' ? (
         <div className="h-[85vh]">
           <div className="mb-4"><Button variant="outline" size="sm" onClick={() => setActiveView('details')}>← بیرته</Button></div>
-          <OfficialFormViewer templateId="formTemplate3" initialData={{ vendor_name: comparison?.winnerVendorName, total: comparison?.winnerTotalPrice }} onSave={handleSavePO} />
+          <OfficialFormViewer templateId="formTemplate3" initialData={{ vendor_name: comparison?.winnerVendorName, total: comparison?.winnerTotalPrice } as any} onSave={handleSavePO} />
         </div>
       ) : activeView === 'rr' ? (
         <div className="h-[85vh]">
           <div className="mb-4"><Button variant="outline" size="sm" onClick={() => setActiveView('details')}>← بیرته</Button></div>
-          <OfficialFormViewer templateId="formTemplate4" initialData={{ vendor_name: comparison?.winnerVendorName }} onSave={handleSaveRR} />
+          <OfficialFormViewer templateId="formTemplate4" initialData={{ vendor_name: comparison?.winnerVendorName } as any} onSave={handleSaveRR} />
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-20">

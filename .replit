@@ -79,9 +79,10 @@ localPort = 5005
 externalPort = 5173
 
 [deployment]
-deploymentTarget = "static"
-build = ["npm", "run", "build"]
+deploymentTarget = "autoscale"
+build = ["bash", "-c", "npm run build && cd backend && npm run build"]
 publicDir = "dist"
+run = ["bash", "-c", "cd backend && bash start-prod.sh"]
 
 [userenv]
 
