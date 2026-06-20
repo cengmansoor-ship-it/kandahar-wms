@@ -35,7 +35,9 @@ import backupRoutes from './routes/backup.routes';
 import delegationRoutes from './routes/delegation.routes';
 import { DelegationService } from './services/delegation.service';
 
-dotenv.config();
+// Load from backend/.env first, then root .env (supports single root .env on Windows)
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 

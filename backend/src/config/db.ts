@@ -1,7 +1,10 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Load backend/.env first, then fall back to root .env
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
