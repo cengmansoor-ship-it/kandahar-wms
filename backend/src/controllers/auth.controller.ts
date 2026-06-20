@@ -27,7 +27,7 @@ async function getSmtpCredentials(): Promise<{ user: string; pass: string } | nu
   return null;
 }
 
-async function sendOtpEmail(toEmail: string, otp: string, smtpUser: string, smtpPass: string): Promise<void> {
+async function sendOtpEmail(toEmail: string, otp: string, smtpUser: string, smtpPass: string, requesterEmail?: string): Promise<void> {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -36,15 +36,22 @@ async function sendOtpEmail(toEmail: string, otp: string, smtpUser: string, smtp
     tls: { rejectUnauthorized: false },
   });
 
+  const requesterLine = requesterEmail
+    ? `<p style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;">
+        📧 د پاسورډ بیا رغونې غوښتنه کوونکی: <strong>${requesterEmail}</strong>
+       </p>`
+    : '';
+
   const html = `
     <div dir="rtl" style="font-family: Arial, sans-serif; font-size: 15px; line-height: 2; color: #1f2937; padding: 32px; max-width: 480px; margin: auto; border: 1px solid #e5e7eb; border-radius: 12px;">
       <h2 style="color: #1e40af; margin-bottom: 8px;">🔑 د پاسورډ بیا ترلاسه کول</h2>
-      <p>ستاسې د پاسورډ بیا رغونې لپاره تایید کوډ (OTP) دی:</p>
+      ${requesterLine}
+      <p>د پاسورډ بیا رغونې لپاره تایید کوډ (OTP) دی:</p>
       <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1e40af; text-align: center; background: #eff6ff; padding: 16px 24px; border-radius: 8px; margin: 16px 0;">
         ${otp}
       </div>
       <p style="color: #6b7280; font-size: 13px;">دا کوډ یوازې <strong>${OTP_TTL_MINUTES} دقیقې</strong> اعتبار لري.</p>
-      <p style="color: #6b7280; font-size: 13px;">که تاسو دا غوښتنه نه وي کړې، نو دا ایمیل له پامه غورځوئ.</p>
+      <p style="color: #6b7280; font-size: 13px;">که دا غوښتنه مو نه وي کړې، نو دا ایمیل له پامه غورځوئ.</p>
       <hr style="margin-top: 24px; border: none; border-top: 1px solid #e5e7eb;" />
       <p style="font-size: 11px; color: #9ca3af; margin-top: 12px;">
         کندهار پوهنتون — د ګدام او تدارکاتو مدیریت سیستم
@@ -55,7 +62,7 @@ async function sendOtpEmail(toEmail: string, otp: string, smtpUser: string, smtp
     from: `"کندهار پوهنتون WMS" <${smtpUser}>`,
     to: toEmail,
     subject: 'د پاسورډ بیا رغونې تایید کوډ (OTP)',
-    text: `ستاسې تایید کوډ: ${otp}\nدا کوډ یوازې ${OTP_TTL_MINUTES} دقیقې اعتبار لري.`,
+    text: `${requesterEmail ? `د پاسورډ غوښتنه کوونکی: ${requesterEmail}\n` : ''}تایید کوډ: ${otp}\nدا کوډ یوازې ${OTP_TTL_MINUTES} دقیقې اعتبار لري.`,
     html,
   });
 }
@@ -86,16 +93,7 @@ export const sendForgotPasswordOtp = async (req: Request, res: Response) => {
   try {
     await ensureOtpTable();
 
-    // Check user exists
-    const [users]: any = await pool.query(
-      'SELECT id, email FROM users WHERE email = ? AND is_deleted = FALSE AND status = "active" LIMIT 1',
-      [cleanEmail]
-    );
-    if (!users || users.length === 0) {
-      return res.status(404).json({ success: false, code: 'USER_NOT_FOUND', message: 'دا ایمیل پته د سیستم کې نه موندل کیږي.' });
-    }
-
-    // Check SMTP configured
+    // Check SMTP configured — OTP always goes to the configured system email
     const smtp = await getSmtpCredentials();
     if (!smtp) {
       return res.status(503).json({ success: false, code: 'SMTP_NOT_CONFIGURED', message: 'SMTP_NOT_CONFIGURED' });
@@ -121,10 +119,12 @@ export const sendForgotPasswordOtp = async (req: Request, res: Response) => {
       [cleanEmail, otp, expiresAt]
     );
 
-    await sendOtpEmail(cleanEmail, otp, smtp.user, smtp.pass);
+    // OTP is always sent to the configured system/admin email, not the requester's email
+    const systemEmail = smtp.user;
+    await sendOtpEmail(systemEmail, otp, smtp.user, smtp.pass, cleanEmail);
 
-    console.log(`[OTP] Sent to ${cleanEmail}`);
-    return res.json({ success: true, message: 'تایید کوډ ستاسې ایمیل ته ولیږل شو.' });
+    console.log(`[OTP] Generated for ${cleanEmail}, sent to system email ${systemEmail}`);
+    return res.json({ success: true, message: 'تایید کوډ د سیستم مدیر ایمیل ته ولیږل شو.', sentTo: systemEmail });
 
   } catch (err: any) {
     console.error('[OTP] Send error:', err.message);

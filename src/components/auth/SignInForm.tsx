@@ -158,7 +158,8 @@ export default function SignInForm() {
       setOtpExpiry(Date.now() + OTP_TTL_MS);
       setOtpAttempts(0);
       setForgotStep("otp");
-      setForgotMsg({ text: "✅ تایید کوډ (OTP) ستاسې ایمیل ته ولیږل شو. ایمیل وچیک کړئ.", ok: true });
+      const sentTo = (result as any).sentTo || "د سیستم مدیر ایمیل";
+      setForgotMsg({ text: `✅ تایید کوډ (OTP) د ${sentTo} ایمیل ته ولیږل شو. هغه ایمیل وچیک کړئ.`, ok: true });
       return;
     }
 

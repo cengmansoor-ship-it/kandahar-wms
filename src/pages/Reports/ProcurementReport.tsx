@@ -109,8 +109,8 @@ export default function ProcurementReport() {
                 onClick={() => applyQuick(key)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   quickFilter === key
-                    ? "bg-primary text-white shadow"
-                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary/10"
+                    ? "bg-brand-100 text-gray-900 border border-brand-300 shadow dark:bg-brand-900/40 dark:text-white dark:border-brand-700"
+                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-brand-900/20"
                 }`}
               >
                 {label}
