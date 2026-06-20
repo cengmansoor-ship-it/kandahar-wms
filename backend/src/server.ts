@@ -29,6 +29,8 @@ import { RequestService } from './services/request.service';
 import { TrashService } from './services/trash.service';
 import { SmsService } from './services/sms.service';
 import { ChecklistService } from './services/checklist.service';
+import { BackupService } from './services/backup.service';
+import backupRoutes from './routes/backup.routes';
 
 dotenv.config();
 
@@ -52,6 +54,9 @@ TrashService.purgeExpired(30).catch(e => console.warn('[WMS] Trash purge warning
 SmsService.runMigrations().then(() => console.log('[WMS] SMS config migrations complete.')).catch(e => console.warn('[WMS] SMS config migrations warning:', e.message));
 ChecklistService.runMigrations().then(() => console.log('[WMS] Checklist migrations & seed complete.')).catch(e => console.warn('[WMS] Checklist migrations warning:', e.message));
 
+// Schedule auto backup every 3 hours
+BackupService.scheduleAutoBackup();
+
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/procurement', procurementRoutes);
@@ -69,6 +74,7 @@ app.use('/api/trash', trashRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/checklist', checklistRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/backup', backupRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });

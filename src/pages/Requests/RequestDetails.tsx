@@ -115,7 +115,8 @@ export default function RequestDetails() {
   };
 
   const canShowConfirmerPanel = profile?.role === ROLES.REQUEST_CONFIRMER &&
-    (request?.status === 'Submitted' ||
+    (request?.status === 'PendingReview' ||
+     request?.status === 'Submitted' ||
      request?.assignedRole === 'REQUEST_CONFIRMER' ||
      request?.currentStage === 'REQUEST_CONFIRMER');
   const canShowSuperAdminPanel = profile?.role === ROLES.SUPER_ADMIN && request?.status === 'ConfirmedByRequestConfirmer';
@@ -204,10 +205,60 @@ export default function RequestDetails() {
               </div>
             </div>
 
+            {/* ReviewReturned banner for Requester */}
+            {request.status === 'ReviewReturned' && profile?.role === ROLES.REQUESTER && (
+              <div className="rounded-2xl border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800/40 p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <span className="text-2xl">↩</span>
+                  <div>
+                    <h3 className="font-bold text-orange-800 dark:text-orange-200">
+                      {pick("غوښتنه د ملاحظو سره بیرته راستانه شوه", "درخواست با نظرات بازگردانده شد")}
+                    </h3>
+                    <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">
+                      {pick(
+                        "د تاییدوونکي لخوا لاندې ملاحظه ورکړل شوه. مهرباني وکړئ سم کړئ او بیا یې واستوئ.",
+                        "تأییدکننده نظر زیر را داده است. لطفاً اصلاح کنید و دوباره ارسال کنید."
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {pipeline.filter(p => p.status === 'ReviewReturned').slice(-1).map((p, i) => (
+                  p.comment && (
+                    <div key={i} className="bg-white dark:bg-black/20 rounded-xl p-4 border border-orange-200 dark:border-orange-700 mb-4">
+                      <p className="text-xs font-bold text-orange-700 dark:text-orange-300 mb-1">
+                        {pick("ملاحظه:", "نظر:")}
+                      </p>
+                      <p className="text-sm text-gray-800 dark:text-white/80">{p.comment}</p>
+                    </div>
+                  )
+                ))}
+                <button
+                  onClick={async () => {
+                    if (!id || !user || !profile) return;
+                    try {
+                      await updateRequestStage(
+                        id, 'PendingReview', 0,
+                        pick('بیا بیاکتنې ته واستول شوه', 'دوباره برای پیش‌بررسی ارسال شد'),
+                        { uid: user.uid, name: profile.name, role: profile.role },
+                        pick('لیکوال ملاحظه سمه کړه او بیا یې واستوله', 'نویسنده نظر را اصلاح کرد و دوباره ارسال کرد')
+                      );
+                      fetchData(id);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition text-sm"
+                >
+                  {pick("↑ بیا د بیاکتنې لپاره واستول", "↑ دوباره ارسال برای پیش‌بررسی")}
+                </button>
+              </div>
+            )}
+
             {/* Role-Based Action Panels */}
             {canShowConfirmerPanel && (
               <ConfirmerPanel 
-                requestId={id!} 
+                requestId={id!}
+                currentStatus={request.status}
                 currentLevel={request.currentRequestLevel} 
                 user={{ uid: user!.uid, name: profile!.name, role: profile!.role }}
                 onUpdate={() => fetchData(id!)}
@@ -301,8 +352,25 @@ export default function RequestDetails() {
 
             {request.status === 'Draft' && profile?.role === ROLES.REQUESTER && (
               <div className="rounded-2xl border border-dashed border-primary bg-primary/5 p-6 text-center">
-                <p className="text-sm text-primary mb-4 font-bold">غوښتنه وروستۍ کړئ!</p>
-                <Button onClick={submitRequest} variant="primary" fullWidth>{pick("استول", "ارسال")}</Button>
+                <p className="text-sm text-primary mb-4 font-bold">
+                  {pick("غوښتنه د بیاکتنې لپاره واستوئ!", "درخواست را برای پیش‌بررسی ارسال کنید!")}
+                </p>
+                <Button onClick={submitRequest} variant="primary" fullWidth>
+                  {pick("د بیاکتنې لپاره واستول", "ارسال برای پیش‌بررسی")}
+                </Button>
+              </div>
+            )}
+
+            {/* PendingReview status info for Requester */}
+            {request.status === 'PendingReview' && profile?.role === ROLES.REQUESTER && (
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800/40 p-5 text-center">
+                <span className="text-2xl">🔍</span>
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-200 mt-2">
+                  {pick("غوښتنه د بیاکتنې لپاره لیږل شوه", "درخواست برای پیش‌بررسی ارسال شده")}
+                </p>
+                <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                  {pick("د تاییدوونکي د بیاکتنې انتظار کوئ...", "در انتظار بررسی تأییدکننده...")}
+                </p>
               </div>
             )}
           </div>

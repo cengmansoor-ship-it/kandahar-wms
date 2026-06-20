@@ -2,3 +2,6 @@
 - [CurrentDateBadge coverage](date-badge-coverage.md) — badge added to 30+ pages; pattern: import + `<div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>` after Breadcrumb.
 - [Qamari date locale](qamari-locale.md) — use `ar-SA-u-ca-islamic-umalqura` + fallback chain for correct Hijri (1448/1/5 for June 20 2026); `islamic-uma` returns Gregorian.
 - [Demo profile live update](demo-profile-update.md) — getDemoUserProfile checks localStorage `users` first; UserManagement dispatches `wms_profile_updated`; AuthContext listens to refresh nav name live.
+- [Server time sync](server-time-sync.md) — CalendarContext fetches /api/time/now on mount, stores offset in serverOffsetRef, exposes getServerNow(); falls back to device time silently; re-syncs every 30min.
+- [Pipeline pre-review flow](pipeline-pre-review.md) — PendingReview/ReviewReturned added to STAGE_MAP; createRequest now starts at PendingReview not Submitted; ConfirmerPanel handles both review modes via currentStatus prop.
+- [Auto backup system](auto-backup.md) — BackupService uses node-cron (every 3h) + exceljs; routes /api/backup/*; frontend at /maintenance/backup (replaced BackupExport); keeps last 50 files in backend/backups/.

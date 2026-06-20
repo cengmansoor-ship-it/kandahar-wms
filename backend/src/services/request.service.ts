@@ -6,8 +6,10 @@ const STAGE_MAP: Record<string, {
   progress: number; stage_ps: string;
   assignedRole: string; nextAction: string; complete: boolean;
 }> = {
-  Draft:                        { progress: 0,   stage_ps: 'غوښتنه جوړه شوه',                  assignedRole: 'REQUEST_CONFIRMER',     nextAction: 'غوښتنه نهایي او واستوئ',              complete: false },
-  Submitted:                    { progress: 0,   stage_ps: 'غوښتنه واستول شوه',                 assignedRole: 'REQUEST_CONFIRMER',     nextAction: 'غوښتنه تاییدول یا ردول',              complete: false },
+  Draft:                        { progress: 0,   stage_ps: 'غوښتنه جوړه شوه',                  assignedRole: 'REQUESTER',             nextAction: 'غوښتنه بیاکتنې ته واستوئ',            complete: false },
+  PendingReview:                { progress: 0,   stage_ps: 'د لومړني بیاکتنې انتظار کې',       assignedRole: 'REQUEST_CONFIRMER',     nextAction: 'غوښتنه وکتل سي / پیشنهاد منظور کړئ', complete: false },
+  ReviewReturned:               { progress: 0,   stage_ps: 'بیاکتنې سره بیرته راستانه شوه',   assignedRole: 'REQUESTER',             nextAction: 'ملاحظې سمه کړئ او بیا واستوئ',        complete: false },
+  Submitted:                    { progress: 0,   stage_ps: 'غوښتنه رسمي واستول شوه',           assignedRole: 'REQUEST_CONFIRMER',     nextAction: 'غوښتنه تاییدول یا ردول',              complete: false },
   ConfirmedByRequestConfirmer:  { progress: 5,   stage_ps: 'د تایید کوونکي لخوا تایید شوه',      assignedRole: 'SUPER_ADMIN',           nextAction: 'غوښتنه منظورول یا ردول',              complete: false },
   RejectedByRequestConfirmer:   { progress: 0,   stage_ps: 'د تایید کوونکي لخوا رد شوه',        assignedRole: 'REQUESTER',             nextAction: 'غوښتنه بیاکتنه وکړئ',                complete: false },
   ApprovedBySuperAdmin:         { progress: 10,  stage_ps: 'د لوی مدیر لخوا منظور شوه',         assignedRole: 'ADMIN',                 nextAction: 'موجودي وګورئ او راجع کړئ',            complete: false },
@@ -127,7 +129,7 @@ export class RequestService {
       await connection.beginTransaction();
 
       const trackingId = 'REQ-' + Date.now();
-      const status       = 'Submitted';
+      const status       = 'PendingReview';
       const currentStage = 'REQUEST_CONFIRMER';
       const assignedRole = 'REQUEST_CONFIRMER';
       const progress     = 0;
@@ -178,9 +180,9 @@ export class RequestService {
           (request_id, status, stage_label, progress, action_by, action_by_name, action_by_role,
            assigned_role, next_action, comment, work_complete)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [requestId, status, 'غوښتنه واستول شوه', progress,
+      `, [requestId, status, 'د لومړني بیاکتنې لپاره واستول شوه', progress,
           userId?.toString() ?? '', data.requester_name ?? '', 'Requester',
-          assignedRole, 'غوښتنه تاییدول یا ردول', '', 0]);
+          assignedRole, 'غوښتنه وکتل سي / پیشنهاد منظور کړئ', '', 0]);
 
       await connection.commit();
       return requestId;

@@ -29,6 +29,12 @@ const normalizeStatus = (raw: string): string => {
     DELIVERED: "Delivered", COMPLETED: "Completed",
     "Request Confirmer": "Submitted",
     "request_confirmer": "Submitted",
+    pendingReview: "PendingReview",
+    pending_review: "PendingReview",
+    PENDING_REVIEW: "PendingReview",
+    reviewReturned: "ReviewReturned",
+    review_returned: "ReviewReturned",
+    REVIEW_RETURNED: "ReviewReturned",
   };
   return map[raw] ?? raw;
 };
@@ -37,7 +43,9 @@ const normalizeStatus = (raw: string): string => {
 const inferAssignedRole = (status: string, assignedRoleCol: string | null): string => {
   if (assignedRoleCol && assignedRoleCol !== '') return assignedRoleCol;
   const roleMap: Record<string, string> = {
-    Draft: "REQUEST_CONFIRMER",
+    Draft: "REQUESTER",
+    PendingReview: "REQUEST_CONFIRMER",
+    ReviewReturned: "REQUESTER",
     Submitted: "REQUEST_CONFIRMER",
     ConfirmedByRequestConfirmer: "SUPER_ADMIN",
     RejectedByRequestConfirmer: "REQUESTER",

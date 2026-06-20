@@ -54,7 +54,7 @@ const AuditActivityReport = lazy(() => import("./pages/Reports/AuditActivityRepo
 
 const TrashList = lazy(() => import("./pages/Maintenance/TrashList"));
 const RecoveryHistory = lazy(() => import("./pages/Maintenance/RecoveryHistory"));
-const BackupExport = lazy(() => import("./pages/Maintenance/BackupExport"));
+const BackupExport = lazy(() => import("./pages/Settings/BackupManagement"));
 const SystemHealth = lazy(() => import("./pages/Maintenance/SystemHealth"));
 const FinalQAChecklist = lazy(() => import("./pages/Maintenance/FinalQAChecklist"));
 const OfficialFormsPage = lazy(() => import("./pages/OfficialForms/OfficialFormsPage"));
