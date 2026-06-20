@@ -7,11 +7,8 @@ import { getItems, getRecentTransactions, WarehouseItem, StockTransaction } from
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCalendar } from "../../context/CalendarContext";
 import { ROLES } from "../../constants/roles";
-import { getShamsiYear } from "../../utils/dateUtils";
-
-const SHAMSI_MONTHS_PS = ["وری", "غویی", "غبرګولی", "چنګاښ", "زمری", "وږی", "تله", "لړم", "لیندۍ", "مرغومی", "سلواغه", "کب"];
-const SHAMSI_MONTHS_DR = ["حمل", "ثور", "جوزا", "سرطان", "اسد", "سنبله", "میزان", "عقرب", "قوس", "جدی", "دلو", "حوت"];
 
 function buildMonthlyStockData(transactions: StockTransaction[], months: string[]) {
   const now = Date.now();
@@ -77,6 +74,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
   const { pick, lang } = useLanguage();
+  const { calendarType, getMonthNames, getCurrentYear, getYearFromDate, getMonthIndexFromDate } = useCalendar();
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
@@ -122,35 +120,39 @@ export default function Home() {
     { label: pick("تدارکاتي غوښتنې", "درخواست‌های تدارکاتی"), value: loading ? "..." : procurementRequests, to: "/procurement", color: procurementRequests > 0 ? "bg-amber-500" : "bg-gray-400", icon: "🛒", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PROCUREMENT_DIRECTOR] },
   ].filter(c => !c.roles || !profile || (c.roles as string[]).includes(profile.role));
 
-  const months = lang === "dr" ? SHAMSI_MONTHS_DR : SHAMSI_MONTHS_PS;
+  const months = useMemo(() => getMonthNames(lang), [lang, calendarType]);
 
   const availableYears = useMemo(() => {
-    const currentYear = getShamsiYear();
+    const currentYear = getCurrentYear();
     const yearsSet = new Set<number>([currentYear]);
     transactions.forEach(tx => {
       if (tx.date) {
-        const y = getShamsiYear(typeof tx.date === "number" ? new Date(tx.date).toISOString() : String(tx.date));
-        if (y > 1300 && y <= currentYear + 1) yearsSet.add(y);
+        const d = typeof tx.date === "number" ? new Date(tx.date) : new Date(String(tx.date));
+        const y = getYearFromDate(d);
+        if (y > 1200 && y <= currentYear + 1) yearsSet.add(y);
       }
     });
     return Array.from(yearsSet).sort((a, b) => b - a);
-  }, [transactions]);
+  }, [transactions, calendarType]);
 
-  const [selectedYear, setSelectedYear] = useState<number>(() => getShamsiYear());
+  const [selectedYear, setSelectedYear] = useState<number>(() => getCurrentYear());
+
+  useEffect(() => {
+    setSelectedYear(getCurrentYear());
+  }, [calendarType]);
 
   const { labels: monthLabels, inData, outData } = useMemo(() => {
     const txForYear = transactions.filter(tx => {
       if (!tx.date) return false;
-      const y = getShamsiYear(typeof tx.date === "number" ? new Date(tx.date).toISOString() : String(tx.date));
-      return y === selectedYear;
+      const d = typeof tx.date === "number" ? new Date(tx.date) : new Date(String(tx.date));
+      return getYearFromDate(d) === selectedYear;
     });
     const inCounts = new Array(12).fill(0);
     const outCounts = new Array(12).fill(0);
     txForYear.forEach(tx => {
       try {
         const d = typeof tx.date === "number" ? new Date(tx.date) : new Date(tx.date!);
-        const monthStr = new Intl.DateTimeFormat('ps-AF-u-ca-persian', { month: 'numeric' }).format(d);
-        const monthIdx = parseInt(monthStr, 10) - 1;
+        const monthIdx = getMonthIndexFromDate(d);
         if (monthIdx >= 0 && monthIdx < 12) {
           if (tx.type === "IN") inCounts[monthIdx] += Number(tx.quantity) || 0;
           else outCounts[monthIdx] += Number(tx.quantity) || 0;
@@ -158,7 +160,7 @@ export default function Home() {
       } catch {}
     });
     return { labels: months, inData: inCounts, outData: outCounts };
-  }, [transactions, selectedYear, months]);
+  }, [transactions, selectedYear, months, calendarType]);
 
   const { labels: statusLabels, series: statusSeries } = buildRequestStatusData(requests, lang);
   const { labels: catLabels, series: catSeries } = buildCategoryData(items);

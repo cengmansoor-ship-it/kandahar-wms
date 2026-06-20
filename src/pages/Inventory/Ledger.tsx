@@ -3,8 +3,10 @@ import { Link, useSearchParams } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRecentTransactions, StockTransaction } from "../../firebase/inventory";
+import { useCalendar } from "../../context/CalendarContext";
 
 export default function InventoryLedger() {
+  const { pickDate } = useCalendar();
   const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
@@ -125,7 +127,7 @@ export default function InventoryLedger() {
               ) : (
                 filteredTransactions.map((t, idx) => (
                   <tr key={t.id || idx} className="border-b border-gray-100 dark:border-gray-800 table-row-hover animate-slide-up" style={{ animationDelay: `${Math.min(idx, 20) * 30}ms` }}>
-                    <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-sm text-right">{t.createdAtHijriShamsi}</td>
+                    <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-sm text-right">{pickDate(t.createdAtHijriShamsi, t.createdAtHijriQamari)}</td>
                     <td className="px-4 py-4 text-gray-700 dark:text-gray-400 text-right font-medium">
                       <Link to={`/inventory/ledger?item=${t.itemId || (t as any).item_id}`} className="hover:text-primary transition-colors hover:underline">
                         {t.itemName}

@@ -14,6 +14,7 @@ import {
 } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCalendar } from "../../context/CalendarContext";
 import OfficialFormViewer from "../../components/OfficialFormViewer";
 import PipelineTimeline from "../../components/requests/PipelineTimeline";
 import ConfirmerPanel from "../../components/requests/ConfirmerPanel";
@@ -31,6 +32,7 @@ export default function RequestDetails() {
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const { pick } = useLanguage();
+  const { pickDate } = useCalendar();
 
   useEffect(() => {
     if (id) fetchData(id);
@@ -156,7 +158,7 @@ export default function RequestDetails() {
                   }`}>
                     {request.status}
                   </span>
-                  <p className="text-xs text-gray-500 mt-2">{request.createdAtHijriShamsi}</p>
+                  <p className="text-xs text-gray-500 mt-2">{pickDate(request.createdAtHijriShamsi, request.createdAtHijriQamari)}</p>
                 </div>
               </div>
 

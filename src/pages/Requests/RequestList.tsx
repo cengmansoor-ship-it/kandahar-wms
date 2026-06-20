@@ -5,6 +5,7 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCalendar } from "../../context/CalendarContext";
 import { ROLES } from "../../constants/roles";
 import { safeSortByCreatedAt } from "../../firebase/safeQuery";
 
@@ -53,6 +54,7 @@ export default function RequestList() {
   const [searchParams] = useSearchParams();
   const { user, profile, loading: authLoading } = useAuth();
   const { pick } = useLanguage();
+  const { pickDate } = useCalendar();
 
   const filterParam = searchParams.get("filter");
 
@@ -178,7 +180,7 @@ export default function RequestList() {
                   <tr key={r.id}
                     className="border-b border-gray-100 table-row-hover dark:border-gray-800 animate-slide-up"
                     style={{ animationDelay: `${Math.min(idx, 12) * 40}ms` }}>
-                    <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{r.createdAtHijriShamsi || "-"}</td>
+                    <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{pickDate(r.createdAtHijriShamsi, r.createdAtHijriQamari)}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="font-bold text-gray-800 dark:text-white/90">{r.faculty || pick("ناپیژندل", "ناشناخته")}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{r.requesterName}</div>

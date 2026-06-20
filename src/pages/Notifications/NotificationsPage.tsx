@@ -6,6 +6,7 @@ import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { getEmailLogs, saveEmailDraft } from "../../firebase/notifications";
 import type { DemoEmailLog } from "../../firebase/localStore";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCalendar } from "../../context/CalendarContext";
 
 const LEVELS_PS = ["ډېر عاجل", "ډېر مهم", "متوسط", "عادي", "لږ مهم"];
 const LEVELS_DR = ["بسیار عاجل", "بسیار مهم", "متوسط", "عادی", "کم‌اهمیت"];
@@ -35,6 +36,7 @@ export default function NotificationsPage() {
     requestLevel: "عادي",
   });
   const { pick, lang } = useLanguage();
+  const { pickDate } = useCalendar();
 
   const levels = lang === "dr" ? LEVELS_DR : LEVELS_PS;
   const ALL_LABEL = pick("ټولې درجې", "همه درجه‌ها");
@@ -263,7 +265,7 @@ export default function NotificationsPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {log.to} · {log.createdAtHijriShamsi} · {log.requestLevel}
+                      {log.to} · {pickDate(log.createdAtHijriShamsi || "", log.createdAtHijriQamari || "")} · {log.requestLevel}
                     </p>
                     <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{log.body}</p>
                   </div>

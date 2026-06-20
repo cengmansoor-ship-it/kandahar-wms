@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequestReport, exportToCSV } from "../../firebase/reports";
 import Button from "../../components/ui/button/Button";
+import { useCalendar } from "../../context/CalendarContext";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'انتظار',
@@ -36,6 +37,7 @@ function getQuickDates(q: QuickFilter): { from: string; to: string } {
 }
 
 export default function RequestReport() {
+  const { pickDate } = useCalendar();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState("");
@@ -86,7 +88,7 @@ export default function RequestReport() {
       'حالت': STATUS_LABELS[r.status] || r.status || "",
       'درجه': r.request_level || "",
       'پرمختګ': r.progress_percent ?? r.progress ?? 0,
-      'نیټه': r.created_at ? new Date(r.created_at).toLocaleDateString() : (r.createdAtHijriShamsi || ""),
+      'نیټه': r.created_at ? pickDate(r.createdAtHijriShamsi || "", r.createdAtHijriQamari || "", new Date(r.created_at).toLocaleDateString()) : (r.createdAtHijriShamsi || ""),
     }));
     exportToCSV(exportData, "request_report");
   };
@@ -193,7 +195,7 @@ export default function RequestReport() {
                       </div>
                       <span className="text-[10px]">{progress}%</span>
                     </td>
-                    <td className="px-4 py-2 border text-xs">{r.created_at ? new Date(r.created_at).toLocaleDateString() : (r.createdAtHijriShamsi || "")}</td>
+                    <td className="px-4 py-2 border text-xs">{r.created_at ? pickDate(r.createdAtHijriShamsi || "", r.createdAtHijriQamari || "", new Date(r.created_at).toLocaleDateString()) : (r.createdAtHijriShamsi || "")}</td>
                   </tr>
                 );
               })}

@@ -6,7 +6,8 @@ import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
 import { login } from "../../firebase/auth";
 import { isFirebaseConfigured } from "../../firebase/firebase";
-import { DEMO_SEED_USERS, getLocalItem, setLocalItem } from "../../firebase/localStore";
+import { DEMO_SEED_USERS, getDemoUsers, getLocalItem, setLocalItem } from "../../firebase/localStore";
+import { ROLES } from "../../constants/roles";
 
 type OtpStep = "email" | "otp" | "newpass";
 
@@ -73,7 +74,12 @@ function friendlySmtpError(code?: string): string {
 export default function SignInForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState(isFirebaseConfigured ? "" : "superadmin@ku.edu.af");
+  const [email, setEmail] = useState<string>(() => {
+    if (isFirebaseConfigured) return "";
+    const users = getDemoUsers();
+    const sa = users.find(u => u.role === ROLES.SUPER_ADMIN);
+    return sa?.email || DEMO_SEED_USERS.find(u => u.role === ROLES.SUPER_ADMIN)?.email || "";
+  });
   const [password, setPassword] = useState(isFirebaseConfigured ? "" : "SuperAdmin@1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -101,7 +107,13 @@ export default function SignInForm() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate("/dashboard", { replace: true });
+      if (!isFirebaseConfigured) {
+        const users = getDemoUsers();
+        const found = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+        navigate(found?.role === ROLES.SUPER_ADMIN ? "/superadmin" : "/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       console.error("Login failed:", err);
       setError("برېښنالیک یا پټنوم ناسم دی / ایمیل یا رمز اشتباه است");

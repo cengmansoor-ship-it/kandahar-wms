@@ -4,9 +4,8 @@ import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
-import { seedDemoItems } from "../../firebase/localStore";
-import { getDemoTransactions } from "../../firebase/localStore";
-import { getDemoRequests } from "../../firebase/localStore";
+import { seedDemoItems, getDemoTransactions, getDemoRequests } from "../../firebase/localStore";
+import { useCalendar } from "../../context/CalendarContext";
 
 // ── Shamsi month labels for 12-month span ──
 const MONTH_LABELS = [
@@ -89,6 +88,7 @@ const STATUS_PS: Record<string, string> = {
 };
 
 export default function ForecastingReport() {
+  const { pickDate } = useCalendar();
   const [selectedItemId, setSelectedItemId] = useState<string>("demo_item_1");
 
   // ── Load data once ──
@@ -461,7 +461,7 @@ export default function ForecastingReport() {
                     </td>
                     <td className="py-2.5 px-2 text-[11px] text-gray-600 max-w-[180px] truncate">{req.reason.substring(0,50)}…</td>
                     <td className="py-2.5 px-2 text-[11px] text-gray-500">{req.items.map(i => `${i.name}×${i.quantity}`).join(", ")}</td>
-                    <td className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap">{req.createdAtHijriShamsi}</td>
+                    <td className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap">{pickDate(req.createdAtHijriShamsi, req.createdAtHijriQamari)}</td>
                     <td className="py-2.5 px-2 text-[11px] text-gray-600">{req.currentStage}</td>
                     <td className="py-2.5 px-2 min-w-[120px]">
                       <div className="flex items-center gap-2">

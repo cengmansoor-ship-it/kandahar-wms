@@ -4,8 +4,10 @@ import Breadcrumb from "../../components/common/Breadcrumb";
 import { exportToCSV } from "../../firebase/reports";
 import { apiClient } from "../../api/apiClient";
 import Button from "../../components/ui/button/Button";
+import { useCalendar } from "../../context/CalendarContext";
 
 export default function StockMovementReport() {
+  const { pickDate } = useCalendar();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ transaction_type: "", from_date: "", to_date: "" });
@@ -41,7 +43,7 @@ export default function StockMovementReport() {
       'مخکنۍ موجودي': t.previous_stock ?? t.stockBefore ?? 0,
       'نوې موجودي': t.new_stock ?? t.stockAfter ?? 0,
       'سرچینه': t.source_type || t.reason || "",
-      'نیټه': t.created_at ? new Date(t.created_at).toLocaleDateString() : (t.createdAtHijriShamsi || ""),
+      'نیټه': t.created_at ? pickDate(t.createdAtHijriShamsi || "", t.createdAtHijriQamari || "", new Date(t.created_at).toLocaleDateString()) : (t.createdAtHijriShamsi || ""),
     }));
     exportToCSV(exportData, "stock_movement_report");
   };
@@ -106,7 +108,7 @@ export default function StockMovementReport() {
                 const type = t.transaction_type || t.type;
                 return (
                   <tr key={i} className="border-b hover:bg-gray-50 transition">
-                    <td className="px-4 py-2 border text-xs">{t.created_at ? new Date(t.created_at).toLocaleDateString() : (t.createdAtHijriShamsi || "")}</td>
+                    <td className="px-4 py-2 border text-xs">{t.created_at ? pickDate(t.createdAtHijriShamsi || "", t.createdAtHijriQamari || "", new Date(t.created_at).toLocaleDateString()) : (t.createdAtHijriShamsi || "")}</td>
                     <td className="px-4 py-2 border font-bold">{t.item_name || t.itemName}</td>
                     <td className="px-4 py-2 border text-xs text-gray-500">{t.item_code}</td>
                     <td className="px-4 py-2 border">

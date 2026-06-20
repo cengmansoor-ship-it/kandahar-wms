@@ -6,6 +6,7 @@ import { getLocalItem, setLocalItem, DEMO_SEED_USERS } from "../../firebase/loca
 import { isFirebaseConfigured } from "../../firebase/firebase";
 import { getCurrentHijriDates } from "../../utils/dateUtils";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCalendar } from "../../context/CalendarContext";
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from "../../constants/roles";
 import { useAuth } from "../../context/AuthContext";
 
@@ -67,6 +68,7 @@ export default function SettingsPage() {
   const [dailyLimit, setDailyLimit] = useState<number>(Number((saved as any).dailyLimit) || 10);
   const [message, setMessage] = useState("");
   const { lang, setLang, pick } = useLanguage();
+  const { calendarType, setCalendarType } = useCalendar();
   const { profile } = useAuth();
   const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
 
@@ -591,6 +593,64 @@ export default function SettingsPage() {
             {lang === "ps"
               ? "✓ اوس سیستم پښتو ژبه کاروي"
               : "✓ اکنون سیستم زبان دری را استفاده می‌کند"}
+          </p>
+        </div>
+
+        {/* ─── Calendar Type Switcher ─── */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] animate-slide-up card-interactive" style={{ animationDelay: "90ms" }}>
+          <h2 className="mb-4 text-lg font-bold text-gray-800 dark:text-white/90">
+            {pick("د تاریخ ډول", "نوع تقویم")}
+          </h2>
+          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            {pick(
+              "هغه تاریخ ډول وټاکئ چې د ټول سیستم لپاره وکارول شي — ټولو ځایونو کې، چارټونو کې او جدولونو کې.",
+              "نوع تقویمی را انتخاب کنید که در کل سیستم استفاده شود — در همه جا، نمودارها و جداول."
+            )}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setCalendarType("shamsi")}
+              className={`flex-1 rounded-xl border-2 py-3 px-4 text-sm font-bold transition-all ${
+                calendarType === "shamsi"
+                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600"
+                  : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              }`}
+            >
+              <div className="text-base mb-1">🌙</div>
+              <div>شمسي</div>
+              <div className="text-xs font-normal mt-0.5 opacity-70">Shamsi</div>
+            </button>
+            <button
+              onClick={() => setCalendarType("qamari")}
+              className={`flex-1 rounded-xl border-2 py-3 px-4 text-sm font-bold transition-all ${
+                calendarType === "qamari"
+                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600"
+                  : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              }`}
+            >
+              <div className="text-base mb-1">☪️</div>
+              <div>قمري</div>
+              <div className="text-xs font-normal mt-0.5 opacity-70">Qamari</div>
+            </button>
+            <button
+              onClick={() => setCalendarType("miladi")}
+              className={`flex-1 rounded-xl border-2 py-3 px-4 text-sm font-bold transition-all ${
+                calendarType === "miladi"
+                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600"
+                  : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              }`}
+            >
+              <div className="text-base mb-1">📅</div>
+              <div>میلادي</div>
+              <div className="text-xs font-normal mt-0.5 opacity-70">Miladi</div>
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">
+            {calendarType === "shamsi"
+              ? pick("✓ اوس سیستم شمسي (هجري شمسي) تاریخ کاروي", "✓ اکنون سیستم از تقویم شمسی (هجری شمسی) استفاده می‌کند")
+              : calendarType === "qamari"
+              ? pick("✓ اوس سیستم قمري (هجري قمري) تاریخ کاروي", "✓ اکنون سیستم از تقویم قمری (هجری قمری) استفاده می‌کند")
+              : pick("✓ اوس سیستم میلادي (ګریګوري) تاریخ کاروي", "✓ اکنون سیستم از تقویم میلادی (گریگوری) استفاده می‌کند")}
           </p>
         </div>
 

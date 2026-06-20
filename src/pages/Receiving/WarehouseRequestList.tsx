@@ -4,6 +4,7 @@ import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
 import { safeSortByCreatedAt } from "../../firebase/safeQuery";
+import { useCalendar } from "../../context/CalendarContext";
 
 const STATUS_LABELS: Record<string, string> = {
   StockAvailable: "جنس شتون لري — سپارل",
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function WarehouseRequestList() {
+  const { pickDate } = useCalendar();
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -120,7 +122,7 @@ export default function WarehouseRequestList() {
                     <tr key={r.id}
                       className="border-b border-gray-100 table-row-hover dark:border-gray-800 animate-slide-up"
                       style={{ animationDelay: `${Math.min(idx, 10) * 50}ms` }}>
-                      <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{r.createdAtHijriShamsi || "-"}</td>
+                      <td className="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 text-right whitespace-nowrap">{pickDate(r.createdAtHijriShamsi, r.createdAtHijriQamari)}</td>
                       <td className="px-4 py-4 text-right">
                         <div className="font-bold text-gray-800 dark:text-white/90">{r.faculty || "-"}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">{r.requesterName}</div>
