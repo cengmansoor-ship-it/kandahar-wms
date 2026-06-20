@@ -26,3 +26,9 @@ kandahar-wms/
 
 # MySQL local data directory
 mysql_data/
+
+# Environment variables (never commit real secrets)
+.env
+.env.local
+.env.*.local
+backend/.env
