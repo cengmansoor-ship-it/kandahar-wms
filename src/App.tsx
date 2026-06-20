@@ -61,6 +61,7 @@ const OfficialFormsPage = lazy(() => import("./pages/OfficialForms/OfficialForms
 const NotificationsPage = lazy(() => import("./pages/Notifications/NotificationsPage"));
 const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
 const BudgetCodes = lazy(() => import("./pages/Settings/BudgetCodes"));
+const DelegationManagement = lazy(() => import("./pages/Admin/DelegationManagement"));
 const AboutPage = lazy(() => import("./pages/About/AboutPage"));
 const TraceabilityPage = lazy(() => import("./pages/Traceability/TraceabilityPage"));
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdmin/SuperAdminDashboard"));
@@ -101,13 +102,13 @@ export default function App() {
 
             <Route path="/inventory" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryDashboard /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/items" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><ItemList /></Suspense></ProtectedRoute>} />
-            <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><AddItem /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/add" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><AddItem /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/add-item" element={<Navigate to="/inventory/add" replace />} />
-            <Route path="/inventory/edit/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><EditItem /></Suspense></ProtectedRoute>} />
-            <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><StockIn /></Suspense></ProtectedRoute>} />
-            <Route path="/inventory/stock-in/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON]}><Suspense fallback={<PageLoader />}><StockIn /></Suspense></ProtectedRoute>} />
-            <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
-            <Route path="/inventory/stock-out/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/edit/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><EditItem /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-in" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockIn /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-in/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_ENTRY_PERSON, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockIn /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-out" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
+            <Route path="/inventory/stock-out/:id" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><StockOut /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/ledger" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><InventoryLedger /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/barcode-scanner" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WAREHOUSE_DIRECTOR]}><Suspense fallback={<PageLoader />}><BarcodeScanner /></Suspense></ProtectedRoute>} />
             <Route path="/inventory/checklist" element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><Suspense fallback={<PageLoader />}><ChecklistManagement /></Suspense></ProtectedRoute>} />
@@ -146,6 +147,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}><SettingsLayout /></ProtectedRoute>}>
               <Route path="/user-management" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
               <Route path="/role-management" element={<Suspense fallback={<PageLoader />}><RoleManagement /></Suspense>} />
+              <Route path="/delegation" element={<Suspense fallback={<PageLoader />}><DelegationManagement /></Suspense>} />
               <Route path="/settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
               <Route path="/settings/budget-codes" element={<Suspense fallback={<PageLoader />}><BudgetCodes /></Suspense>} />
               <Route path="/maintenance/trash" element={<Suspense fallback={<PageLoader />}><TrashList /></Suspense>} />

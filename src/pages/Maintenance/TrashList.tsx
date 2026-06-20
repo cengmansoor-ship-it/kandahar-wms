@@ -296,8 +296,9 @@ export default function TrashList() {
           title="⚠️ تل لپاره حذف کول"
           description={`ایا ډاډه یاست چې «${pendingDelete.label}» تل لپاره حذف کړئ؟ دا عمل د بیرته راګرځولو وړ نه دی.`}
           currentUserEmail={profile?.email || ""}
+          requireReason={true}
           onCancel={() => setPendingDelete(null)}
-          onConfirm={() => {
+          onConfirm={(_reason) => {
             const r = pendingDelete;
             setPendingDelete(null);
             handlePermanentDelete(r);

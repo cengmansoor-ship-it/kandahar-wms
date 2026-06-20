@@ -480,17 +480,20 @@ export class InventoryService {
     }
   }
 
-  static async deleteItem(id: number, userId: number | null) {
+  static async deleteItem(id: number, userId: number | null, deleteReason?: string) {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
-      const [result] = await connection.query<ResultSetHeader>(`UPDATE items SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ?`, [id]);
+      const [result] = await connection.query<ResultSetHeader>(
+        `UPDATE items SET is_deleted = TRUE, deleted_at = NOW(), deleted_by_name = ?, delete_reason = ? WHERE id = ?`,
+        [userId, deleteReason || null, id]
+      );
       if (result.affectedRows === 0) throw new Error('not_found');
 
       await connection.query(`
-        INSERT INTO audit_logs (user_id, action, entity_type, entity_id)
-        VALUES (?, ?, ?, ?)
-      `, [userId, 'DELETE', 'ITEM', id]);
+        INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_value)
+        VALUES (?, ?, ?, ?, ?)
+      `, [userId, 'DELETE', 'ITEM', id, deleteReason || null]);
 
       await connection.commit();
       return true;

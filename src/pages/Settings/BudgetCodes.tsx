@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
+import SecureDeleteModal from "../../components/common/SecureDeleteModal";
 import { budgetService, BudgetBab, BudgetFasl } from "../../services/budget";
+import { useAuth } from "../../context/AuthContext";
 
 type EditTarget = { type: "bab"; item: BudgetBab } | { type: "fasl"; item: BudgetFasl };
 
@@ -12,6 +14,7 @@ const emptyBab = { bab_code: "", name_ps: "", name_fa: "", description: "" };
 const emptyFasl = { fasl_code: "", name_ps: "", name_fa: "", description: "" };
 
 export default function BudgetCodes() {
+  const { profile } = useAuth();
   const [babs, setBabs] = useState<BudgetBab[]>([]);
   const [fasls, setFasls] = useState<Record<number, BudgetFasl[]>>({});
   const [loading, setLoading] = useState(true);
@@ -312,28 +315,14 @@ export default function BudgetCodes() {
       )}
 
       {deleteConfirm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-6 space-y-4" dir="rtl">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <h3 className="text-base font-bold text-gray-800 dark:text-white/90">د حذف تایید</h3>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              ایا غواړئ <strong className="text-gray-900 dark:text-white">«{deleteConfirm.name}»</strong> حذف کړئ؟ دا عملیه بیرته نشي اخستل کیدلی.
-            </p>
-            {deleteError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 p-3">
-                <p className="text-xs text-red-600 dark:text-red-400">{deleteError}</p>
-              </div>
-            )}
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => { setDeleteConfirm(null); setDeleteError(""); }} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">لغوه</button>
-              <button onClick={handleDelete} disabled={deleteLoading} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50 transition">
-                {deleteLoading ? "حذفیږي..." : "حذف کول"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SecureDeleteModal
+          title={`⚠️ د «${deleteConfirm.name}» حذف کول`}
+          description={`${deleteConfirm.type === "bab" ? "باب" : "فصل"} «${deleteConfirm.name}» به دایمي حذف کیږي.`}
+          currentUserEmail={profile?.email || ""}
+          requireReason={true}
+          onCancel={() => { setDeleteConfirm(null); setDeleteError(""); }}
+          onConfirm={(_reason) => handleDelete()}
+        />
       )}
 
       <div className="space-y-5">

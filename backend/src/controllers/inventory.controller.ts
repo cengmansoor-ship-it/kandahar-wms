@@ -65,7 +65,8 @@ export const updateItem = async (req: Request, res: Response) => {
 export const deleteItem = async (req: Request, res: Response) => {
   try {
     const userId = 1;
-    await InventoryService.deleteItem(Number(req.params.id), userId);
+    const { delete_reason } = req.body;
+    await InventoryService.deleteItem(Number(req.params.id), userId, delete_reason);
     res.json({ success: true, message: 'جنس په بریالیتوب سره ړنګ شو.' });
   } catch (error) {
     handleError(res, error);

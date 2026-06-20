@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import CurrentDateBadge from "../../components/common/CurrentDateBadge";
+import SecureDeleteModal from "../../components/common/SecureDeleteModal";
 import { apiClient } from "../../api/apiClient";
 import { useLanguage } from "../../context/LanguageContext";
+import { useAuth } from "../../context/AuthContext";
 
 interface BackupFile {
   filename: string;
@@ -25,11 +27,13 @@ function formatDate(iso: string): string {
 
 export default function BackupManagement() {
   const { pick } = useLanguage();
+  const { profile } = useAuth();
   const [backups, setBackups]       = useState<BackupFile[]>([]);
   const [loading, setLoading]       = useState(true);
   const [creating, setCreating]     = useState(false);
   const [deletingFile, setDeleting] = useState<string | null>(null);
   const [message, setMessage]       = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [pendingDeleteFile, setPendingDeleteFile] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -58,8 +62,10 @@ export default function BackupManagement() {
     }
   };
 
-  const deleteBackup = async (filename: string) => {
-    if (!confirm(pick("ایا د دې بیکپ حذف کول غواړئ؟", "آیا می‌خواهید این پشتیبان را حذف کنید؟"))) return;
+  const deleteBackup = async (_reason: string) => {
+    if (!pendingDeleteFile) return;
+    const filename = pendingDeleteFile;
+    setPendingDeleteFile(null);
     setDeleting(filename);
     try {
       await apiClient.delete(`/backup/${filename}`);
@@ -200,7 +206,7 @@ export default function BackupManagement() {
                           ⬇ {pick("ډاونلوډ", "دانلود")}
                         </button>
                         <button
-                          onClick={() => deleteBackup(bf.filename)}
+                          onClick={() => setPendingDeleteFile(bf.filename)}
                           disabled={deletingFile === bf.filename}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-xs font-bold rounded-lg transition disabled:opacity-50"
                         >
@@ -229,6 +235,17 @@ export default function BackupManagement() {
         </div>
 
       </div>
+
+      {pendingDeleteFile && (
+        <SecureDeleteModal
+          title={pick("⚠️ د بیکپ حذف کول", "⚠️ حذف پشتیبان")}
+          description={`"${pendingDeleteFile}" ${pick("دایمي حذف کیږي.", "به صورت دایمی حذف می‌شود.")}`}
+          currentUserEmail={profile?.email || ""}
+          requireReason={true}
+          onCancel={() => setPendingDeleteFile(null)}
+          onConfirm={deleteBackup}
+        />
+      )}
     </>
   );
 }

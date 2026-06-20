@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import PageMeta from "../components/common/PageMeta";
 import Breadcrumb from "../components/common/Breadcrumb";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from "../constants/roles";
 import CurrentDateBadge from "../components/common/CurrentDateBadge";
+import SecureDeleteModal from "../components/common/SecureDeleteModal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface CustomRole {
@@ -70,6 +72,7 @@ function PermBadge({ perm }: { perm: string }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function RoleManagement() {
   const { pick } = useLanguage();
+  const { profile } = useAuth();
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -77,6 +80,7 @@ export default function RoleManagement() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteRole, setPendingDeleteRole] = useState<CustomRole | null>(null);
   const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [activeTab, setActiveTab] = useState<"system" | "custom">("system");
 
@@ -135,7 +139,6 @@ export default function RoleManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm(pick("ایا ډاډه یاست چې دا رول ړنګ کړئ؟", "آیا مطمئن هستید که این نقش را حذف کنید؟"))) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/custom-roles/${id}`, { method: "DELETE" });
@@ -291,7 +294,7 @@ export default function RoleManagement() {
                         </button>
                         {/* Delete */}
                         <button
-                          onClick={() => handleDelete(role.id)}
+                          onClick={() => setPendingDeleteRole(role)}
                           disabled={deletingId === role.id}
                           className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-700/40 dark:bg-red-900/20 dark:text-red-300 disabled:opacity-50 transition"
                         >
@@ -412,6 +415,20 @@ export default function RoleManagement() {
             </div>
           </div>
         </div>
+      )}
+      {pendingDeleteRole && (
+        <SecureDeleteModal
+          title={pick("⚠️ د رول حذف کول", "⚠️ حذف نقش")}
+          description={`"${pendingDeleteRole.name_ps}" ${pick("ړنګیږي. ایا ډاډه یاست؟", "حذف می‌شود. مطمئن هستید؟")}`}
+          currentUserEmail={profile?.email || ""}
+          requireReason={true}
+          onCancel={() => setPendingDeleteRole(null)}
+          onConfirm={(_reason) => {
+            const id = pendingDeleteRole.id;
+            setPendingDeleteRole(null);
+            handleDelete(id);
+          }}
+        />
       )}
     </>
   );

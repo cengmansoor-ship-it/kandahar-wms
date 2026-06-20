@@ -33,6 +33,8 @@ export default function StockIn() {
     document_reference: "",
     source_type: "تدارکات",
     notes: "",
+    received_by: "",
+    entry_date: new Date().toISOString().split("T")[0],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +69,13 @@ export default function StockIn() {
     else { loadItems(); }
   }, [id, loadItem, loadItems]);
 
+  // Pre-fill received_by from logged-in user
+  useEffect(() => {
+    if (profile?.name && !form.received_by) {
+      setForm(p => ({ ...p, received_by: profile.name }));
+    }
+  }, [profile]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -81,7 +90,11 @@ export default function StockIn() {
         supplier_name: form.supplier_name || undefined,
         document_reference: form.document_reference || undefined,
         source_type: form.source_type || undefined,
-        notes: form.notes || undefined,
+        notes: [
+          form.notes,
+          form.received_by ? `ثبت کوونکی: ${form.received_by}` : "",
+          form.entry_date ? `د داخلولو نیټه: ${form.entry_date}` : "",
+        ].filter(Boolean).join(" | ") || undefined,
       });
       setSuccess(true);
       setTimeout(() => navigate("/inventory/items"), 1500);
@@ -103,6 +116,8 @@ export default function StockIn() {
 
   const inputCls = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
   const labelCls = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+
+  const totalPrice = (form.quantity || 0) * (form.unit_price || 0);
 
   if (fetching) {
     return <div className="p-10 text-center text-gray-500 dark:text-gray-400" dir="rtl">بارول...</div>;
@@ -172,7 +187,8 @@ export default function StockIn() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Quantity + Unit Price + Total */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className={labelCls}>داخلېدونکی مقدار <span className="text-red-500">*</span></label>
               <input type="number" value={form.quantity}
@@ -184,6 +200,28 @@ export default function StockIn() {
               <input type="number" value={form.unit_price || ""}
                 onChange={e => setForm(p => ({ ...p, unit_price: Number(e.target.value) }))}
                 min="0" placeholder="اختیاري" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>مجموعي قیمت (؋)</label>
+              <div className={`${inputCls} bg-gray-50 dark:bg-gray-800 font-bold text-primary cursor-not-allowed`}>
+                {totalPrice > 0 ? totalPrice.toLocaleString("fa-AF") : "—"}
+              </div>
+            </div>
+          </div>
+
+          {/* Date + Received by */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>د داخلولو نیټه <span className="text-red-500">*</span></label>
+              <input type="date" value={form.entry_date}
+                onChange={e => setForm(p => ({ ...p, entry_date: e.target.value }))}
+                required className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>ثبت کوونکی (شخص) <span className="text-red-500">*</span></label>
+              <input type="text" value={form.received_by}
+                onChange={e => setForm(p => ({ ...p, received_by: e.target.value }))}
+                required placeholder="د ثبت کوونکي نوم..." className={inputCls} />
             </div>
           </div>
 
@@ -216,7 +254,7 @@ export default function StockIn() {
             <label className={labelCls}>یادښت</label>
             <textarea value={form.notes}
               onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              rows={3} placeholder="اختیاري یادښت..."
+              rows={2} placeholder="اختیاري یادښت..."
               className={inputCls + " resize-none"} />
           </div>
 

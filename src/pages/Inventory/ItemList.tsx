@@ -25,7 +25,8 @@ export default function ItemList() {
   const [selectedCat, setSelectedCat] = useState<string>("");
   const [selectedUnit, setSelectedUnit] = useState<string>("");
 
-  const canEdit = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN;
+  const canEdit = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN ||
+    profile?.role === ROLES.WAREHOUSE_ENTRY_PERSON || profile?.role === ROLES.WAREHOUSE_DIRECTOR;
   const canStockIn = canEdit || profile?.role === ROLES.WAREHOUSE_ENTRY_PERSON;
   const canStockOut = canEdit || profile?.role === ROLES.WAREHOUSE_DIRECTOR;
   const canScanBarcode = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN || profile?.role === ROLES.WAREHOUSE_DIRECTOR;

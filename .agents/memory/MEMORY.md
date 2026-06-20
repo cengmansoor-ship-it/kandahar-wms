@@ -5,3 +5,5 @@
 - [Server time sync](server-time-sync.md) — CalendarContext fetches /api/time/now on mount, stores offset in serverOffsetRef, exposes getServerNow(); falls back to device time silently; re-syncs every 30min.
 - [Pipeline pre-review flow](pipeline-pre-review.md) — PendingReview/ReviewReturned added to STAGE_MAP; createRequest now starts at PendingReview not Submitted; ConfirmerPanel handles both review modes via currentStatus prop.
 - [Auto backup system](auto-backup.md) — BackupService uses node-cron (every 3h) + exceljs; routes /api/backup/*; frontend at /maintenance/backup (replaced BackupExport); keeps last 50 files in backend/backups/.
+- [Delegation (کفیل) system](delegation-system.md) — user_delegations table; backend service + routes at /api/delegations; frontend at /delegation (SuperAdmin only via SettingsLayout); import pool not db from ../config/db.
+- [SecureDeleteModal pattern](secure-delete-pattern.md) — requireReason=true; onConfirm(reason: string); all admin deletes (BackupManagement, BudgetCodes, RoleManagement, TrashList, ChecklistManagement) use it.

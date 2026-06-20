@@ -101,22 +101,33 @@ export default function RequestDetails() {
     try {
       await updateRequestStage(
         id, 
-        'Submitted', 
+        'PendingReview', 
         0, 
-        'غوښتنه واستول شوه / درخواست ارسال شد', 
+        pick('د بیاکتنې لپاره واستول شوه', 'برای پیش‌بررسی ارسال شد'),
         { uid: user.uid, name: profile.name, role: profile.role },
-        "غوښتنه نهایي او واستول شوه."
+        pick("غوښتنه نهایي او د بیاکتنې لپاره واستول شوه.", "درخواست نهایی شد و برای پیش‌بررسی ارسال شد.")
       );
-      alert(pick("غوښتنه په بریالیتوب سره واستول شوه.", "درخواست با موفقیت ارسال شد."));
+      alert(pick("غوښتنه د بیاکتنې لپاره واستول شوه.", "درخواست برای پیش‌بررسی ارسال شد."));
       fetchData(id);
     } catch (error) {
       console.error("Error submitting request:", error);
     }
   };
 
+  // Get last SuperAdmin comment (for ReturnedToConfirmer case)
+  const lastSuperAdminComment = pipeline
+    .filter(p => p.status === 'ReturnedToConfirmer' && p.comment)
+    .slice(-1)[0]?.comment ?? "";
+
+  // Get last ReviewReturned comment  
+  const lastReturnedComment = pipeline
+    .filter(p => p.status === 'ReviewReturned' && p.comment)
+    .slice(-1)[0]?.comment ?? "";
+
   const canShowConfirmerPanel = profile?.role === ROLES.REQUEST_CONFIRMER &&
     (request?.status === 'PendingReview' ||
      request?.status === 'Submitted' ||
+     request?.status === 'ReturnedToConfirmer' ||
      request?.assignedRole === 'REQUEST_CONFIRMER' ||
      request?.currentStage === 'REQUEST_CONFIRMER');
   const canShowSuperAdminPanel = profile?.role === ROLES.SUPER_ADMIN && request?.status === 'ConfirmedByRequestConfirmer';
@@ -155,6 +166,8 @@ export default function RequestDetails() {
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                     request.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
                     request.status.includes('Rejected') ? 'bg-red-100 text-red-600' :
+                    request.status === 'ReviewReturned' ? 'bg-orange-100 text-orange-600' :
+                    request.status === 'ReturnedToConfirmer' ? 'bg-amber-100 text-amber-700' :
                     'bg-green-100 text-green-600'
                   }`}>
                     {request.status}
@@ -165,30 +178,30 @@ export default function RequestDetails() {
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-bold text-gray-500 mb-1">د غوښتنې علت:</h4>
+                  <h4 className="text-sm font-bold text-gray-500 mb-1">{pick("د غوښتنې علت:", "دلیل درخواست:")}</h4>
                   <p className="text-gray-800 dark:text-white/80">{request.reason}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-500 mb-1">درجه:</h4>
+                  <h4 className="text-sm font-bold text-gray-500 mb-1">{pick("درجه:", "درجه:")}</h4>
                   <p className="text-gray-800 dark:text-white/80">{request.currentRequestLevel}</p>
                 </div>
                 {request.rejectionComment && (
                   <div className="bg-red-50 border border-red-100 p-4 rounded-xl">
-                    <h4 className="text-sm font-bold text-red-700 mb-1">د ردیدو علت:</h4>
+                    <h4 className="text-sm font-bold text-red-700 mb-1">{pick("د ردیدو علت:", "دلیل رد:")}</h4>
                     <p className="text-red-600">{request.rejectionComment}</p>
                   </div>
                 )}
               </div>
 
               <div className="mt-8">
-                <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 mb-3 border-b pb-2 dark:border-gray-700">غوښتل شوي اجناس:</h4>
+                <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 mb-3 border-b pb-2 dark:border-gray-700">{pick("غوښتل شوي اجناس:", "اجناس درخواستی:")}</h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-right text-sm">
                     <thead>
                       <tr className="text-gray-500 text-xs uppercase">
-                        <th className="py-2">جنس</th>
-                        <th className="py-2">مقدار</th>
-                        <th className="py-2">واحد</th>
+                        <th className="py-2">{pick("جنس", "جنس")}</th>
+                        <th className="py-2">{pick("مقدار", "مقدار")}</th>
+                        <th className="py-2">{pick("واحد", "واحد")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -216,22 +229,20 @@ export default function RequestDetails() {
                     </h3>
                     <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">
                       {pick(
-                        "د تاییدوونکي لخوا لاندې ملاحظه ورکړل شوه. مهرباني وکړئ سم کړئ او بیا یې واستوئ.",
-                        "تأییدکننده نظر زیر را داده است. لطفاً اصلاح کنید و دوباره ارسال کنید."
+                        "د تاییدوونکي لخوا لاندې ملاحظه ورکړل شوه. مهرباني وکړئ غوښتنه سم کړئ او بیا یې واستوئ.",
+                        "تأییدکننده نظر زیر را داده است. لطفاً درخواست را اصلاح کنید و دوباره ارسال کنید."
                       )}
                     </p>
                   </div>
                 </div>
-                {pipeline.filter(p => p.status === 'ReviewReturned').slice(-1).map((p, i) => (
-                  p.comment && (
-                    <div key={i} className="bg-white dark:bg-black/20 rounded-xl p-4 border border-orange-200 dark:border-orange-700 mb-4">
-                      <p className="text-xs font-bold text-orange-700 dark:text-orange-300 mb-1">
-                        {pick("ملاحظه:", "نظر:")}
-                      </p>
-                      <p className="text-sm text-gray-800 dark:text-white/80">{p.comment}</p>
-                    </div>
-                  )
-                ))}
+                {lastReturnedComment && (
+                  <div className="bg-white dark:bg-black/20 rounded-xl p-4 border border-orange-200 dark:border-orange-700 mb-4">
+                    <p className="text-xs font-bold text-orange-700 dark:text-orange-300 mb-1">
+                      {pick("ملاحظه:", "نظر:")}
+                    </p>
+                    <p className="text-sm text-gray-800 dark:text-white/80">{lastReturnedComment}</p>
+                  </div>
+                )}
                 <button
                   onClick={async () => {
                     if (!id || !user || !profile) return;
@@ -254,6 +265,34 @@ export default function RequestDetails() {
               </div>
             )}
 
+            {/* ReturnedToConfirmer banner — only visible to Confirmer */}
+            {request.status === 'ReturnedToConfirmer' && profile?.role === ROLES.REQUEST_CONFIRMER && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800/40 p-5">
+                <div className="flex items-start gap-3 mb-3">
+                  <span className="text-2xl">↩️</span>
+                  <div>
+                    <h3 className="font-bold text-amber-800 dark:text-amber-200">
+                      {pick("د مقام لخوا ستاسو ته راستانه شوه", "توسط مقام به شما بازگردانده شد")}
+                    </h3>
+                    <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                      {pick(
+                        "مقام دا غوښتنه ملاحظه سره بیرته درلیږله. لاندې پینل کې یې وینئ او بیا یې واستوئ.",
+                        "مقام این درخواست را با نظر بازگردانده. در پنل زیر ببینید و دوباره ارسال کنید."
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {lastSuperAdminComment && (
+                  <div className="bg-white dark:bg-black/20 rounded-xl p-4 border border-amber-200 dark:border-amber-700">
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-300 mb-1">
+                      {pick("د مقام ملاحظه:", "نظر مقام:")}
+                    </p>
+                    <p className="text-sm text-gray-800 dark:text-white/80">{lastSuperAdminComment}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Role-Based Action Panels */}
             {canShowConfirmerPanel && (
               <ConfirmerPanel 
@@ -262,6 +301,7 @@ export default function RequestDetails() {
                 currentLevel={request.currentRequestLevel} 
                 user={{ uid: user!.uid, name: profile!.name, role: profile!.role }}
                 onUpdate={() => fetchData(id!)}
+                superAdminComment={lastSuperAdminComment}
               />
             )}
 
@@ -290,7 +330,7 @@ export default function RequestDetails() {
 
           <div className="space-y-6">
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">رسمي فورمونه</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("رسمي فورمونه", "فورم‌های رسمی")}</h3>
               <div className="space-y-3">
                 <button 
                   onClick={() => openForm('Proposal')}
@@ -350,6 +390,7 @@ export default function RequestDetails() {
               })()}
             </div>
 
+            {/* Draft - Requester can submit */}
             {request.status === 'Draft' && profile?.role === ROLES.REQUESTER && (
               <div className="rounded-2xl border border-dashed border-primary bg-primary/5 p-6 text-center">
                 <p className="text-sm text-primary mb-4 font-bold">
@@ -370,6 +411,19 @@ export default function RequestDetails() {
                 </p>
                 <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
                   {pick("د تاییدوونکي د بیاکتنې انتظار کوئ...", "در انتظار بررسی تأییدکننده...")}
+                </p>
+              </div>
+            )}
+
+            {/* Submitted - waiting for official confirmation */}
+            {request.status === 'Submitted' && profile?.role === ROLES.REQUESTER && (
+              <div className="rounded-2xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800/40 p-5 text-center">
+                <span className="text-2xl">📋</span>
+                <p className="text-sm font-bold text-indigo-700 dark:text-indigo-200 mt-2">
+                  {pick("غوښتنه د رسمي تایید لپاره ده", "درخواست در انتظار تأیید رسمی")}
+                </p>
+                <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-1">
+                  {pick("د تاییدوونکي د رسمي تایید انتظار کوئ...", "در انتظار تأیید رسمی تأییدکننده...")}
                 </p>
               </div>
             )}

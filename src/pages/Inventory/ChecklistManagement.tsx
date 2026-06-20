@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { ROLES } from "../../constants/roles";
 import { useNavigate } from "react-router";
 import CurrentDateBadge from "../../components/common/CurrentDateBadge";
+import SecureDeleteModal from "../../components/common/SecureDeleteModal";
 
 interface ChecklistItem {
   id: number;
@@ -157,25 +158,18 @@ export default function ChecklistManagement() {
       <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
 
       {deleteConfirm !== null && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full" dir="rtl">
-            <div className="text-center mb-5">
-              <div className="text-5xl mb-3">⚠️</div>
-              <p className="text-gray-800 dark:text-white font-semibold">ایا ډاډه یاست؟ دا جنس به د چکلیسټ نه لرې شي.</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} disabled={deleting}
-                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl py-2.5 text-sm font-medium">
-                لغوه
-              </button>
-              <button onClick={() => handleDelete(deleteConfirm!)} disabled={deleting}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-bold transition-all">
-                {deleting ? "لرې کول..." : "ړنګول"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SecureDeleteModal
+          title="⚠️ د چکلیسټ جنس حذف کول"
+          description="ایا ډاډه یاست؟ دا جنس به د چکلیسټ نه لرې شي."
+          currentUserEmail={profile?.email || ""}
+          requireReason={true}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={(_reason) => {
+            const id = deleteConfirm;
+            setDeleteConfirm(null);
+            handleDelete(id!);
+          }}
+        />
       )}
 
       {showModal && (

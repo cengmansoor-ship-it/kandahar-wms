@@ -28,6 +28,7 @@ const getSuperAdminNavItems = (): NavItem[] => [
   { id: "notifications", icon: <UserCircleIcon />, name: "خبرتیاوې / اعلانات", path: "/notifications" },
   { id: "reports", icon: <PieChartIcon />, name: "راپورونه / گزارش‌ها", path: "/reports" },
   { id: "traceability_sa", icon: <ListIcon />, name: "د اجناسو تعقیب / ردیابی اجناس", path: "/traceability" },
+  { id: "delegation", icon: <UserCircleIcon />, name: "د کفیل مدیریت / مدیریت نمایندگی", path: "/delegation" },
   { id: "settings", icon: <BoxCubeIcon />, name: "تنظیمات / تنظیمات", path: "/settings" },
   { id: "about_us", icon: <UserCircleIcon />, name: "زموږ په اړه / درباره ما", path: "/about" },
 ];

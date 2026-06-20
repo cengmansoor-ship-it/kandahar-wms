@@ -7,9 +7,10 @@ import { auth } from "../../firebase/firebase";
 interface SecureDeleteModalProps {
   title: string;
   description: string;
-  onConfirm: () => void;
+  onConfirm: (reason: string) => void;
   onCancel: () => void;
   currentUserEmail?: string;
+  requireReason?: boolean;
 }
 
 export default function SecureDeleteModal({
@@ -18,9 +19,11 @@ export default function SecureDeleteModal({
   onConfirm,
   onCancel,
   currentUserEmail,
+  requireReason = true,
 }: SecureDeleteModalProps) {
   const [inputEmail, setInputEmail] = useState(currentUserEmail || "");
   const [inputPass, setInputPass] = useState("");
+  const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [verifying, setVerifying] = useState(false);
 
@@ -28,6 +31,10 @@ export default function SecureDeleteModal({
     e.preventDefault();
     if (!inputEmail.trim() || !inputPass.trim()) {
       setError("د حذف لپاره خپل برېښنالیک او پټنوم ولیکئ");
+      return;
+    }
+    if (requireReason && !reason.trim()) {
+      setError("مهرباني وکړئ د حذف دلیل ولیکئ. / لطفاً دلیل حذف را بنویسید.");
       return;
     }
     setVerifying(true);
@@ -38,7 +45,7 @@ export default function SecureDeleteModal({
         if (!user) throw new Error("دا عمل اجازه نه لري");
         const cred = EmailAuthProvider.credential(inputEmail.trim(), inputPass);
         await reauthenticateWithCredential(user, cred);
-        onConfirm();
+        onConfirm(reason.trim());
         return;
       }
 
@@ -57,7 +64,7 @@ export default function SecureDeleteModal({
         setError("پټنوم ناسم دی");
         return;
       }
-      onConfirm();
+      onConfirm(reason.trim());
     } catch {
       setError("پټنوم ناسم دی");
     } finally {
@@ -82,6 +89,22 @@ export default function SecureDeleteModal({
         )}
 
         <form onSubmit={handleVerify} className="space-y-3">
+          {requireReason && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                د حذف دلیل <span className="text-red-500">*</span>
+                <span className="text-gray-400 font-normal"> / دلیل حذف</span>
+              </label>
+              <textarea
+                value={reason}
+                onChange={e => { setReason(e.target.value); setError(""); }}
+                rows={2}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:border-red-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                placeholder="ولې دا ریکارډ حذف کوئ؟ / چرا این رکورد را حذف می‌کنید؟"
+                required
+              />
+            </div>
+          )}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">برېښنالیک</label>
             <input

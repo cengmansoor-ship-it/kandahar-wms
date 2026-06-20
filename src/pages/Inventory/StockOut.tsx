@@ -45,6 +45,8 @@ export default function StockOut() {
     academic_level: "",
     source_type: "ورکړه",
     notes: "",
+    entry_date: new Date().toISOString().split("T")[0],
+    issued_by: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -76,6 +78,13 @@ export default function StockOut() {
     managementService.getFaculties().then(setFaculties).catch(() => {});
   }, [id, loadItem, loadItems]);
 
+  // Pre-fill issued_by from logged-in user
+  useEffect(() => {
+    if (profile?.name && !form.issued_by) {
+      setForm(p => ({ ...p, issued_by: profile.name }));
+    }
+  }, [profile]);
+
   useEffect(() => {
     if (!form.faculty_id) { setDepartments([]); setPeople([]); return; }
     managementService.getDepartments()
@@ -99,6 +108,7 @@ export default function StockOut() {
       item_name: item?.name_ps,
       quantity: form.quantity,
       unit_price: form.unit_price || null,
+      total_price: (form.quantity * (form.unit_price || 0)) || null,
       receiver_name: form.receiver_name || (person?.full_name),
       receiver_id_no: form.receiver_id_no || null,
       faculty: faculty?.name_ps || null,
@@ -108,7 +118,8 @@ export default function StockOut() {
       linked_request_id: form.linked_request_id || null,
       fs5_reference: form.fs5_reference || null,
       source: form.source_type,
-      date: new Date().toLocaleDateString("fa-AF"),
+      date: form.entry_date || new Date().toLocaleDateString("fa-AF"),
+      issued_by: form.issued_by || null,
       assignment_id: null as number | null,
       transaction_id: null as number | null,
     };
@@ -304,7 +315,24 @@ export default function StockOut() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Date + Issued by */}
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>د ایستلو نیټه <span className="text-red-500">*</span></label>
+              <input type="date" value={form.entry_date}
+                onChange={e => setForm(p => ({ ...p, entry_date: e.target.value }))}
+                required className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>د ایستلو مسئول (شخص)</label>
+              <input type="text" value={form.issued_by}
+                onChange={e => setForm(p => ({ ...p, issued_by: e.target.value }))}
+                placeholder="د مسئول نوم..." className={inputCls} />
+            </div>
+          </div>
+
+          {/* Qty + Unit Price + Total */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>ایستل کیدونکی مقدار <span className="text-red-500">*</span></label>
               <input type="number" value={form.quantity}
@@ -316,6 +344,14 @@ export default function StockOut() {
               <input type="number" value={form.unit_price || ""}
                 onChange={e => setForm(p => ({ ...p, unit_price: Number(e.target.value) }))}
                 min="0" placeholder="اختیاري" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>مجموعي قیمت (؋)</label>
+              <div className={`${inputCls} bg-gray-50 dark:bg-gray-800 font-bold text-primary cursor-not-allowed`}>
+                {(form.quantity * (form.unit_price || 0)) > 0
+                  ? (form.quantity * form.unit_price).toLocaleString("fa-AF")
+                  : "—"}
+              </div>
             </div>
           </div>
 
