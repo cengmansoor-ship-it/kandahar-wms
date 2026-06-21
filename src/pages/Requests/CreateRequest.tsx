@@ -404,83 +404,112 @@ export default function CreateRequest() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-                    <div className="md:col-span-2">
-                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                        {pick("جنس انتخاب کړئ *", "انتخاب جنس *")}
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder={pick("لټون... (نوم، کټګوري، کوډ)", "جستجو... (نام، دسته، کد)")}
-                          value={sItem.searchText}
-                          onChange={e => {
-                            const updated = [...selectedItems];
-                            updated[index] = { ...updated[index], searchText: e.target.value, showDropdown: true, checklistId: "", name: "" };
-                            setSelectedItems(updated);
-                          }}
-                          onFocus={() => {
-                            const updated = [...selectedItems];
-                            updated[index] = { ...updated[index], showDropdown: true };
-                            setSelectedItems(updated);
-                          }}
-                          onBlur={() => setTimeout(() => {
-                            const updated = [...selectedItems];
-                            updated[index] = { ...updated[index], showDropdown: false };
-                            setSelectedItems(updated);
-                          }, 200)}
-                          className={selCls}
-                        />
-                        {sItem.showDropdown && (
-                          <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                            {checklistLoading ? (
-                              <div className="px-3 py-2 text-xs text-gray-400">{pick("بارول...", "در حال بارگذاری...")}</div>
-                            ) : (
-                              <>
-                                {getFilteredChecklist(sItem.searchText, []).length === 0 ? (
-                                  <div className="px-3 py-3 text-xs text-gray-400 text-center">
-                                    {pick("هیڅ جنس ونه موندل شو", "جنسی یافت نشد")}
-                                  </div>
-                                ) : (
-                                  getFilteredChecklist(sItem.searchText, []).map(ci => (
-                                    <button key={ci.id} type="button"
-                                      onMouseDown={() => selectChecklistItem(index, ci)}
-                                      className="w-full text-right px-3 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <span className="font-medium text-gray-800 dark:text-white/90">{ci.item_name}</span>
-                                        <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 shrink-0">{ci.category}</span>
-                                      </div>
-                                      {ci.description && (
-                                        <div className="text-xs text-gray-400 mt-0.5 truncate">{ci.description}</div>
-                                      )}
-                                      <div className="flex gap-2 mt-0.5">
-                                        {ci.unit && <span className="text-xs text-gray-400">{pick("واحد:", "واحد:")} {ci.unit}</span>}
-                                        {ci.item_code && <span className="text-xs font-mono text-gray-300 dark:text-gray-600">{ci.item_code}</span>}
-                                      </div>
-                                    </button>
-                                  ))
-                                )}
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {sItem.checklistId && (
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          {pick("انتخاب شوی:", "انتخاب‌شده:")} <span className="font-medium text-primary">{sItem.name}</span>
-                          {sItem.typeOrSpecification && <> — <span className="text-gray-400">{sItem.typeOrSpecification}</span></>}
-                        </p>
+                  {/* Row 1 — item search */}
+                  <div className="mb-3">
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {pick("جنس انتخاب کړئ *", "انتخاب جنس *")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={pick("لټون... (نوم، کټګوري، کوډ)", "جستجو... (نام، دسته، کد)")}
+                        value={sItem.searchText}
+                        onChange={e => {
+                          const updated = [...selectedItems];
+                          updated[index] = { ...updated[index], searchText: e.target.value, showDropdown: true, checklistId: "", name: "" };
+                          setSelectedItems(updated);
+                        }}
+                        onFocus={() => {
+                          const updated = [...selectedItems];
+                          updated[index] = { ...updated[index], showDropdown: true };
+                          setSelectedItems(updated);
+                        }}
+                        onBlur={() => setTimeout(() => {
+                          const updated = [...selectedItems];
+                          updated[index] = { ...updated[index], showDropdown: false };
+                          setSelectedItems(updated);
+                        }, 200)}
+                        className={selCls}
+                      />
+                      {sItem.showDropdown && (
+                        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                          {checklistLoading ? (
+                            <div className="px-3 py-2 text-xs text-gray-400">{pick("بارول...", "در حال بارگذاری...")}</div>
+                          ) : (
+                            <>
+                              {getFilteredChecklist(sItem.searchText, []).length === 0 ? (
+                                <div className="px-3 py-3 text-xs text-gray-400 text-center">
+                                  {pick("هیڅ جنس ونه موندل شو", "جنسی یافت نشد")}
+                                </div>
+                              ) : (
+                                getFilteredChecklist(sItem.searchText, []).map(ci => (
+                                  <button key={ci.id} type="button"
+                                    onMouseDown={() => selectChecklistItem(index, ci)}
+                                    className="w-full text-right px-3 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="font-medium text-gray-800 dark:text-white/90">{ci.item_name}</span>
+                                      <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 shrink-0">{ci.category}</span>
+                                    </div>
+                                    {ci.description && (
+                                      <div className="text-xs text-gray-400 mt-0.5 truncate">{ci.description}</div>
+                                    )}
+                                    <div className="flex gap-2 mt-0.5">
+                                      {ci.unit && <span className="text-xs text-gray-400">{pick("واحد:", "واحد:")} {ci.unit}</span>}
+                                      {ci.item_code && <span className="text-xs font-mono text-gray-300 dark:text-gray-600">{ci.item_code}</span>}
+                                    </div>
+                                  </button>
+                                ))
+                              )}
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
+                  </div>
 
+                  {/* Row 2 — all columns: مقدار | واحد | مشخصات | في قیمت | مجموعه */}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                    {/* مقدار */}
                     <div>
                       <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("مقدار *", "مقدار *")}</label>
                       <input type="number" value={sItem.quantity}
                         onChange={e => handleQuantityChange(index, Number(e.target.value))}
                         min="1" required className={selCls} />
-                      {sItem.unit && <p className="mt-1 text-xs text-gray-400">{pick("واحد:", "واحد:")} {sItem.unit}</p>}
                     </div>
 
+                    {/* واحد */}
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("واحد", "واحد")}</label>
+                      <input
+                        type="text"
+                        value={sItem.unit}
+                        onChange={e => {
+                          const updated = [...selectedItems];
+                          updated[index] = { ...updated[index], unit: e.target.value };
+                          setSelectedItems(updated);
+                        }}
+                        placeholder={pick("مثلاً: عدد", "مثلاً: عدد")}
+                        className={selCls}
+                      />
+                    </div>
+
+                    {/* مشخصات/نوع */}
+                    <div className="sm:col-span-1 md:col-span-1">
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("مشخصات / نوع", "مشخصات / نوع")}</label>
+                      <input
+                        type="text"
+                        value={sItem.typeOrSpecification}
+                        onChange={e => {
+                          const updated = [...selectedItems];
+                          updated[index] = { ...updated[index], typeOrSpecification: e.target.value };
+                          setSelectedItems(updated);
+                        }}
+                        placeholder={pick("مشخصات...", "مشخصات...")}
+                        className={selCls}
+                      />
+                    </div>
+
+                    {/* في قیمت */}
                     <div>
                       <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("في قیمت (افغانۍ)", "قیمت واحد (افغانی)")}</label>
                       <input
@@ -493,6 +522,7 @@ export default function CreateRequest() {
                       />
                     </div>
 
+                    {/* مجموعه */}
                     <div>
                       <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("مجموعه (افغانۍ)", "مجموع (افغانی)")}</label>
                       <div className={`${selCls} bg-gray-100 dark:bg-gray-700 font-semibold text-primary`}>
