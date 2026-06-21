@@ -3,6 +3,7 @@ import { Outlet } from "react-router";
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
+import DelegationBanner from "../components/common/DelegationBanner";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -19,6 +20,7 @@ const LayoutContent: React.FC = () => {
         } ${isMobileOpen ? "mr-0" : ""}`}
       >
         <AppHeader />
+        <DelegationBanner />
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
           <Outlet />
         </div>

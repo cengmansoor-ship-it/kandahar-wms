@@ -9,6 +9,7 @@ const TRASH_TABLES: { table: string; labelCol: string; type: string }[] = [
   { table: 'departments',       labelCol: 'name_ps',     type: 'ادارې' },
   { table: 'people',            labelCol: 'full_name',   type: 'خلک' },
   { table: 'procurement_cases', labelCol: 'id',          type: 'تدارکات' },
+  { table: 'custom_roles',      labelCol: 'name_ps',     type: 'رولونه' },
 ];
 
 export class TrashService {
@@ -27,7 +28,7 @@ export class TrashService {
       try {
         const [rows] = await db.query<RowDataPacket[]>(
           `SELECT id, \`${t.labelCol}\` AS label, deleted_at, deleted_by_name, delete_reason
-           FROM \`${t.table}\` WHERE is_deleted = TRUE`
+           FROM \`${t.table}\` WHERE is_deleted = TRUE OR is_deleted = 1`
         );
         for (const row of rows) {
           results.push({
@@ -55,7 +56,7 @@ export class TrashService {
     if (!TRASH_TABLES.find(t => t.table === table)) throw new Error('invalid_table');
     const [result] = await db.query<ResultSetHeader>(
       `UPDATE \`${table}\` SET is_deleted = FALSE, deleted_at = NULL, deleted_by_name = NULL, delete_reason = NULL
-       WHERE id = ? AND is_deleted = TRUE`,
+       WHERE id = ? AND (is_deleted = TRUE OR is_deleted = 1)`,
       [id]
     );
     if (result.affectedRows === 0) throw new Error('not_found');
@@ -65,7 +66,7 @@ export class TrashService {
   static async permanentDelete(table: string, id: number) {
     if (!TRASH_TABLES.find(t => t.table === table)) throw new Error('invalid_table');
     const [result] = await db.query<ResultSetHeader>(
-      `DELETE FROM \`${table}\` WHERE id = ? AND is_deleted = TRUE`,
+      `DELETE FROM \`${table}\` WHERE id = ? AND (is_deleted = TRUE OR is_deleted = 1)`,
       [id]
     );
     if (result.affectedRows === 0) throw new Error('not_found');
@@ -78,7 +79,7 @@ export class TrashService {
       try {
         const [result] = await db.query<ResultSetHeader>(
           `DELETE FROM \`${t.table}\`
-           WHERE is_deleted = TRUE
+           WHERE (is_deleted = TRUE OR is_deleted = 1)
              AND deleted_at IS NOT NULL
              AND deleted_at < DATE_SUB(NOW(), INTERVAL ? DAY)`,
           [daysOld]

@@ -53,8 +53,9 @@ export const updateCustomRole = async (req: Request, res: Response) => {
 
 export const deleteCustomRole = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
+  const { deletedByName, deleteReason } = req.body || {};
   try {
-    const ok = await CustomRolesService.delete(id);
+    const ok = await CustomRolesService.delete(id, deletedByName, deleteReason);
     if (!ok) return res.status(404).json({ success: false, message: 'Not found' });
     return res.json({ success: true });
   } catch (err: any) {

@@ -138,13 +138,20 @@ export default function RoleManagement() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number, reason?: string) => {
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/custom-roles/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/custom-roles/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deletedByName: profile?.name || profile?.email || "",
+          deleteReason: reason || "",
+        }),
+      });
       const data = await res.json();
       if (data.success) {
-        flashMsg(pick("رول ړنګ شو.", "نقش حذف شد."), "success");
+        flashMsg(pick("رول د ټرش ته ولاړ. د بیا رغونې لپاره د ټرش برخه وګورئ.", "نقش به سطل زباله رفت. برای بازیابی به سطل زباله مراجعه کنید."), "success");
         await loadCustomRoles();
       } else {
         flashMsg(data.message || pick("ستونزه.", "خطا."), "error");
@@ -423,10 +430,10 @@ export default function RoleManagement() {
           currentUserEmail={profile?.email || ""}
           requireReason={true}
           onCancel={() => setPendingDeleteRole(null)}
-          onConfirm={(_reason) => {
+          onConfirm={(reason) => {
             const id = pendingDeleteRole.id;
             setPendingDeleteRole(null);
-            handleDelete(id);
+            handleDelete(id, reason);
           }}
         />
       )}

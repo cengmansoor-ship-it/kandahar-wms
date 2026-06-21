@@ -11,7 +11,7 @@ export interface CustomRole {
 
 export class CustomRolesService {
   static async runMigrations() {
-    const { withRetry } = await import('../utils/migrationHelper');
+    const { withRetry, runColumnMigration } = await import('../utils/migrationHelper');
     const conn = await pool.getConnection();
     try {
       await withRetry(() => conn.query(`
@@ -28,11 +28,16 @@ export class CustomRolesService {
     } finally {
       conn.release();
     }
+    // Add soft-delete columns if missing
+    await runColumnMigration('custom_roles', 'is_deleted',      'TINYINT(1) DEFAULT 0',          'CustomRoles').catch(() => {});
+    await runColumnMigration('custom_roles', 'deleted_at',      'TIMESTAMP NULL DEFAULT NULL',   'CustomRoles').catch(() => {});
+    await runColumnMigration('custom_roles', 'deleted_by_name', 'VARCHAR(150) NULL DEFAULT NULL','CustomRoles').catch(() => {});
+    await runColumnMigration('custom_roles', 'delete_reason',   'TEXT NULL',                     'CustomRoles').catch(() => {});
   }
 
   static async getAll(): Promise<CustomRole[]> {
     const [rows]: any = await pool.query(
-      'SELECT id, name, name_ps, name_dr, permissions, created_at FROM custom_roles ORDER BY created_at ASC'
+      'SELECT id, name, name_ps, name_dr, permissions, created_at FROM custom_roles WHERE is_deleted = 0 OR is_deleted IS NULL ORDER BY created_at ASC'
     );
     return rows.map((r: any) => ({
       ...r,
@@ -52,14 +57,17 @@ export class CustomRolesService {
 
   static async update(id: number, data: { name: string; name_ps: string; name_dr: string; permissions: string[] }): Promise<boolean> {
     const [result]: any = await pool.query(
-      'UPDATE custom_roles SET name = ?, name_ps = ?, name_dr = ?, permissions = ? WHERE id = ?',
+      'UPDATE custom_roles SET name = ?, name_ps = ?, name_dr = ?, permissions = ? WHERE id = ? AND (is_deleted = 0 OR is_deleted IS NULL)',
       [data.name, data.name_ps, data.name_dr, JSON.stringify(data.permissions), id]
     );
     return result.affectedRows > 0;
   }
 
-  static async delete(id: number): Promise<boolean> {
-    const [result]: any = await pool.query('DELETE FROM custom_roles WHERE id = ?', [id]);
+  static async delete(id: number, deletedByName?: string, deleteReason?: string): Promise<boolean> {
+    const [result]: any = await pool.query(
+      'UPDATE custom_roles SET is_deleted = 1, deleted_at = NOW(), deleted_by_name = ?, delete_reason = ? WHERE id = ? AND (is_deleted = 0 OR is_deleted IS NULL)',
+      [deletedByName || null, deleteReason || null, id]
+    );
     return result.affectedRows > 0;
   }
 }
