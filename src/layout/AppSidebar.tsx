@@ -14,6 +14,7 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
+  badge?: number;
   subItems?: { name: string; path: string; roles?: string[] }[];
 };
 
@@ -29,6 +30,7 @@ const getSuperAdminNavItems = (): NavItem[] => [
   { id: "reports", icon: <PieChartIcon />, name: "راپورونه / گزارش‌ها", path: "/reports" },
   { id: "traceability_sa", icon: <ListIcon />, name: "د اجناسو تعقیب / ردیابی اجناس", path: "/traceability" },
   { id: "delegation", icon: <UserCircleIcon />, name: "د کفیل مدیریت / مدیریت نمایندگی", path: "/delegation" },
+  { id: "trash", icon: <BoxCubeIcon />, name: "ټرش / سطل زباله", path: "/maintenance/trash" },
   { id: "settings", icon: <BoxCubeIcon />, name: "تنظیمات / تنظیمات", path: "/settings" },
   { id: "about_us", icon: <UserCircleIcon />, name: "زموږ په اړه / درباره ما", path: "/about" },
 ];
@@ -70,8 +72,26 @@ const AppSidebar: React.FC = () => {
   const [openSubmenu, setOpenSubmenu] = useState<{ type: string; index: number } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [trashCount, setTrashCount] = useState(0);
 
   const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
+
+  // Fetch trash count for badge
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    const fetchTrashCount = () => {
+      fetch("/api/trash")
+        .then((r) => r.json())
+        .then((d) => {
+          const items = Array.isArray(d) ? d : (d?.data || []);
+          setTrashCount(items.length);
+        })
+        .catch(() => {});
+    };
+    fetchTrashCount();
+    const timer = setInterval(fetchTrashCount, 60000);
+    return () => clearInterval(timer);
+  }, [isSuperAdmin]);
 
   const isActive = useCallback(
     (path: string) => location.pathname === path || (path !== "/" && location.pathname.startsWith(path)),
@@ -79,7 +99,9 @@ const AppSidebar: React.FC = () => {
   );
 
   const mainNavItems: NavItem[] = isSuperAdmin
-    ? getSuperAdminNavItems()
+    ? getSuperAdminNavItems().map((item) =>
+        item.id === "trash" ? { ...item, badge: trashCount > 0 ? trashCount : undefined } : item
+      )
     : getStandardNavItems().filter((item) => canAccessMenu(profile?.role, item.id));
 
   useEffect(() => {
@@ -138,11 +160,21 @@ const AppSidebar: React.FC = () => {
                     ? "bg-white/20 text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"}`}
               >
-                <span className={`shrink-0 [&_svg]:size-5 ${isActive(nav.path) ? "text-white" : "text-white/50"}`}>
+                <span className={`relative shrink-0 [&_svg]:size-5 ${isActive(nav.path) ? "text-white" : "text-white/50"}`}>
                   {nav.icon}
+                  {nav.badge !== undefined && (!isExpanded && !isHovered && !isMobileOpen) && (
+                    <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
+                      {nav.badge > 99 ? "99+" : nav.badge}
+                    </span>
+                  )}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <span className="flex-1 text-right">{splitPick(nav.name)}</span>
+                )}
+                {(isExpanded || isHovered || isMobileOpen) && nav.badge !== undefined && (
+                  <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {nav.badge > 99 ? "99+" : nav.badge}
+                  </span>
                 )}
               </Link>
             )

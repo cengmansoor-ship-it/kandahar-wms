@@ -462,19 +462,19 @@ export default function OfficialFormsPage() {
           </div>
         )}
 
-        {/* Form tabs — Super Admin only */}
-        {isSuperAdmin ? (
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
-            {visibleForms.map((form) => {
-              const isActive = activeTemplateId === form.id;
-              const hasData = !!allFormsData[form.id];
+        {/* Form tiles — visible to ALL users */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+          {visibleForms.map((form) => {
+            const isActiveTile = activeTemplateId === form.id;
+            const hasData = !!allFormsData[form.id];
+            if (isSuperAdmin) {
               return (
                 <button
                   key={form.id}
                   type="button"
                   onClick={() => setActiveTemplateId(form.id)}
                   className={`rounded-xl border p-3 text-right transition ${
-                    isActive
+                    isActiveTile
                       ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10"
                       : "border-gray-200 bg-white text-gray-700 hover:border-brand-400 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300"
                   }`}
@@ -482,85 +482,101 @@ export default function OfficialFormsPage() {
                   <span className="block text-xs font-bold">{form.title}</span>
                   <span className="mt-0.5 block text-xs opacity-60">{form.phase}</span>
                   {hasData && (
-                    <span className="mt-1 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
-                      ✓
-                    </span>
+                    <span className="mt-1 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">✓</span>
                   )}
                 </button>
               );
-            })}
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
-            <span>🔒</span>
-            <span>د لیدلو حالت — د فورمونو سمول یوازې د لوی مدیر لپاره دي.</span>
+            }
+            return (
+              <div
+                key={form.id}
+                className="rounded-xl border border-gray-200 bg-white p-3 text-right dark:border-gray-800 dark:bg-white/[0.03] opacity-80"
+              >
+                <span className="block text-xs font-bold text-gray-700 dark:text-gray-300">{form.title}</span>
+                <span className="mt-0.5 block text-xs text-gray-400">{form.phase}</span>
+                <span className="mt-1 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
+                  📄
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Non-Super Admin: info message instead of Document Editor */}
+        {!isSuperAdmin && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-5 text-right dark:border-blue-900/40 dark:bg-blue-900/10">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📋</span>
+              <div>
+                <p className="font-bold text-blue-800 dark:text-blue-300 text-sm">
+                  د فورمونو لیست — معلوماتي حالت
+                </p>
+                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                  د فورمونو د سمولو او ډاکمنټ ایډیټر برخه یوازې د لوی مدیر لپاره وي. مهرباني وکړئ د رسمي فورمونو د ترلاسه کولو لپاره له لوی مدیر سره اړیکه ونیسئ.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* ── Progress / status indicator ─────────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
-          {/* Left: stage + progress */}
-          <div className="flex items-center gap-3 text-sm">
-            {activeRequest ? (
-              <>
-                <span className="font-bold text-gray-700 dark:text-gray-200">
-                  {stagePashto}
-                </span>
-                <span className="text-gray-400">·</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className="h-2 rounded-full bg-brand-500 transition-all"
-                      style={{ width: `${activeRequest.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
-                    {activeRequest.progress}٪
-                  </span>
-                </div>
-              </>
-            ) : (
-              <span className="text-gray-400 text-xs">غوښتنه غوره کړئ</span>
-            )}
-          </div>
-
-          {/* Right: save status */}
-          <div className="flex items-center gap-2 text-xs">
-            {saveStatus === "saving" && (
-              <span className="text-amber-600 dark:text-amber-400 animate-pulse">ذخیره کیږي...</span>
-            )}
-            {saveStatus === "saved" && (
-              <span className="text-green-600 dark:text-green-400">
-                ✓ ذخیره شو
-                {lastSavedAt && (
-                  <span className="mr-1 opacity-70">— {formatSaveTime(lastSavedAt)}</span>
+        {/* ── Document Editor section — Super Admin ONLY ───────────────────── */}
+        {isSuperAdmin && (
+          <>
+            {/* Progress / status indicator */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
+              <div className="flex items-center gap-3 text-sm">
+                {activeRequest ? (
+                  <>
+                    <span className="font-bold text-gray-700 dark:text-gray-200">{stagePashto}</span>
+                    <span className="text-gray-400">·</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div
+                          className="h-2 rounded-full bg-brand-500 transition-all"
+                          style={{ width: `${activeRequest.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
+                        {activeRequest.progress}٪
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-gray-400 text-xs">غوښتنه غوره کړئ</span>
                 )}
-              </span>
-            )}
-            {saveStatus === "error" && (
-              <span className="text-red-600 dark:text-red-400">
-                ✗ {saveError || "ذخیره ناکامه شوه"}
-              </span>
-            )}
-            {saveStatus === "idle" && lastSavedAt && (
-              <span className="text-gray-400">
-                وروستی ذخیره: {formatSaveTime(lastSavedAt)}
-              </span>
-            )}
-          </div>
-        </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                {saveStatus === "saving" && (
+                  <span className="text-amber-600 dark:text-amber-400 animate-pulse">ذخیره کیږي...</span>
+                )}
+                {saveStatus === "saved" && (
+                  <span className="text-green-600 dark:text-green-400">
+                    ✓ ذخیره شو
+                    {lastSavedAt && <span className="mr-1 opacity-70">— {formatSaveTime(lastSavedAt)}</span>}
+                  </span>
+                )}
+                {saveStatus === "error" && (
+                  <span className="text-red-600 dark:text-red-400">✗ {saveError || "ذخیره ناکامه شوه"}</span>
+                )}
+                {saveStatus === "idle" && lastSavedAt && (
+                  <span className="text-gray-400">وروستی ذخیره: {formatSaveTime(lastSavedAt)}</span>
+                )}
+              </div>
+            </div>
 
-        {/* ── Form viewer ─────────────────────────────────────────────────── */}
-        <div>
-          <OfficialFormViewer
-            templateId={activeTemplateId}
-            requestId={requestId || undefined}
-            allFormsData={Object.keys(allFormsData).length > 0 ? allFormsData : undefined}
-            initialData={allFormsData[activeTemplateId]}
-            onSave={profile?.role === ROLES.SUPER_ADMIN ? handleSave : undefined}
-            readOnly={profile?.role !== ROLES.SUPER_ADMIN}
-          />
-        </div>
+            {/* Form viewer / Document Editor */}
+            <div>
+              <OfficialFormViewer
+                templateId={activeTemplateId}
+                requestId={requestId || undefined}
+                allFormsData={Object.keys(allFormsData).length > 0 ? allFormsData : undefined}
+                initialData={allFormsData[activeTemplateId]}
+                onSave={handleSave}
+                readOnly={false}
+              />
+            </div>
+          </>
+        )}
 
       </div>
     </>
