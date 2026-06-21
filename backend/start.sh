@@ -42,7 +42,8 @@ wait_for_mysql() {
 }
 
 init_db() {
-  DB_EXISTS=$(mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" -e "SHOW DATABASES LIKE 'kandahar_wms_db';" 2>/dev/null | grep -c kandahar_wms_db || echo 0)
+  DB_EXISTS=$(mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" -e "SHOW DATABASES LIKE 'kandahar_wms_db';" 2>/dev/null | grep -c kandahar_wms_db 2>/dev/null || true)
+  DB_EXISTS=${DB_EXISTS:-0}
   if [ "$DB_EXISTS" -eq 0 ]; then
     echo "[WMS] Initializing database schema..."
     mysql -u root -h 127.0.0.1 -P "$MYSQL_PORT" < "$SCRIPT_DIR/src/database/schema.sql"
