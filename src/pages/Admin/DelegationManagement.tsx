@@ -25,6 +25,8 @@ const emptyForm = {
   delegated_role: "SUPER_ADMIN" as "SUPER_ADMIN" | "ADMIN",
   delegated_user_name: "",
   delegated_user_email: "",
+  password: "",
+  confirm_password: "",
   start_date: new Date().toISOString().split("T")[0],
   end_date: "",
   reason: "",
@@ -64,6 +66,14 @@ export default function DelegationManagement() {
       setError(pick("ټول اړین ساحې پوره کړئ.", "همه فیلدهای الزامی را پر کنید."));
       return;
     }
+    if (!form.password || form.password.trim().length < 6) {
+      setError(pick("پاسورډ باید لږ تر لږه ۶ توري ولري.", "رمز باید حداقل ۶ کاراکتر داشته باشد."));
+      return;
+    }
+    if (form.password !== form.confirm_password) {
+      setError(pick("پاسورډونه سره برابر نه دي.", "رمزها با هم مطابقت ندارند."));
+      return;
+    }
     if (new Date(form.end_date) < new Date(form.start_date)) {
       setError(pick("د پای نیټه باید له پیل نیټې وروسته وي.", "تاریخ پایان باید بعد از شروع باشد."));
       return;
@@ -71,7 +81,13 @@ export default function DelegationManagement() {
     setSaving(true);
     try {
       await apiClient.post("/delegations", {
-        ...form,
+        delegated_role: form.delegated_role,
+        delegated_user_name: form.delegated_user_name,
+        delegated_user_email: form.delegated_user_email,
+        password: form.password,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        reason: form.reason,
         delegated_by_name: profile?.name || "SuperAdmin",
         delegated_user_id: 0,
       });
@@ -196,6 +212,24 @@ export default function DelegationManagement() {
                   <input type="email" value={form.delegated_user_email}
                     onChange={e => setForm(p => ({ ...p, delegated_user_email: e.target.value }))}
                     required placeholder="example@ku.edu.af" className={inputCls} dir="ltr" />
+                </div>
+                <div>
+                  <label className={labelCls}>
+                    {pick("د کفیل پاسورډ", "رمز کفیل")} <span className="text-red-500">*</span>
+                  </label>
+                  <input type="password" value={form.password}
+                    onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                    required placeholder={pick("لږ تر لږه ۶ توري", "حداقل ۶ کاراکتر")}
+                    className={inputCls} dir="ltr" />
+                </div>
+                <div>
+                  <label className={labelCls}>
+                    {pick("پاسورډ تایید کړئ", "تأیید رمز")} <span className="text-red-500">*</span>
+                  </label>
+                  <input type="password" value={form.confirm_password}
+                    onChange={e => setForm(p => ({ ...p, confirm_password: e.target.value }))}
+                    required placeholder={pick("پاسورډ بیا ولیکئ", "رمز را مجدداً وارد کنید")}
+                    className={inputCls} dir="ltr" />
                 </div>
                 <div>
                   <label className={labelCls}>
@@ -336,6 +370,7 @@ export default function DelegationManagement() {
             📋 {pick("د کفالت سیستم د کار طریقه", "نحوه کار سیستم نمایندگی")}
           </h4>
           <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li>• {pick("کفیل کولی شي د خپل ایمیل او د کفالت پاسورډ سره سیستم ته ننوځي.", "کفیل می‌تواند با ایمیل و رمز کفالت خود وارد سیستم شود.")}</li>
             <li>• {pick("کله چي کفالت فعال وي، کفیل کولی شي د ټاکل شوي صلاحیت سره سیستم وکاروي.", "وقتی نمایندگی فعال است، کفیل می‌تواند با اختیار تعیین‌شده سیستم را استفاده کند.")}</li>
             <li>• {pick("د سوپر اډمین کفیل کولی شي غوښتنې منظور کړي.", "کفیل سوپر ادمین می‌تواند درخواست‌ها را منظور کند.")}</li>
             <li>• {pick("د اډمین کفیل کولی شي د اډمین ټول کارونه وکړي.", "کفیل ادمین می‌تواند تمام کارهای ادمین را انجام دهد.")}</li>

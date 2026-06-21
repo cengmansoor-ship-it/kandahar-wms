@@ -9,6 +9,27 @@ import { isFirebaseConfigured } from "../../firebase/firebase";
 import { DEMO_SEED_USERS, getDemoUsers, getLocalItem, setLocalItem } from "../../firebase/localStore";
 import { ROLES } from "../../constants/roles";
 
+const DEMO_AUTH_KEY = "kandahar_wms_demo_auth_user";
+const DEMO_LOGGED_OUT_KEY = "kandahar_wms_user_logged_out";
+
+async function tryDelegateLogin(email: string, password: string): Promise<{
+  name: string; email: string; role: string; uid: string;
+} | null> {
+  try {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "/api";
+    const res = await fetch(`${apiBase}/delegations/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const json = await res.json();
+    if (json.success && json.data) return json.data;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 type OtpStep = "email" | "otp" | "newpass";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
@@ -115,6 +136,35 @@ export default function SignInForm() {
         navigate("/dashboard", { replace: true });
       }
     } catch (err) {
+      // Normal login failed — try delegate login
+      const cleanEmail = email.trim().toLowerCase();
+      const delegate = await tryDelegateLogin(cleanEmail, password);
+      if (delegate) {
+        // Register delegate as a temporary user in localStorage so getDemoUserProfile works
+        const existingUsers = getLocalItem<any[]>("users", []);
+        const withoutOld = existingUsers.filter((u: any) => u.email?.toLowerCase() !== cleanEmail);
+        const delegateProfile = {
+          uid: delegate.uid,
+          name: delegate.name,
+          email: delegate.email,
+          phone: "",
+          role: delegate.role === "SUPER_ADMIN" ? ROLES.SUPER_ADMIN : ROLES.ADMIN,
+          active: true,
+          forcePasswordChange: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        setLocalItem("users", [...withoutOld, delegateProfile]);
+        window.localStorage.removeItem(DEMO_LOGGED_OUT_KEY);
+        window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({
+          email: delegate.email,
+          uid: delegate.uid,
+          displayName: delegate.name,
+        }));
+        window.dispatchEvent(new Event("kandahar-wms-demo-auth-change"));
+        navigate(delegate.role === "SUPER_ADMIN" ? "/superadmin" : "/dashboard", { replace: true });
+        return;
+      }
       console.error("Login failed:", err);
       setError("برېښنالیک یا پټنوم ناسم دی / ایمیل یا رمز اشتباه است");
       setLoading(false);

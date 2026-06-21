@@ -1,5 +1,6 @@
 import pool from '../config/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import bcrypt from 'bcryptjs';
 
 export class DelegationService {
 
@@ -16,10 +17,15 @@ export class DelegationService {
           start_date DATE NOT NULL,
           end_date DATE NOT NULL,
           reason TEXT NULL,
+          password_hash VARCHAR(255) NULL,
           is_active BOOLEAN DEFAULT TRUE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
+      // Add password_hash column if it doesn't exist (for existing tables)
+      await pool.query(`
+        ALTER TABLE user_delegations ADD COLUMN password_hash VARCHAR(255) NULL
+      `).catch(() => {});
       console.log('[WMS] Delegation migrations complete.');
     } catch (e: any) {
       console.warn('[WMS] Delegation migration warning:', e.message);
@@ -28,7 +34,10 @@ export class DelegationService {
 
   static async getAll() {
     const [rows] = await pool.query<RowDataPacket[]>(`
-      SELECT * FROM user_delegations ORDER BY created_at DESC
+      SELECT id, delegated_role, delegated_user_id, delegated_user_name,
+             delegated_user_email, delegated_by_name, start_date, end_date,
+             reason, is_active, created_at
+      FROM user_delegations ORDER BY created_at DESC
     `);
     return rows;
   }
@@ -36,7 +45,10 @@ export class DelegationService {
   static async getActiveDelegations() {
     const today = new Date().toISOString().split('T')[0];
     const [rows] = await pool.query<RowDataPacket[]>(`
-      SELECT * FROM user_delegations
+      SELECT id, delegated_role, delegated_user_id, delegated_user_name,
+             delegated_user_email, delegated_by_name, start_date, end_date,
+             reason, is_active, created_at
+      FROM user_delegations
       WHERE is_active = TRUE
         AND start_date <= ?
         AND end_date >= ?
@@ -54,12 +66,18 @@ export class DelegationService {
     start_date: string;
     end_date: string;
     reason?: string;
+    password?: string;
   }) {
+    let password_hash: string | null = null;
+    if (data.password && data.password.trim().length >= 6) {
+      password_hash = await bcrypt.hash(data.password.trim(), 10);
+    }
+
     const [result] = await pool.query<ResultSetHeader>(`
       INSERT INTO user_delegations
         (delegated_role, delegated_user_id, delegated_user_name, delegated_user_email,
-         delegated_by_name, start_date, end_date, reason, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+         delegated_by_name, start_date, end_date, reason, password_hash, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
     `, [
       data.delegated_role,
       data.delegated_user_id,
@@ -69,6 +87,7 @@ export class DelegationService {
       data.start_date,
       data.end_date,
       data.reason || null,
+      password_hash,
     ]);
     return result.insertId;
   }
@@ -93,5 +112,38 @@ export class DelegationService {
     `, [email, today, today]);
     if (rows.length === 0) return null;
     return { role: rows[0].delegated_role };
+  }
+
+  static async verifyDelegateLogin(email: string, password: string): Promise<{
+    name: string;
+    email: string;
+    role: string;
+    uid: string;
+  } | null> {
+    const today = new Date().toISOString().split('T')[0];
+    const [rows] = await pool.query<RowDataPacket[]>(`
+      SELECT id, delegated_role, delegated_user_name, delegated_user_email, password_hash
+      FROM user_delegations
+      WHERE LOWER(delegated_user_email) = LOWER(?)
+        AND is_active = TRUE
+        AND start_date <= ?
+        AND end_date >= ?
+      LIMIT 1
+    `, [email, today, today]);
+
+    if (rows.length === 0) return null;
+    const row = rows[0];
+
+    if (!row.password_hash) return null;
+
+    const match = await bcrypt.compare(password, row.password_hash);
+    if (!match) return null;
+
+    return {
+      name: row.delegated_user_name,
+      email: row.delegated_user_email,
+      role: row.delegated_role,
+      uid: `delegate_${row.id}`,
+    };
   }
 }
