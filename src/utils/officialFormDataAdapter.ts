@@ -72,8 +72,8 @@ export function extractSharedItemRows(items: InventoryRequest["items"]): Officia
     itemNameType: item.specifications ? `${item.name} - ${item.specifications}` : item.name || "",
     quantity: String(item.quantity || ""),
     unit: item.unit || "",
-    unitPrice: "",
-    totalPrice: "",
+    unitPrice: item.unitPrice ? String(item.unitPrice) : "",
+    totalPrice: item.totalPrice ? String(item.totalPrice) : "",
   }));
 }
 

@@ -1,6 +1,22 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import db from '../config/db';
 
+// ── Map Pashto/Dari priority labels → DB ENUM ────────────────────────────────
+function normalizeRequestLevel(level: string): 'URGENT' | 'NORMAL' | 'LOW' {
+  if (!level) return 'NORMAL';
+  const s = level.trim();
+  if (['URGENT', 'NORMAL', 'LOW'].includes(s)) return s as 'URGENT' | 'NORMAL' | 'LOW';
+  // Pashto urgent
+  if (['ډېر عاجل', 'ډیر عاجل', 'عاجل', 'بسیار عاجل', 'فوري', 'urgent'].includes(s)) return 'URGENT';
+  // Pashto high-importance
+  if (['ډېر مهم', 'ډیر مهم', 'بسیار مهم', 'خورا مهم'].includes(s)) return 'URGENT';
+  // Pashto low
+  if (['لږ مهم', 'کم‌اهمیت', 'کم اهمیت', 'low'].includes(s)) return 'LOW';
+  // Pashto normal / متوسط
+  if (['عادي', 'عادی', 'متوسط', 'normal'].includes(s)) return 'NORMAL';
+  return 'NORMAL';
+}
+
 // ── Workflow stage configuration ─────────────────────────────────────────────
 const STAGE_MAP: Record<string, {
   progress: number; stage_ps: string;
@@ -149,7 +165,7 @@ export class RequestService {
         data.faculty_id || null,
         data.department_id || null,
         data.person_id || null,
-        data.request_level || 'NORMAL',
+        normalizeRequestLevel(data.request_level || ''),
         data.notes || '',
         status,
         currentStage,

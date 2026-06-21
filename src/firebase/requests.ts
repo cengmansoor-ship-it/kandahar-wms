@@ -86,6 +86,7 @@ const mapRequestFromApi = (apiReq: any): InventoryRequest => {
       name: i.item_name || i.item_code || "",
       unit: i.unit_name || "",
       quantity: Number(i.quantity) || 0,
+      specifications: i.specifications || "",
       unitPrice: Number(i.unit_price) || 0,
       totalPrice: Number(i.total_price) || 0,
     })),
