@@ -41,6 +41,9 @@ export class RequestService {
   static async runMigrations() {
     const { withRetry } = await import('../utils/migrationHelper');
 
+    await withRetry(() => db.query(`ALTER TABLE request_items ADD COLUMN unit_price DECIMAL(15,2) DEFAULT 0`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE request_items ADD COLUMN total_price DECIMAL(15,2) DEFAULT 0`)).catch(() => {});
+
     await withRetry(() => db.query(`ALTER TABLE requests MODIFY COLUMN status VARCHAR(100) DEFAULT 'Submitted'`)).catch(() => {});
     await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN current_stage VARCHAR(100) NULL`)).catch(() => {});
     await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN assigned_role VARCHAR(100) NULL`)).catch(() => {});
@@ -162,9 +165,9 @@ export class RequestService {
       if (data.items && Array.isArray(data.items)) {
         for (const item of data.items) {
           await connection.query(`
-            INSERT INTO request_items (request_id, item_id, item_name, quantity, unit_id, specifications)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `, [requestId, item.item_id || null, item.item_name, item.quantity, item.unit_id || null, item.specifications || '']);
+            INSERT INTO request_items (request_id, item_id, item_name, quantity, unit_id, specifications, unit_price, total_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `, [requestId, item.item_id || null, item.item_name, item.quantity, item.unit_id || null, item.specifications || '', item.unit_price || 0, item.total_price || 0]);
         }
       }
 

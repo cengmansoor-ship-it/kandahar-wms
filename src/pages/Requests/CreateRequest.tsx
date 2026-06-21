@@ -28,6 +28,8 @@ interface RequestItemRow {
   unit: string;
   typeOrSpecification: string;
   quantity: number;
+  unitPrice: number;
+  totalPrice: number;
   searchText: string;
   showDropdown: boolean;
 }
@@ -105,7 +107,7 @@ export default function CreateRequest() {
   const addItem = () => {
     setSelectedItems(prev => [...prev, {
       checklistId: "", name: "", unit: "", typeOrSpecification: "",
-      quantity: 1, searchText: "", showDropdown: false,
+      quantity: 1, unitPrice: 0, totalPrice: 0, searchText: "", showDropdown: false,
     }]);
   };
 
@@ -126,15 +128,31 @@ export default function CreateRequest() {
 
   const selectChecklistItem = (index: number, ci: ChecklistItem) => {
     const updated = [...selectedItems];
+    const unitPrice = ci.estimated_price || 0;
+    const qty = updated[index].quantity || 1;
     updated[index] = {
       ...updated[index],
       checklistId: String(ci.id),
       name: ci.item_name,
       unit: ci.unit || "",
       typeOrSpecification: ci.description || "",
+      unitPrice,
+      totalPrice: unitPrice * qty,
       searchText: ci.item_name,
       showDropdown: false,
     };
+    setSelectedItems(updated);
+  };
+
+  const handleUnitPriceChange = (index: number, price: number) => {
+    const updated = [...selectedItems];
+    updated[index] = { ...updated[index], unitPrice: price, totalPrice: price * (updated[index].quantity || 1) };
+    setSelectedItems(updated);
+  };
+
+  const handleQuantityChange = (index: number, qty: number) => {
+    const updated = [...selectedItems];
+    updated[index] = { ...updated[index], quantity: qty, totalPrice: (updated[index].unitPrice || 0) * qty };
     setSelectedItems(updated);
   };
 
@@ -194,6 +212,8 @@ export default function CreateRequest() {
         unit: i.unit,
         quantity: i.quantity,
         specifications: i.typeOrSpecification,
+        unitPrice: i.unitPrice || 0,
+        totalPrice: i.totalPrice || 0,
       }));
       const requestId = await createRequest(
         {
@@ -384,7 +404,7 @@ export default function CreateRequest() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                     <div className="md:col-span-2">
                       <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                         {pick("جنس انتخاب کړئ *", "انتخاب جنس *")}
@@ -456,13 +476,28 @@ export default function CreateRequest() {
                     <div>
                       <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("مقدار *", "مقدار *")}</label>
                       <input type="number" value={sItem.quantity}
-                        onChange={e => {
-                          const updated = [...selectedItems];
-                          updated[index] = { ...updated[index], quantity: Number(e.target.value) };
-                          setSelectedItems(updated);
-                        }}
+                        onChange={e => handleQuantityChange(index, Number(e.target.value))}
                         min="1" required className={selCls} />
                       {sItem.unit && <p className="mt-1 text-xs text-gray-400">{pick("واحد:", "واحد:")} {sItem.unit}</p>}
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("في قیمت (افغانۍ)", "قیمت واحد (افغانی)")}</label>
+                      <input
+                        type="number"
+                        value={sItem.unitPrice || ""}
+                        onChange={e => handleUnitPriceChange(index, Number(e.target.value))}
+                        min="0"
+                        placeholder="0"
+                        className={selCls}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{pick("مجموعه (افغانۍ)", "مجموع (افغانی)")}</label>
+                      <div className={`${selCls} bg-gray-100 dark:bg-gray-700 font-semibold text-primary`}>
+                        {sItem.totalPrice > 0 ? sItem.totalPrice.toLocaleString() : "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -474,6 +509,21 @@ export default function CreateRequest() {
                   <p className="text-xs">{pick("د جنس اضافه کولو بټن ووهئ.", "دکمه افزودن جنس را بزنید.")}</p>
                 </div>
               )}
+
+              {selectedItems.length > 0 && (() => {
+                const grandTotal = selectedItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+                if (grandTotal <= 0) return null;
+                return (
+                  <div className="flex items-center justify-between px-4 py-3 mt-2 rounded-xl bg-primary/5 border border-primary/20">
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                      {pick("ټولټال مجموعه:", "مجموع کل:")}
+                    </span>
+                    <span className="text-lg font-black text-primary">
+                      ؋ {grandTotal.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

@@ -202,6 +202,8 @@ export default function RequestDetails() {
                         <th className="py-2">{pick("جنس", "جنس")}</th>
                         <th className="py-2">{pick("مقدار", "مقدار")}</th>
                         <th className="py-2">{pick("واحد", "واحد")}</th>
+                        <th className="py-2">{pick("في قیمت", "قیمت واحد")}</th>
+                        <th className="py-2">{pick("مجموعه", "مجموع")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -210,9 +212,21 @@ export default function RequestDetails() {
                           <td className="py-3 font-medium text-gray-800 dark:text-white/90">{item.name}</td>
                           <td className="py-3 text-gray-600 dark:text-gray-400">{item.quantity}</td>
                           <td className="py-3 text-gray-600 dark:text-gray-400">{item.unit}</td>
+                          <td className="py-3 text-gray-600 dark:text-gray-400">{item.unitPrice ? `؋ ${item.unitPrice.toLocaleString()}` : "—"}</td>
+                          <td className="py-3 font-semibold text-primary">{item.totalPrice ? `؋ ${item.totalPrice.toLocaleString()}` : "—"}</td>
                         </tr>
                       ))}
                     </tbody>
+                    {request.items.some(i => (i.totalPrice || 0) > 0) && (
+                      <tfoot>
+                        <tr className="border-t-2 border-primary/20 dark:border-primary/30">
+                          <td colSpan={4} className="py-2 text-xs font-bold text-gray-700 dark:text-gray-300 text-left">{pick("ټولټال:", "مجموع کل:")}</td>
+                          <td className="py-2 font-black text-primary">
+                            ؋ {request.items.reduce((s, i) => s + (i.totalPrice || 0), 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
                 </div>
               </div>

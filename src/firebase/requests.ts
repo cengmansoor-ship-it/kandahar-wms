@@ -86,6 +86,8 @@ const mapRequestFromApi = (apiReq: any): InventoryRequest => {
       name: i.item_name || i.item_code || "",
       unit: i.unit_name || "",
       quantity: Number(i.quantity) || 0,
+      unitPrice: Number(i.unit_price) || 0,
+      totalPrice: Number(i.total_price) || 0,
     })),
     status,
     progress: Number(apiReq.progress_percent) || 0,
@@ -141,6 +143,8 @@ export interface RequestItem {
   unit: string;
   quantity: number;
   specifications?: string;
+  unitPrice?: number;
+  totalPrice?: number;
 }
 
 export interface InventoryRequest {
@@ -230,6 +234,8 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
         item_id: parseInt(i.itemId) || null,
         item_name: i.name,
         quantity: i.quantity,
+        unit_price: i.unitPrice || 0,
+        total_price: i.totalPrice || 0,
       }))
     };
     const response = await apiClient.post('/requests', apiPayload);
