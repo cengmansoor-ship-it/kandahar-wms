@@ -66,6 +66,14 @@ const PERM_LABEL_PS: Record<string, string> = {
 export default function SettingsPage() {
   const saved = getLocalItem("request_limits", { dailyLimit: 10, updatedAtHijriShamsi: "" });
   const [dailyLimit, setDailyLimit] = useState<number>(Number((saved as any).dailyLimit) || 10);
+
+  // Load the authoritative limit from the backend on mount
+  useEffect(() => {
+    fetch("/api/settings/request-limit")
+      .then(r => r.json())
+      .then(d => { if (d?.data?.limit !== undefined) setDailyLimit(Number(d.data.limit)); })
+      .catch(() => {});
+  }, []);
   const [message, setMessage] = useState("");
   const { lang, setLang, pick } = useLanguage();
   const { calendarType, setCalendarType } = useCalendar();
@@ -526,12 +534,21 @@ export default function SettingsPage() {
     setEmailMsg(null);
   };
 
-  const save = () => {
+  const save = async () => {
     const dates = getCurrentHijriDates();
+    // Save to localStorage (legacy/fallback)
     setLocalItem("request_limits", { dailyLimit, updatedAtHijriShamsi: dates.shamsi, updatedAtHijriQamari: dates.qamari });
+    // Save to backend (enforced)
+    try {
+      await fetch("/api/settings/request-limit", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: dailyLimit }),
+      });
+    } catch { /* backend may be down — localStorage is fallback */ }
     setMessage(pick(
-      "د ورځني غوښتنو حد خوندي شو او د سیستم فعالیتونو کې د ثبت لپاره چمتو دی.",
-      "محدودیت درخواست‌های روزانه ذخیره شد."
+      "د ورځني غوښتنو حد خوندي شو. اوس د سیستم له لوري پلي کیږي.",
+      "محدودیت درخواست‌های روزانه ذخیره و اجرا شد."
     ));
   };
 

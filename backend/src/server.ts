@@ -35,6 +35,8 @@ import { BackupService } from './services/backup.service';
 import backupRoutes from './routes/backup.routes';
 import delegationRoutes from './routes/delegation.routes';
 import { DelegationService } from './services/delegation.service';
+import settingsRoutes from './routes/settings.routes';
+import { SettingsService } from './services/settings.service';
 
 // Load from backend/.env first, then root .env (supports single root .env on Windows)
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -60,6 +62,7 @@ TrashService.purgeExpired(30).catch(e => console.warn('[WMS] Trash purge warning
 SmsService.runMigrations().then(() => console.log('[WMS] SMS config migrations complete.')).catch(e => console.warn('[WMS] SMS config migrations warning:', e.message));
 ChecklistService.runMigrations().then(() => console.log('[WMS] Checklist migrations & seed complete.')).catch(e => console.warn('[WMS] Checklist migrations warning:', e.message));
 DelegationService.runMigration().catch(e => console.warn('[WMS] Delegation migration warning:', e.message));
+SettingsService.runMigrations().then(() => console.log('[WMS] System settings migrations complete.')).catch(e => console.warn('[WMS] Settings migrations warning:', e.message));
 
 // Schedule auto backup every 3 hours
 BackupService.scheduleAutoBackup();
@@ -83,6 +86,7 @@ app.use('/api/checklist', checklistRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/delegations', delegationRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, status: 'ok', service: 'Kandahar WMS Backend', timestamp: new Date().toISOString() });

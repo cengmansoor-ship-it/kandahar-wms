@@ -7,3 +7,4 @@
 - [Auto backup system](auto-backup.md) — BackupService uses node-cron (every 3h) + exceljs; routes /api/backup/*; frontend at /maintenance/backup (replaced BackupExport); keeps last 50 files in backend/backups/.
 - [Delegation (کفیل) system](delegation-system.md) — user_delegations table; backend service + routes at /api/delegations; frontend at /delegation (SuperAdmin only via SettingsLayout); import pool not db from ../config/db.
 - [SecureDeleteModal pattern](secure-delete-pattern.md) — requireReason=true; onConfirm(reason: string); all admin deletes (BackupManagement, BudgetCodes, RoleManagement, TrashList, ChecklistManagement) use it.
+- [System settings table](system-settings-table.md) — system_settings table (VARCHAR(2000) not TEXT for default value support); daily_request_limit key; routes /api/settings/*; backend enforces 429 on createRequest.

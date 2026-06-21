@@ -54,11 +54,21 @@ export default function CreateRequest() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [limitInfo, setLimitInfo] = useState<{ limit: number; today_count: number } | null>(null);
   const { user, profile } = useAuth();
   const { pick, lang } = useLanguage();
   const navigate = useNavigate();
 
   const levels = lang === "dr" ? REQUEST_LEVELS_DR : REQUEST_LEVELS_PS;
+
+  // Load today's request count vs limit
+  useEffect(() => {
+    if (!profile?.name) return;
+    fetch(`/api/settings/request-limit?requester_name=${encodeURIComponent(profile.name)}`)
+      .then(r => r.json())
+      .then(d => { if (d?.data) setLimitInfo({ limit: d.data.limit, today_count: d.data.today_count }); })
+      .catch(() => {});
+  }, [profile?.name]);
 
   useEffect(() => {
     setChecklistLoading(true);
@@ -200,7 +210,18 @@ export default function CreateRequest() {
       navigate(`/requests/details/${requestId}`);
     } catch (err: any) {
       console.error("Error creating request:", err);
-      setError(pick("د غوښتنې ثبتولو کې تېروتنه رامنځته شوه.", "خطایی در ثبت درخواست رخ داد."));
+      if (err?.limit_exceeded) {
+        setError(err.message || pick("د ورځني غوښتنو حد خلاص شوی.", "محدودیت درخواست‌های روزانه پر شده است."));
+        // Refresh the limit counter so UI reflects latest state
+        if (profile?.name) {
+          fetch(`/api/settings/request-limit?requester_name=${encodeURIComponent(profile.name)}`)
+            .then(r => r.json())
+            .then(d => { if (d?.data) setLimitInfo({ limit: d.data.limit, today_count: d.data.today_count }); })
+            .catch(() => {});
+        }
+      } else {
+        setError(pick("د غوښتنې ثبتولو کې تېروتنه رامنځته شوه.", "خطایی در ثبت درخواست رخ داد."));
+      }
     } finally {
       setLoading(false);
     }
@@ -215,6 +236,26 @@ export default function CreateRequest() {
       <Breadcrumb pageTitle="نوې غوښتنه / درخواست جدید" />
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]" dir="rtl">
+        {/* Daily limit usage badge */}
+        {limitInfo && limitInfo.limit > 0 && (
+          <div className={`mb-4 flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${
+            limitInfo.today_count >= limitInfo.limit
+              ? "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+              : limitInfo.today_count >= limitInfo.limit - 1
+              ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-300"
+              : "border-blue-100 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-900/10 dark:text-blue-300"
+          }`}>
+            <span className="font-semibold">
+              {pick("نن د غوښتنو شمیر:", "تعداد درخواست امروز:")}
+            </span>
+            <span className="font-black text-base">
+              {limitInfo.today_count} / {limitInfo.limit}
+              {limitInfo.today_count >= limitInfo.limit && (
+                <span className="mr-2 text-xs font-semibold">— {pick("حد خلاص", "محدودیت پر")}</span>
+              )}
+            </span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700 text-sm dark:bg-red-900/20 dark:border-red-800 dark:text-red-300">

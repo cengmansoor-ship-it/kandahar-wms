@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { RequestService } from '../services/request.service';
 import { SmsService } from '../services/sms.service';
+import { SettingsService } from '../services/settings.service';
 
 const handleError = (res: Response, error: any) => {
   console.error(error);
@@ -29,14 +30,32 @@ export const getRequestById = async (req: Request, res: Response): Promise<any> 
   }
 };
 
-export const createRequest = async (req: Request, res: Response) => {
+export const createRequest = async (req: Request, res: Response): Promise<any> => {
   try {
+    const requesterName = req.body.requester_name || null;
+
+    // ── Enforce daily request limit ───────────────────────────────────────────
+    if (requesterName) {
+      const [limit, todayCount] = await Promise.all([
+        SettingsService.getDailyRequestLimit(),
+        SettingsService.getTodayRequestCount(requesterName),
+      ]);
+      if (limit > 0 && todayCount >= limit) {
+        return res.status(429).json({
+          success: false,
+          limit_exceeded: true,
+          message: `د ورځني غوښتنو حد (${limit}) خلاص شوی. نن مو ${todayCount} غوښتنه ثبت کړې.`,
+          data: { limit, today_count: todayCount },
+        });
+      }
+    }
+
     const userId = 1;
     const id = await RequestService.createRequest({
       ...req.body,
-      faculty_name:      req.body.faculty_name || req.body.faculty || null,
-      department_name:   req.body.department_name || req.body.departmentOrPerson || null,
-      requester_name:    req.body.requester_name || null,
+      faculty_name:    req.body.faculty_name || req.body.faculty || null,
+      department_name: req.body.department_name || req.body.departmentOrPerson || null,
+      requester_name:  requesterName,
     }, userId);
     res.status(201).json({ success: true, message: 'غوښتنه په بریالیتوب سره ثبت شوه.', data: { id } });
   } catch (error) {

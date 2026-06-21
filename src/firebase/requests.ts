@@ -246,7 +246,26 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
       saveDemoRequests([localReq, ...existing]);
     }
     return newId;
-  } catch (apiError) {
+  } catch (apiError: any) {
+    // ── If the backend rejected due to daily limit, propagate immediately ───
+    if (apiError?.message?.includes('HTTP 429')) {
+      // Parse the JSON body from the error text
+      try {
+        const jsonStart = apiError.message.indexOf('{');
+        if (jsonStart !== -1) {
+          const parsed = JSON.parse(apiError.message.slice(jsonStart));
+          const limitErr = new Error(parsed.message || apiError.message) as any;
+          limitErr.limit_exceeded = true;
+          limitErr.data = parsed.data;
+          throw limitErr;
+        }
+      } catch (parseErr: any) {
+        if (parseErr.limit_exceeded) throw parseErr;
+      }
+      const limitErr = new Error(apiError.message) as any;
+      limitErr.limit_exceeded = true;
+      throw limitErr;
+    }
     console.warn("Backend createRequest failed; falling back to Firebase/Local");
     if (!isFirebaseConfigured) {
       const requestId = makeLocalId("request");

@@ -25,6 +25,8 @@ interface TrashRecord {
   delete_reason: string | null;
 }
 
+function rowKey(r: TrashRecord) { return `${r.table}-${r.id}`; }
+
 function daysRemaining(deletedAt: string | null): number | null {
   if (!deletedAt) return null;
   const deleted = new Date(deletedAt).getTime();
@@ -50,10 +52,15 @@ export default function TrashList() {
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<TrashRecord | null>(null);
 
+  // Bulk selection state
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkRestoring, setBulkRestoring] = useState(false);
+
   useEffect(() => { fetchTrash(); }, []);
 
   const fetchTrash = async () => {
     setLoading(true);
+    setSelected(new Set());
     try {
       const res = await fetch("/api/trash");
       const json = await res.json();
@@ -103,6 +110,35 @@ export default function TrashList() {
     }
   };
 
+  // ── Bulk restore ──────────────────────────────────────────────────────────
+  const handleBulkRestore = async () => {
+    if (selected.size === 0) return;
+    const reason = window.prompt(`د ${selected.size} ریکارډونو د بیا راوستلو دلیل ولیکئ:`);
+    if (!reason) return;
+    setBulkRestoring(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const key of selected) {
+      const [table, idStr] = key.split(/-(.+)/);
+      const id = idStr;
+      try {
+        const res = await fetch(`/api/trash/${table}/${id}/restore`, { method: "POST" });
+        const json = await res.json();
+        if (json.success) successCount++;
+        else failCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setBulkRestoring(false);
+    if (failCount === 0) {
+      showMsg(`${successCount} ریکارډونه بریالیتوب سره بیا راوستل شول.`, true);
+    } else {
+      showMsg(`${successCount} بریالي، ${failCount} ناکام.`, failCount > 0 && successCount === 0 ? false : true);
+    }
+    await fetchTrash();
+  };
+
   const expiringCount = useMemo(() => records.filter(r => { const d = daysRemaining(r.deleted_at); return d !== null && d <= 7 && d > 0; }).length, [records]);
   const typeCounts = useMemo(() => {
     const map: Record<string, number> = {};
@@ -124,6 +160,39 @@ export default function TrashList() {
     }
     return list;
   }, [records, search, typeFilter]);
+
+  // Selection helpers
+  const allFilteredKeys = useMemo(() => new Set(filtered.map(rowKey)), [filtered]);
+  const allSelected = filtered.length > 0 && filtered.every(r => selected.has(rowKey(r)));
+  const someSelected = filtered.some(r => selected.has(rowKey(r)));
+
+  const toggleRow = (r: TrashRecord) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      const k = rowKey(r);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected(prev => {
+        const next = new Set(prev);
+        filtered.forEach(r => next.delete(rowKey(r)));
+        return next;
+      });
+    } else {
+      setSelected(prev => {
+        const next = new Set(prev);
+        filtered.forEach(r => next.add(rowKey(r)));
+        return next;
+      });
+    }
+  };
+
+  const selectedCount = filtered.filter(r => selected.has(rowKey(r))).length;
 
   return (
     <>
@@ -217,10 +286,44 @@ export default function TrashList() {
           {search && <p className="mt-1 text-xs text-gray-400">{filtered.length} پایله</p>}
         </div>
 
+        {/* Bulk action bar */}
+        {someSelected && (
+          <div className="mb-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20 px-4 py-2.5 gap-3">
+            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+              {selectedCount} ریکارډونه غوره شوي
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelected(new Set())}
+                className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
+              >
+                لغوه
+              </button>
+              <button
+                onClick={handleBulkRestore}
+                disabled={bulkRestoring}
+                className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg px-4 py-1.5 transition"
+              >
+                {bulkRestoring ? "روان دی..." : `↩ ټول (${selectedCount}) بیا راوستل`}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-right table-auto border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800">
+                <th className="px-3 py-3 border border-gray-200 dark:border-gray-700 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                    onChange={toggleAll}
+                    className="w-4 h-4 cursor-pointer rounded"
+                    title="ټول غوره کول"
+                  />
+                </th>
                 <th className="px-4 py-3 border border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-white/90">ډول</th>
                 <th className="px-4 py-3 border border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-white/90">نوم / لیبل</th>
                 <th className="px-4 py-3 border border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-white/90">حذف کوونکی</th>
@@ -232,10 +335,10 @@ export default function TrashList() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400">بارول...</td></tr>
+                <tr><td colSpan={8} className="text-center py-10 text-gray-400">بارول...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-gray-400">
+                  <td colSpan={8} className="text-center py-10 text-gray-400">
                     {search ? `"${search}" لپاره هیڅ حذف شوی ریکارډ ونه موندل شو.` : "هیڅ حذف شوي معلومات نشته."}
                   </td>
                 </tr>
@@ -243,9 +346,18 @@ export default function TrashList() {
                 filtered.map((r, i) => {
                   const days = daysRemaining(r.deleted_at);
                   const isExpiring = days !== null && days <= 7;
+                  const isSelected = selected.has(rowKey(r));
                   return (
                     <tr key={i}
-                      className={`border-b border-gray-100 dark:border-gray-800 transition hover:bg-gray-50 dark:hover:bg-white/[0.02] ${isExpiring ? "bg-orange-50/40 dark:bg-orange-900/10" : ""}`}>
+                      className={`border-b border-gray-100 dark:border-gray-800 transition hover:bg-gray-50 dark:hover:bg-white/[0.02] ${isExpiring ? "bg-orange-50/40 dark:bg-orange-900/10" : ""} ${isSelected ? "bg-emerald-50/60 dark:bg-emerald-900/10" : ""}`}>
+                      <td className="px-3 py-3 border border-gray-100 dark:border-gray-800 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleRow(r)}
+                          className="w-4 h-4 cursor-pointer rounded"
+                        />
+                      </td>
                       <td className="px-4 py-3 border border-gray-100 dark:border-gray-800">
                         <span className="inline-block rounded-full bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5">{r.type}</span>
                       </td>
