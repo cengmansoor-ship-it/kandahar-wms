@@ -142,7 +142,7 @@ export default function RequestDetails() {
       <PageMeta title="د غوښتنې جزیات | Kandahar University WMS" description="د غوښتنې جزیات او فورمونه" />
       <Breadcrumb pageTitle={pick("د غوښتنې جزیات", "جزیات درخواست")} />
 
-      {activeForm && profile?.role !== ROLES.REQUESTER ? (
+      {activeForm ? (
         <div className="h-[85vh]">
           <div className="mb-4">
             <Button variant="outline" size="sm" onClick={() => setActiveForm(null)}>← {pick("بیرته", "بازګشت")}</Button>
@@ -151,7 +151,7 @@ export default function RequestDetails() {
             templateId={activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5'} 
             initialData={formData}
             onSave={handleSaveForm}
-            readOnly={request.status !== 'Draft'}
+            readOnly={profile?.role === ROLES.REQUESTER || request.status !== 'Draft'}
           />
         </div>
       ) : (
@@ -344,8 +344,7 @@ export default function RequestDetails() {
           </div>
 
           <div className="space-y-6">
-            {profile?.role !== ROLES.REQUESTER && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("رسمي فورمونه", "فورم‌های رسمی")}</h3>
                 <div className="space-y-3">
                   <button 
@@ -368,7 +367,6 @@ export default function RequestDetails() {
                   </button>
                 </div>
               </div>
-            )}
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("پرمختګ", "پیشرفت")}</h3>
