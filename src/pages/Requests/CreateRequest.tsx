@@ -92,6 +92,34 @@ export default function CreateRequest() {
       .finally(() => setLoadingFaculties(false));
   }, []);
 
+  // For REQUESTER: auto-fill faculty/department from their traceability profile
+  const isRequester = profile?.role === "REQUESTER";
+  useEffect(() => {
+    if (!isRequester || !profile?.faculty_id || !profile?.department_id) return;
+    const fid = String(profile.faculty_id);
+    const did = String(profile.department_id);
+    // Wait until faculties are loaded then pre-fill
+    if (faculties.length > 0) {
+      const fac = faculties.find((f: any) => String(f.id) === fid);
+      managementService.getDepartments().then((allDepts: any[]) => {
+        const dept = allDepts.find((d: any) => String(d.id) === did);
+        setFormData(prev => ({
+          ...prev,
+          faculty_id: fid,
+          faculty: fac ? (lang === "dr" ? fac.name_fa : fac.name_ps) : prev.faculty,
+          department_id: did,
+          departmentOrPerson: dept ? (lang === "dr" ? dept.name_fa : dept.name_ps) : prev.departmentOrPerson,
+        }));
+        if (fac && did) {
+          const filtered = allDepts.filter((d: any) => String(d.faculty_id) === fid);
+          setDepartments(filtered);
+          setDepartmentMode(filtered.length > 0 ? "dropdown" : "text");
+        }
+        setFacultyMode("dropdown");
+      }).catch(() => {});
+    }
+  }, [isRequester, profile?.faculty_id, profile?.department_id, faculties.length, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!formData.faculty_id) { setDepartments([]); return; }
     managementService.getDepartments()
@@ -185,7 +213,7 @@ export default function CreateRequest() {
       setError(pick("د کاروونکي معلومات ونه موندل شول.", "اطلاعات کاربر یافت نشد."));
       return;
     }
-    if (!formData.faculty.trim()) {
+    if (!formData.faculty.trim() && !(isRequester && profile.faculty_id)) {
       setError(pick("مهرباني وکړئ پوهنځی انتخاب کړئ.", "لطفاً پوهنکده را انتخاب کنید."));
       return;
     }
@@ -223,7 +251,10 @@ export default function CreateRequest() {
           originalRequestLevel: formData.requestLevel,
           currentRequestLevel: formData.requestLevel,
           items: requestItems,
-        },
+          faculty_id: formData.faculty_id ? Number(formData.faculty_id) : (profile.faculty_id || undefined),
+          department_id: formData.department_id ? Number(formData.department_id) : (profile.department_id || undefined),
+          person_id: profile.person_id || undefined,
+        } as any,
         user.uid,
         profile.name
       );
@@ -288,7 +319,12 @@ export default function CreateRequest() {
               <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {pick("پوهنځی / فاکولته", "پوهنکده / فاکولتی")} <span className="text-red-500">*</span>
               </label>
-              {facultyMode === "dropdown" ? (
+              {isRequester && profile?.faculty_id ? (
+                <div className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  <span className="font-medium">{formData.faculty || pick("د ستاسو پوهنځی...", "پوهنکده شما...")}</span>
+                </div>
+              ) : facultyMode === "dropdown" ? (
                 <>
                   <select value={formData.faculty_id} onChange={handleFacultySelect} required disabled={loadingFaculties} className={inputCls}>
                     <option value="">{loadingFaculties ? pick("بارگذاری...", "بارگذاری...") : pick("پوهنځی غوره کړئ...", "پوهنکده انتخاب کنید...")}</option>
@@ -314,12 +350,17 @@ export default function CreateRequest() {
 
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {pick("څانګه یا کس", "دیپارتمنت یا شخص")} <span className="text-red-500">*</span>
+                {pick("ډیپارمنټ", "دیپارتمنت")} <span className="text-red-500">*</span>
               </label>
-              {departmentMode === "dropdown" && formData.faculty_id && departments.length > 0 ? (
+              {isRequester && profile?.department_id ? (
+                <div className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  <span className="font-medium">{formData.departmentOrPerson || pick("د ستاسو ډیپارمنټ...", "دیپارتمنت شما...")}</span>
+                </div>
+              ) : departmentMode === "dropdown" && formData.faculty_id && departments.length > 0 ? (
                 <>
                   <select value={formData.department_id} onChange={handleDepartmentSelect} required className={inputCls}>
-                    <option value="">{pick("څانګه غوره کړئ...", "دیپارتمنت انتخاب کنید...")}</option>
+                    <option value="">{pick("ډیپارمنټ غوره کړئ...", "دیپارتمنت انتخاب کنید...")}</option>
                     {departments.map((d: any) => (
                       <option key={d.id} value={d.id}>{lang === "dr" ? d.name_fa : d.name_ps}</option>
                     ))}

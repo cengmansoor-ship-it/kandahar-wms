@@ -12,6 +12,9 @@ export interface UserProfile {
   forcePasswordChange: boolean;
   createdAt: number;
   updatedAt: number;
+  person_id?: number;
+  faculty_id?: number;
+  department_id?: number;
 }
 
 const COLLECTION_NAME = "users";

@@ -25,10 +25,30 @@ const LEVEL_LABELS: Record<string, { ps: string; dr: string; color: string; grad
 };
 
 const STATUS_LABELS: Record<string, { ps: string; dr: string; cls: string }> = {
-  ASSIGNED:    { ps: "ټاکل شوی", dr: "تخصیص داده‌شده", cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
-  RETURNED:    { ps: "بیرته راستون", dr: "برگشت‌داده‌شده", cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
-  DAMAGED:     { ps: "خراب شوی", dr: "آسیب‌دیده", cls: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
-  TRANSFERRED: { ps: "لیږدول شوی", dr: "منتقل‌شده", cls: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
+  ASSIGNED:                      { ps: "ټاکل شوی",          dr: "تخصیص داده‌شده",     cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  RETURNED:                      { ps: "بیرته راستون",        dr: "برگشت‌داده‌شده",     cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
+  DAMAGED:                       { ps: "خراب شوی",            dr: "آسیب‌دیده",          cls: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
+  TRANSFERRED:                   { ps: "لیږدول شوی",          dr: "منتقل‌شده",          cls: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
+  PendingReview:                 { ps: "د بیاکتنې انتظار",    dr: "منتظر بررسی",        cls: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
+  ReviewReturned:                { ps: "بیرته راستانه",        dr: "برگشت‌داده شده",     cls: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  Submitted:                     { ps: "واستول شوی",          dr: "ارسال شده",          cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  ConfirmedByRequestConfirmer:   { ps: "تایید شوی",           dr: "تأیید شده",          cls: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300" },
+  RejectedByRequestConfirmer:    { ps: "رد شوی",              dr: "رد شده",             cls: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
+  ApprovedBySuperAdmin:          { ps: "منظور شوی",           dr: "تصویب شده",          cls: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  RejectedBySuperAdmin:          { ps: "رد شوی",              dr: "رد شده",             cls: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
+  StockAvailable:                { ps: "جنس شتون لري",        dr: "موجود است",          cls: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  StockNotAvailable:             { ps: "جنس نشته",            dr: "موجود نیست",         cls: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  ProcurementPending:            { ps: "تدارکاتو ته لیږل شو", dr: "به تدارکات ارسال",   cls: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
+  FS5Created:                    { ps: "ف.س.۵ جوړه شوه",      dr: "ف.س.۵ ایجاد شد",    cls: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300" },
+  Delivered:                     { ps: "تسلیم شو",            dr: "تحویل داده شد",      cls: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  Completed:                     { ps: "بشپړه شوه",           dr: "تکمیل شد",           cls: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+};
+
+const SOURCE_LABELS: Record<string, { ps: string; dr: string; icon: string }> = {
+  manual:   { ps: "لاسي ټاکنه",   dr: "تخصیص دستی",    icon: "✋" },
+  delivery: { ps: "سپارنه",        dr: "تحویل",          icon: "📦" },
+  request:  { ps: "غوښتنه",        dr: "درخواست",        icon: "📋" },
+  stock_out:{ ps: "د ګدام وتل",    dr: "خروج انبار",     icon: "📤" },
 };
 
 // ─── Animated Counter ─────────────────────────────────────────────────────────
@@ -657,9 +677,14 @@ export default function TraceabilityPage() {
                       <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 justify-end">
                         <span>🔢 {e.quantity} {splitPick(`${e.unit_name_ps || ''} / ${e.unit_name_fa || ''}`)}</span>
                         <span>📅 {e.assigned_at ? new Date(e.assigned_at).toLocaleDateString("fa-AF") : "—"}</span>
-                        {e.request_tracking_id && <span>🔖 {e.request_tracking_id}</span>}
+                        {e.tracking_id && <span>🔖 {e.tracking_id}</span>}
                         {e.delivery_fs5 && <span>📄 FS5: {e.delivery_fs5}</span>}
-                        <span>📤 {e.source_type || "—"}</span>
+                        {e.source_type && (() => {
+                          const src = SOURCE_LABELS[e.source_type];
+                          return src
+                            ? <span className="flex items-center gap-0.5">{src.icon} {pick(src.ps, src.dr)}</span>
+                            : <span>📤 {e.source_type}</span>;
+                        })()}
                       </div>
                       {e.notes && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{e.notes}</p>}
                     </div>

@@ -61,13 +61,13 @@ export const DEMO_USER_PROFILE: UserProfile = {
 };
 
 export const DEMO_SEED_USERS: DemoSeedUser[] = [
-  { uid:"seed_super_admin",        name:"Enayatullah Mansoor",   email:"superadmin@ku.edu.af",   phone:"0700100001", password:"SuperAdmin@1",  role:ROLES.SUPER_ADMIN,            active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
-  { uid:"seed_admin",              name:"Fazalrahman Mayar",     email:"admin@ku.edu.af",         phone:"0700100002", password:"Admin@1234",    role:ROLES.ADMIN,                  active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
-  { uid:"seed_procurement",        name:"Abdulhadi Rahimi",      email:"procurement@ku.edu.af",   phone:"0700100003", password:"Procure@123",   role:ROLES.PROCUREMENT_DIRECTOR,   active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
-  { uid:"seed_warehouse_director", name:"Nazirahmad Bashare",    email:"warehouse@ku.edu.af",     phone:"0700100004", password:"Warehouse@1",   role:ROLES.WAREHOUSE_DIRECTOR,     active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
-  { uid:"seed_requester",          name:"Afghan Sahib",          email:"requester@ku.edu.af",     phone:"0700100005", password:"Request@123",   role:ROLES.REQUESTER,              active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
-  { uid:"seed_confirmer",          name:"Doostyar Sahib",        email:"confirmer@ku.edu.af",     phone:"0700100006", password:"Confirm@123",   role:ROLES.REQUEST_CONFIRMER,      active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
-  { uid:"seed_entry",              name:"Mansoor Ahmad",         email:"entry@ku.edu.af",         phone:"0700100007", password:"Entry@1234",    role:ROLES.WAREHOUSE_ENTRY_PERSON, active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1 },
+  { uid:"seed_super_admin",        name:"Enayatullah Mansoor",   email:"superadmin@ku.edu.af",   phone:"0700100001", password:"SuperAdmin@1",  role:ROLES.SUPER_ADMIN,            active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:1, department_id:1 },
+  { uid:"seed_admin",              name:"Fazalrahman Mayar",     email:"admin@ku.edu.af",         phone:"0700100002", password:"Admin@1234",    role:ROLES.ADMIN,                  active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:2, department_id:2 },
+  { uid:"seed_procurement",        name:"Abdulhadi Rahimi",      email:"procurement@ku.edu.af",   phone:"0700100003", password:"Procure@123",   role:ROLES.PROCUREMENT_DIRECTOR,   active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:3, department_id:3 },
+  { uid:"seed_warehouse_director", name:"Nazirahmad Bashare",    email:"warehouse@ku.edu.af",     phone:"0700100004", password:"Warehouse@1",   role:ROLES.WAREHOUSE_DIRECTOR,     active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:4, department_id:4 },
+  { uid:"seed_requester",          name:"Afghan Sahib",          email:"requester@ku.edu.af",     phone:"0700100005", password:"Request@123",   role:ROLES.REQUESTER,              active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:5, department_id:6, faculty_id:1 },
+  { uid:"seed_confirmer",          name:"Doostyar Sahib",        email:"confirmer@ku.edu.af",     phone:"0700100006", password:"Confirm@123",   role:ROLES.REQUEST_CONFIRMER,      active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:6, department_id:6, faculty_id:1 },
+  { uid:"seed_entry",              name:"Mansoor Ahmad",         email:"entry@ku.edu.af",         phone:"0700100007", password:"Entry@1234",    role:ROLES.WAREHOUSE_ENTRY_PERSON, active:true, forcePasswordChange:false, createdAt:Y1, updatedAt:Y1, person_id:7, department_id:5 },
 ];
 
 export function getLocalItem<T>(key: string, fallback: T): T {
@@ -161,8 +161,13 @@ export function getDemoUserProfile(email?: string | null): UserProfile {
   const savedUsers = getLocalItem<UserProfile[]>("users", []);
   const fromSaved = savedUsers.find(u => u.email.toLowerCase() === normalized);
   if (fromSaved) {
-    setLocalItem("demo_profile", fromSaved);
-    return fromSaved;
+    // Merge traceability fields from seed if missing (backwards-compat for cached users)
+    const seedMatch = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === normalized);
+    const merged = seedMatch && (fromSaved.person_id == null)
+      ? { ...fromSaved, person_id: seedMatch.person_id, faculty_id: seedMatch.faculty_id, department_id: seedMatch.department_id }
+      : fromSaved;
+    setLocalItem("demo_profile", merged);
+    return merged;
   }
   // Fall back to seed users
   const matched = DEMO_SEED_USERS.find(u => u.email.toLowerCase() === normalized);

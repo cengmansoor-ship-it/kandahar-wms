@@ -161,7 +161,7 @@ export class TraceabilityService {
   }
 
   static async getPersonLedger(personId: number) {
-    const [rows] = await db.query<RowDataPacket[]>(`
+    const [assignRows] = await db.query<RowDataPacket[]>(`
       SELECT
         ia.id, ia.quantity, ia.assigned_at, ia.source_type, ia.status,
         ia.notes, ia.tracking_id, ia.delivery_id, ia.fs5_reference,
@@ -186,7 +186,56 @@ export class TraceabilityService {
       WHERE ia.person_id = ? AND ia.is_deleted = FALSE
       ORDER BY ia.assigned_at DESC
     `, [personId]);
-    return rows;
+
+    // Also fetch requests linked to this person (pending and completed)
+    const [reqRows] = await db.query<RowDataPacket[]>(`
+      SELECT
+        CONCAT('req_', ri.id) as id,
+        ri.quantity,
+        r.created_at as assigned_at,
+        'request' as source_type,
+        r.status,
+        r.notes,
+        r.tracking_id,
+        NULL as delivery_id,
+        NULL as fs5_reference,
+        i.item_code,
+        COALESCE(i.name_ps, ri.item_name) as item_name_ps,
+        COALESCE(i.name_fa, ri.item_name) as item_name_fa,
+        NULL as item_description,
+        u.name_ps as unit_name_ps,
+        u.name_fa as unit_name_fa,
+        p.full_name as person_name,
+        d.name_ps as dept_name_ps,
+        d.name_fa as dept_name_fa,
+        f.name_ps as faculty_name_ps,
+        f.name_fa as faculty_name_fa,
+        r.tracking_id as request_tracking_id,
+        NULL as delivery_fs5,
+        ru.name as assigned_by_name
+      FROM requests r
+      JOIN people p ON r.person_id = p.id
+      JOIN request_items ri ON ri.request_id = r.id
+      LEFT JOIN items i ON ri.item_id = i.id
+      LEFT JOIN units u ON (ri.unit_id = u.id OR i.unit_id = u.id)
+      LEFT JOIN departments d ON p.department_id = d.id
+      LEFT JOIN faculties f ON d.faculty_id = f.id
+      LEFT JOIN users ru ON r.requester_id = ru.id
+      WHERE r.person_id = ? AND r.is_deleted = FALSE
+      ORDER BY r.created_at DESC
+    `, [personId]);
+
+    // Merge: assignments first, then requests not already covered by an assignment
+    const assignTrackingIds = new Set(
+      (assignRows as any[]).map((r: any) => r.request_tracking_id).filter(Boolean)
+    );
+    const filteredReqRows = (reqRows as any[]).filter(
+      (r: any) => !assignTrackingIds.has(r.tracking_id)
+    );
+
+    const combined = [...(assignRows as any[]), ...filteredReqRows];
+    combined.sort((a: any, b: any) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime());
+    return combined;
   }
 
   static async getFacultyLedger(facultyId: number) {
