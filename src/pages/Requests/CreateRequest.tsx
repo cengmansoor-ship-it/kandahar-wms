@@ -288,6 +288,36 @@ export default function CreateRequest() {
   const inputCls = "w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-800 outline-none transition focus:border-primary dark:border-gray-700 dark:text-white/90";
   const selCls = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white/90";
 
+  // ── Guard: Requester must have an assigned faculty before submitting ──────
+  if (isRequester && !profile?.faculty_id) {
+    return (
+      <>
+        <PageMeta title={pick("نوې غوښتنه", "درخواست جدید") + " | Kandahar University WMS"} description="" />
+        <Breadcrumb pageTitle="نوې غوښتنه / درخواست جدید" />
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-900/10 p-10 flex flex-col items-center justify-center gap-5 text-center min-h-[320px]" dir="rtl">
+          <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-3xl">🏫</div>
+          <div>
+            <h2 className="text-lg font-bold text-amber-800 dark:text-amber-300 mb-2">
+              {pick("ستاسو پوهنځی ټاکل شوی نه دی", "پوهنکده شما تعیین نشده است")}
+            </h2>
+            <p className="text-sm text-amber-700 dark:text-amber-400 max-w-md leading-relaxed">
+              {pick(
+                "د نوي غوښتنه کولو لپاره باید سوپر ادمین ستاسو اکاونټ ته پوهنځی تاکي. مهرباني وکړئ له سوپر ادمین سره اړیکه ونیسئ.",
+                "برای ثبت درخواست جدید، ادمین باید پوهنکده شما را تعیین کند. لطفاً با سوپر ادمین تماس بگیرید."
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-2 px-6 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition"
+          >
+            {pick("بیرته ګرځئ", "بازگشت")}
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageMeta title={pick("نوې غوښتنه", "درخواست جدید") + " | Kandahar University WMS"} description="" />
