@@ -59,6 +59,17 @@ const LEVELS = [
   { value: "PhD",      label: "دوکتورا" },
 ];
 
+// ─── Password validation ──────────────────────────────────────────────────────
+function checkPassword(pw: string): { score: number; errors: string[] } {
+  const errors: string[] = [];
+  if (pw.length < 8)           errors.push("لږترلږه ۸ کرکټره وي");
+  if (!/[A-Z]/.test(pw))       errors.push("لږترلږه یو لوی توری (A-Z)");
+  if (!/[a-z]/.test(pw))       errors.push("لږترلږه یو کوچنی توری (a-z)");
+  if (!/[0-9]/.test(pw))       errors.push("لږترلږه یو عدد (0-9)");
+  const score = 4 - errors.length;
+  return { score, errors };
+}
+
 const emptyTraceForm = {
   section_type: "" as "" | "ADMIN" | "FACULTY",
   level: "",
@@ -202,6 +213,13 @@ export default function UserManagement() {
     if (!editUser && !formData.password.trim()) {
       setMsg("مهرباني وکړئ د نوي کاروونکي لپاره پټنوم ولیکئ.");
       return;
+    }
+    if (formData.password.trim()) {
+      const { errors } = checkPassword(formData.password.trim());
+      if (errors.length > 0) {
+        setMsg("پټنوم ضعیف دی: " + errors.join(" | "));
+        return;
+      }
     }
 
     const isConfirmer = formData.role === ROLES.REQUEST_CONFIRMER;
@@ -501,6 +519,38 @@ export default function UserManagement() {
                         {showPass ? "🙈" : "👁"}
                       </button>
                     </div>
+                    {formData.password && (() => {
+                      const { score, errors } = checkPassword(formData.password);
+                      const bars = [
+                        score >= 1 ? "bg-red-400" : "bg-gray-200 dark:bg-gray-700",
+                        score >= 2 ? "bg-orange-400" : "bg-gray-200 dark:bg-gray-700",
+                        score >= 3 ? "bg-yellow-400" : "bg-gray-200 dark:bg-gray-700",
+                        score >= 4 ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700",
+                      ];
+                      const label = score === 4 ? { text: "قوي ✓", cls: "text-green-600 dark:text-green-400" }
+                                  : score === 3 ? { text: "منځني",  cls: "text-yellow-600 dark:text-yellow-400" }
+                                  : score === 2 ? { text: "کمزوری", cls: "text-orange-600 dark:text-orange-400" }
+                                  :               { text: "ضعیف",   cls: "text-red-600 dark:text-red-400" };
+                      return (
+                        <div className="mt-2 space-y-1.5" dir="rtl">
+                          <div className="flex items-center gap-1.5">
+                            {bars.map((cls, i) => (
+                              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${cls}`} />
+                            ))}
+                            <span className={`text-xs font-semibold mr-1 ${label.cls}`}>{label.text}</span>
+                          </div>
+                          {errors.length > 0 && (
+                            <ul className="space-y-0.5">
+                              {errors.map((e, i) => (
+                                <li key={i} className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400">
+                                  <span>✗</span> {e}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div>
