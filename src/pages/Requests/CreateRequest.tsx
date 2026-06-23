@@ -94,7 +94,7 @@ export default function CreateRequest() {
 
   // For REQUESTER: auto-fill faculty/department from their traceability profile
   // Only faculty_id is required — department_id is optional (faculty-level vs dept-level)
-  const isRequester = profile?.role === "REQUESTER";
+  const isRequester = profile?.role === "Requester";
   useEffect(() => {
     if (!isRequester || !profile?.faculty_id) return;
     const fid = String(profile.faculty_id);
