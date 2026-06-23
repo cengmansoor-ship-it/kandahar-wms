@@ -74,14 +74,34 @@ export default function CreateRequest() {
   }, [profile?.name]);
 
   useEffect(() => {
-    setChecklistLoading(true);
-    Promise.all([
-      apiClient.get("/checklist?active_only=true"),
-      apiClient.get("/checklist/categories"),
-    ]).then(([itemsRes, catsRes]) => {
-      setChecklistItems(Array.isArray(itemsRes) ? itemsRes : []);
-      setChecklistCategories(Array.isArray(catsRes) ? catsRes : []);
-    }).catch(() => {}).finally(() => setChecklistLoading(false));
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const loadChecklist = (attempt: number) => {
+      if (cancelled) return;
+      setChecklistLoading(true);
+      Promise.all([
+        apiClient.get("/checklist?active_only=true"),
+        apiClient.get("/checklist/categories"),
+      ]).then(([itemsRes, catsRes]) => {
+        if (cancelled) return;
+        const items = Array.isArray(itemsRes) ? itemsRes : [];
+        setChecklistItems(items);
+        setChecklistCategories(Array.isArray(catsRes) ? catsRes : []);
+        setChecklistLoading(false);
+        if (items.length === 0 && attempt < 3) {
+          retryTimer = setTimeout(() => loadChecklist(attempt + 1), 2500);
+        }
+      }).catch(() => {
+        if (cancelled) return;
+        setChecklistLoading(false);
+        if (attempt < 3) {
+          retryTimer = setTimeout(() => loadChecklist(attempt + 1), 2500);
+        }
+      });
+    };
+
+    loadChecklist(1);
 
     setLoadingFaculties(true);
     managementService.getFaculties()
@@ -91,6 +111,11 @@ export default function CreateRequest() {
       })
       .catch(() => setFacultyMode("text"))
       .finally(() => setLoadingFaculties(false));
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
 
   // For REQUESTER: auto-fill faculty/department from their traceability profile

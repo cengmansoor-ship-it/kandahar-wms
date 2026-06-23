@@ -85,6 +85,7 @@ interface WfFlag {
 export default function OfficialFormsPage() {
   const { user, profile } = useAuth();
   const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
+  const isRequester = profile?.role === ROLES.REQUESTER;
   const [activeTemplateId, setActiveTemplateId] = useState<OfficialTemplateId>("formTemplate0");
   const [menuFilter, setMenuFilter] = useState("ټول فورمونه");
   const [levelFilter, setLevelFilter] = useState("ټولې درجې");
@@ -166,11 +167,21 @@ export default function OfficialFormsPage() {
 
   const filteredRequests = useMemo(
     () =>
-      requests.filter(
-        (r) => levelFilter === "ټولې درجې" || r.currentRequestLevel === levelFilter
-      ),
-    [requests, levelFilter]
+      requests.filter((r) => {
+        const levelOk = levelFilter === "ټولې درجې" || r.currentRequestLevel === levelFilter;
+        const ownerOk = !isRequester || r.requesterName === profile?.name;
+        return levelOk && ownerOk;
+      }),
+    [requests, levelFilter, isRequester, profile?.name]
   );
+
+  useEffect(() => {
+    if (!isRequester || requestId) return;
+    if (filteredRequests.length > 0) {
+      const last = filteredRequests[filteredRequests.length - 1];
+      if (last) setRequestId(last.id);
+    }
+  }, [isRequester, filteredRequests.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Workflow progress connection ────────────────────────────────────────────
 
@@ -462,65 +473,34 @@ export default function OfficialFormsPage() {
           </div>
         )}
 
-        {/* Form tiles — visible to ALL users */}
+        {/* Form tiles — clickable for ALL users */}
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
           {visibleForms.map((form) => {
             const isActiveTile = activeTemplateId === form.id;
             const hasData = !!allFormsData[form.id];
-            if (isSuperAdmin) {
-              return (
-                <button
-                  key={form.id}
-                  type="button"
-                  onClick={() => setActiveTemplateId(form.id)}
-                  className={`rounded-xl border p-3 text-right transition ${
-                    isActiveTile
-                      ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-brand-400 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300"
-                  }`}
-                >
-                  <span className="block text-xs font-bold">{form.title}</span>
-                  <span className="mt-0.5 block text-xs opacity-60">{form.phase}</span>
-                  {hasData && (
-                    <span className="mt-1 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">✓</span>
-                  )}
-                </button>
-              );
-            }
             return (
-              <div
+              <button
                 key={form.id}
-                className="rounded-xl border border-gray-200 bg-white p-3 text-right dark:border-gray-800 dark:bg-white/[0.03] opacity-80"
+                type="button"
+                onClick={() => setActiveTemplateId(form.id)}
+                className={`rounded-xl border p-3 text-right transition ${
+                  isActiveTile
+                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-brand-400 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300"
+                }`}
               >
-                <span className="block text-xs font-bold text-gray-700 dark:text-gray-300">{form.title}</span>
-                <span className="mt-0.5 block text-xs text-gray-400">{form.phase}</span>
-                <span className="mt-1 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
-                  📄
-                </span>
-              </div>
+                <span className="block text-xs font-bold">{form.title}</span>
+                <span className="mt-0.5 block text-xs opacity-60">{form.phase}</span>
+                {hasData && (
+                  <span className="mt-1 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">✓</span>
+                )}
+              </button>
             );
           })}
         </div>
 
-        {/* Non-Super Admin (excluding Requesters): info message instead of Document Editor */}
-        {!isSuperAdmin && profile?.role !== ROLES.REQUESTER && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-5 text-right dark:border-blue-900/40 dark:bg-blue-900/10">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">📋</span>
-              <div>
-                <p className="font-bold text-blue-800 dark:text-blue-300 text-sm">
-                  د فورمونو لیست — معلوماتي حالت
-                </p>
-                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                  د فورمونو د سمولو او ډاکمنټ ایډیټر برخه یوازې د لوی مدیر لپاره وي. مهرباني وکړئ د رسمي فورمونو د ترلاسه کولو لپاره له لوی مدیر سره اړیکه ونیسئ.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Document Editor section — Super Admin ONLY ───────────────────── */}
-        {isSuperAdmin && (
+        {/* ── Document Editor — all roles except Requester (full edit) ───── */}
+        {!isRequester && (
           <>
             {/* Progress / status indicator */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
@@ -564,7 +544,7 @@ export default function OfficialFormsPage() {
               </div>
             </div>
 
-            {/* Form viewer / Document Editor */}
+            {/* Form viewer — editing enabled for all non-Requester roles */}
             <div>
               <OfficialFormViewer
                 templateId={activeTemplateId}
@@ -575,6 +555,64 @@ export default function OfficialFormsPage() {
                 readOnly={false}
               />
             </div>
+          </>
+        )}
+
+        {/* ── Requester: readonly view — see form, no editing, can print ── */}
+        {isRequester && (
+          <>
+            {/* Info bar */}
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-right dark:border-green-900/40 dark:bg-green-900/10">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📄</span>
+                <div>
+                  <p className="font-bold text-green-800 dark:text-green-300 text-sm">
+                    د پیشنهاد فورم — یوازې لیدل او چاپ
+                  </p>
+                  <p className="mt-0.5 text-xs text-green-700 dark:text-green-400">
+                    د ستاسو غوښتنه معلومات د پیشنهاد فورم کې اتومات ډک شوي دي. کولای شئ وچاپوئ.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Request status */}
+            {activeRequest && (
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/50 text-sm">
+                <span className="font-bold text-gray-700 dark:text-gray-200">{stagePashto}</span>
+                <span className="text-gray-400">·</span>
+                <span className="text-gray-600 dark:text-gray-300">{activeRequest.currentRequestLevel}</span>
+                <span className="text-gray-400">·</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-20 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div
+                      className="h-2 rounded-full bg-brand-500 transition-all"
+                      style={{ width: `${activeRequest.progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
+                    {activeRequest.progress}٪
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Readonly form viewer */}
+            {requestId ? (
+              <OfficialFormViewer
+                templateId={activeTemplateId}
+                requestId={requestId}
+                allFormsData={Object.keys(allFormsData).length > 0 ? allFormsData : undefined}
+                initialData={allFormsData[activeTemplateId]}
+                readOnly={true}
+              />
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center dark:border-gray-700 dark:bg-gray-900/30">
+                <p className="text-gray-400 text-sm">
+                  مهرباني وکړئ خپله غوښتنه وټاکئ ترڅو د پیشنهاد فورم وګورئ.
+                </p>
+              </div>
+            )}
           </>
         )}
 

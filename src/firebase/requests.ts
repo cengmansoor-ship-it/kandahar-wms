@@ -237,7 +237,7 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
       department_id: (requestData as any).department_id || null,
       person_id: (requestData as any).person_id || null,
       items: (requestData.items || []).map(i => ({
-        item_id: parseInt(i.itemId) || null,
+        item_id: null,
         item_name: i.name,
         quantity: i.quantity,
         unit_price: i.unitPrice || 0,

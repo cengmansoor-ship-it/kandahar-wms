@@ -61,6 +61,7 @@ export function extractSharedRequestData(request: InventoryRequest): Record<stri
     v7ProposalSubject: request.reason || request.items?.[0]?.name || "",
     v7FacultySelect: request.faculty || "",
     v7FacultyDepartment: request.departmentOrPerson || "",
+    v7FacultyLevel: request.currentRequestLevel || request.originalRequestLevel || "",
   };
 }
 

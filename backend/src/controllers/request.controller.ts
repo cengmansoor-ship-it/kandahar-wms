@@ -22,7 +22,9 @@ export const getRequests = async (req: Request, res: Response) => {
 
 export const getRequestById = async (req: Request, res: Response): Promise<any> => {
   try {
-    const request = await RequestService.getRequestById(Number(req.params.id));
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ناسم ID.' });
+    const request = await RequestService.getRequestById(id);
     if (!request) return res.status(404).json({ success: false, message: 'غوښتنه ونه موندل شوه.' });
     res.json({ success: true, data: request });
   } catch (error) {
@@ -98,28 +100,34 @@ export const updateLevel = async (req: Request, res: Response): Promise<any> => 
   }
 };
 
-export const getLevelHistory = async (req: Request, res: Response) => {
+export const getLevelHistory = async (req: Request, res: Response): Promise<any> => {
   try {
-    const history = await RequestService.getLevelHistory(Number(req.params.id));
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ناسم ID.' });
+    const history = await RequestService.getLevelHistory(id);
     res.json({ success: true, data: history });
   } catch (error) {
     handleError(res, error);
   }
 };
 
-export const getPipelineHistory = async (req: Request, res: Response) => {
+export const getPipelineHistory = async (req: Request, res: Response): Promise<any> => {
   try {
-    const pipeline = await RequestService.getPipelineHistory(Number(req.params.id));
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ناسم ID.' });
+    const pipeline = await RequestService.getPipelineHistory(id);
     res.json({ success: true, data: pipeline });
   } catch (error) {
     handleError(res, error);
   }
 };
 
-export const deleteRequest = async (req: Request, res: Response) => {
+export const deleteRequest = async (req: Request, res: Response): Promise<any> => {
   try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ناسم ID.' });
     const userId = 1;
-    await RequestService.deleteRequest(Number(req.params.id), userId);
+    await RequestService.deleteRequest(id, userId);
     res.json({ success: true, message: 'غوښتنه ړنګه شوه.' });
   } catch (error) {
     handleError(res, error);
