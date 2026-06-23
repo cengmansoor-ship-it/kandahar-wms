@@ -4988,19 +4988,6 @@ th.line-spacing-target * {
 </div>
 <button class="icon-btn" id="decreaseFontBtn" title="Decrease Font: Ctrl + [" type="button">A-</button>
 <button class="icon-btn" id="increaseFontBtn" title="Increase Font: Ctrl + ]" type="button">A+</button>
-<button class="icon-btn" id="boldBtn" title="Bold" type="button"><b>B</b></button>
-<button class="icon-btn" id="italicBtn" title="Italic" type="button"><i>I</i></button>
-<button class="icon-btn" id="underlineBtn" title="Underline" type="button"><u>U</u></button>
-<button class="icon-btn" id="strikeBtn" title="Strike" type="button"><s>S</s></button>
-<label class="color-control" title="Text Color">
-<span>A</span>
-<input id="textColorInput" type="color" value="#000000"/>
-</label>
-<label class="color-control" title="Highlight">
-<span>▉</span>
-<input id="highlightColorInput" type="color" value="#ffff00"/>
-</label>
-<button class="icon-btn" id="clearFormatBtn" title="Clear Format" type="button">Tx</button>
 </div>
 </div>
 </div>
@@ -5190,13 +5177,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const sizeList = document.getElementById("sizeList");
   const increaseFontBtn = document.getElementById("increaseFontBtn");
   const decreaseFontBtn = document.getElementById("decreaseFontBtn");
-  const boldBtn = document.getElementById("boldBtn");
-  const italicBtn = document.getElementById("italicBtn");
-  const underlineBtn = document.getElementById("underlineBtn");
-  const strikeBtn = document.getElementById("strikeBtn");
-  const textColorInput = document.getElementById("textColorInput");
-  const highlightColorInput = document.getElementById("highlightColorInput");
-  const clearFormatBtn = document.getElementById("clearFormatBtn");
 
   const alignRightBtn = document.getElementById("alignRightBtn");
   const alignCenterBtn = document.getElementById("alignCenterBtn");
@@ -6123,20 +6103,6 @@ document.addEventListener("DOMContentLoaded", function () {
     changeFontSize(-2);
   });
 
-  boldBtn.addEventListener("click", function () { runCommand("bold"); });
-  italicBtn.addEventListener("click", function () { runCommand("italic"); });
-  underlineBtn.addEventListener("click", function () { runCommand("underline"); });
-  strikeBtn.addEventListener("click", function () { runCommand("strikeThrough"); });
-
-  textColorInput.addEventListener("input", function () {
-    applyStyleToSelection({ color: textColorInput.value });
-  });
-
-  highlightColorInput.addEventListener("input", function () {
-    applyStyleToSelection({ backgroundColor: highlightColorInput.value });
-  });
-
-  clearFormatBtn.addEventListener("click", clearFormatting);
 
   alignRightBtn.addEventListener("click", function () {
     applyBlockStyle({ textAlign: "right" });
@@ -6248,24 +6214,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if ((event.ctrlKey || event.metaKey) && (key === "y" || (event.shiftKey && key === "z"))) {
       event.preventDefault();
       redoHistory();
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && key === "b") {
-      event.preventDefault();
-      runCommand("bold");
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && key === "i") {
-      event.preventDefault();
-      runCommand("italic");
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && key === "u") {
-      event.preventDefault();
-      runCommand("underline");
       return;
     }
 
@@ -9486,13 +9434,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const sizeList = document.getElementById("sizeList");
   const increaseFontBtn = document.getElementById("increaseFontBtn");
   const decreaseFontBtn = document.getElementById("decreaseFontBtn");
-  const boldBtn = document.getElementById("boldBtn");
-  const italicBtn = document.getElementById("italicBtn");
-  const underlineBtn = document.getElementById("underlineBtn");
-  const strikeBtn = document.getElementById("strikeBtn");
-  const textColorInput = document.getElementById("textColorInput");
-  const highlightColorInput = document.getElementById("highlightColorInput");
-  const clearFormatBtn = document.getElementById("clearFormatBtn");
 
   const alignRightBtn = document.getElementById("alignRightBtn");
   const alignCenterBtn = document.getElementById("alignCenterBtn");
@@ -10419,20 +10360,6 @@ document.addEventListener("DOMContentLoaded", function () {
     changeFontSize(-2);
   });
 
-  boldBtn.addEventListener("click", function () { runCommand("bold"); });
-  italicBtn.addEventListener("click", function () { runCommand("italic"); });
-  underlineBtn.addEventListener("click", function () { runCommand("underline"); });
-  strikeBtn.addEventListener("click", function () { runCommand("strikeThrough"); });
-
-  textColorInput.addEventListener("input", function () {
-    applyStyleToSelection({ color: textColorInput.value });
-  });
-
-  highlightColorInput.addEventListener("input", function () {
-    applyStyleToSelection({ backgroundColor: highlightColorInput.value });
-  });
-
-  clearFormatBtn.addEventListener("click", clearFormatting);
 
   alignRightBtn.addEventListener("click", function () {
     applyBlockStyle({ textAlign: "right" });
@@ -10546,23 +10473,6 @@ document.addEventListener("DOMContentLoaded", function () {
       redoHistory();
       return;
     }
-
-    if ((event.ctrlKey || event.metaKey) && key === "b") {
-      event.preventDefault();
-      runCommand("bold");
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && key === "i") {
-      event.preventDefault();
-      runCommand("italic");
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && key === "u") {
-      event.preventDefault();
-      runCommand("underline");
-      return;
     }
 
     /* Word-like font size shortcuts:
