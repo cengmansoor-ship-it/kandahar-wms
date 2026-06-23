@@ -1,15 +1,10 @@
-const CACHE_NAME = 'ku-wms-v2';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-];
+const CACHE_NAME = 'ku-wms-v3';
+const API_CACHE = 'ku-wms-api-v3';
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(STATIC_ASSETS).catch(() => {})
+      cache.addAll(['/manifest.json']).catch(() => {})
     )
   );
 });
@@ -17,16 +12,26 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
+          .map((k) => caches.delete(k))
+      )
     )
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) return;
+
+  // Skip Vite internal dev paths — never cache or intercept these
+  if (
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/__') ||
+    url.pathname.includes('?') && url.pathname === '/'
+  ) return;
 
   // API calls: network-first, fall back to cached response or offline JSON
   if (url.pathname.startsWith('/api/')) {
@@ -35,12 +40,12 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           if (res.ok) {
             const clone = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone)).catch(() => {});
+            caches.open(API_CACHE).then((c) => c.put(event.request, clone)).catch(() => {});
           }
           return res;
         })
         .catch(() =>
-          caches.match(event.request).then((cached) => {
+          caches.match(event.request, { cacheName: API_CACHE }).then((cached) => {
             if (cached) return cached;
             return new Response(
               JSON.stringify({ success: false, offline: true, data: null, message: 'آفلاین — شبکه اتصال نشته' }),
@@ -52,29 +57,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests: try network, fall back to cached index.html
+  // Navigation requests (page loads): always go to network — never serve stale HTML
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() =>
-        caches.match('/index.html').then((r) => r || new Response('Offline', { status: 503 }))
+        caches.match('/index.html', { cacheName: CACHE_NAME })
+          .then((r) => r || fetch('/index.html'))
+          .catch(() => new Response('Offline', { status: 503 }))
       )
     );
     return;
   }
 
-  // Static assets: cache-first, then network + cache
+  // All other static assets: network-first (not cache-first) to avoid stale Vite bundles
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((res) => {
+    fetch(event.request)
+      .then((res) => {
         if (res.ok && res.status === 200) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then((c) => c.put(event.request, clone)).catch(() => {});
         }
         return res;
-      }).catch(() =>
-        caches.match('/').then((r) => r || new Response('Offline', { status: 503 }))
-      );
-    })
+      })
+      .catch(() =>
+        caches.match(event.request).then((r) => r || new Response('Offline', { status: 503 }))
+      )
   );
 });
