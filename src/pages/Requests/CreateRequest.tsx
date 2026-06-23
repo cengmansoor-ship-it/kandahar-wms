@@ -93,28 +93,29 @@ export default function CreateRequest() {
   }, []);
 
   // For REQUESTER: auto-fill faculty/department from their traceability profile
+  // Only faculty_id is required — department_id is optional (faculty-level vs dept-level)
   const isRequester = profile?.role === "REQUESTER";
   useEffect(() => {
-    if (!isRequester || !profile?.faculty_id || !profile?.department_id) return;
+    if (!isRequester || !profile?.faculty_id) return;
     const fid = String(profile.faculty_id);
-    const did = String(profile.department_id);
+    const did = profile.department_id ? String(profile.department_id) : null;
     // Wait until faculties are loaded then pre-fill
     if (faculties.length > 0) {
       const fac = faculties.find((f: any) => String(f.id) === fid);
       managementService.getDepartments().then((allDepts: any[]) => {
-        const dept = allDepts.find((d: any) => String(d.id) === did);
+        const dept = did ? allDepts.find((d: any) => String(d.id) === did) : null;
         setFormData(prev => ({
           ...prev,
           faculty_id: fid,
           faculty: fac ? (lang === "dr" ? fac.name_fa : fac.name_ps) : prev.faculty,
-          department_id: did,
-          departmentOrPerson: dept ? (lang === "dr" ? dept.name_fa : dept.name_ps) : prev.departmentOrPerson,
+          ...(did && dept ? {
+            department_id: did,
+            departmentOrPerson: lang === "dr" ? dept.name_fa : dept.name_ps,
+          } : {}),
         }));
-        if (fac && did) {
-          const filtered = allDepts.filter((d: any) => String(d.faculty_id) === fid);
-          setDepartments(filtered);
-          setDepartmentMode(filtered.length > 0 ? "dropdown" : "text");
-        }
+        const filtered = allDepts.filter((d: any) => String(d.faculty_id) === fid);
+        setDepartments(filtered);
+        setDepartmentMode(filtered.length > 0 ? "dropdown" : "text");
         setFacultyMode("dropdown");
       }).catch(() => {});
     }
