@@ -129,9 +129,9 @@ export class TraceabilityService {
         MAX(ia.assigned_at) as latest_assignment_date
       FROM people p
       LEFT JOIN departments d ON p.department_id = d.id
-      LEFT JOIN faculties f ON d.faculty_id = f.id
+      LEFT JOIN faculties f ON COALESCE(d.faculty_id, p.faculty_id) = f.id
       LEFT JOIN item_assignments ia ON ia.person_id = p.id AND ia.is_deleted = FALSE
-      WHERE f.id = ? AND p.is_deleted = FALSE
+      WHERE COALESCE(d.faculty_id, p.faculty_id) = ? AND p.is_deleted = FALSE
       GROUP BY p.id, p.full_name, p.position, p.phone, p.email,
                d.name_ps, d.name_fa, f.name_ps, f.name_fa, f.level
       ORDER BY p.full_name
