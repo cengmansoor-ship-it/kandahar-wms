@@ -188,8 +188,8 @@ export class ManagementService {
     if (existing) {
       await ManagementService.updatePerson(existing.id, {
         full_name: data.full_name,
-        department_id: data.department_id ?? undefined,
-        faculty_id: data.faculty_id ?? undefined,
+        department_id: data.department_id,
+        faculty_id: data.faculty_id,
         position: data.position,
         phone: data.phone,
         email: data.email,

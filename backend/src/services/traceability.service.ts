@@ -143,20 +143,30 @@ export class TraceabilityService {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT
         p.id, p.full_name, p.position, p.phone, p.email, p.photo,
-        d.name_ps as dept_name_ps, d.name_fa as dept_name_fa,
-        f.name_ps as faculty_name_ps, f.name_fa as faculty_name_fa, f.level,
+        COALESCE(d.name_ps, fd.name_ps) as dept_name_ps,
+        COALESCE(d.name_fa, fd.name_fa) as dept_name_fa,
+        COALESCE(f.name_ps, f2.name_ps) as faculty_name_ps,
+        COALESCE(f.name_fa, f2.name_fa) as faculty_name_fa,
+        COALESCE(f.level, f2.level) as level,
         COUNT(DISTINCT ia.item_id) as item_count,
         COALESCE(SUM(ia.quantity), 0) as total_quantity,
         MAX(ia.assigned_at) as latest_assignment_date
       FROM people p
       LEFT JOIN departments d ON p.department_id = d.id
       LEFT JOIN faculties f ON d.faculty_id = f.id
+      LEFT JOIN departments fd ON fd.id = ?
+      LEFT JOIN faculties f2 ON p.faculty_id = f2.id
       LEFT JOIN item_assignments ia ON ia.person_id = p.id AND ia.is_deleted = FALSE
-      WHERE p.department_id = ? AND p.is_deleted = FALSE
+      WHERE p.is_deleted = FALSE
+        AND (
+          p.department_id = ?
+          OR (p.department_id IS NULL AND p.faculty_id = (SELECT faculty_id FROM departments WHERE id = ? LIMIT 1))
+        )
       GROUP BY p.id, p.full_name, p.position, p.phone, p.email,
-               d.name_ps, d.name_fa, f.name_ps, f.name_fa, f.level
+               d.name_ps, d.name_fa, fd.name_ps, fd.name_fa,
+               f.name_ps, f.name_fa, f.level, f2.name_ps, f2.name_fa, f2.level
       ORDER BY p.full_name
-    `, [departmentId]);
+    `, [departmentId, departmentId, departmentId]);
     return rows;
   }
 
