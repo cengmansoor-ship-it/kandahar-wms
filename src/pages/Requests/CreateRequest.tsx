@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { managementService } from "../../services/management";
 import { apiClient } from "../../api/apiClient";
+import { saveOfficialFormData, mapRequestToProposal, mapRequestToSI9 } from "../../utils/officialFormDataAdapter";
 
 const REQUEST_LEVELS_PS = ["ډېر عاجل", "ډېر مهم", "متوسط", "عادي", "لږ مهم"];
 const REQUEST_LEVELS_DR = ["بسیار عاجل", "بسیار مهم", "متوسط", "عادی", "کم‌اهمیت"];
@@ -250,21 +251,30 @@ export default function CreateRequest() {
         unitPrice: i.unitPrice || 0,
         totalPrice: i.totalPrice || 0,
       }));
-      const requestId = await createRequest(
-        {
-          faculty: formData.faculty,
-          departmentOrPerson: formData.departmentOrPerson,
-          reason: formData.reason,
-          originalRequestLevel: formData.requestLevel,
-          currentRequestLevel: formData.requestLevel,
-          items: requestItems,
-          faculty_id: formData.faculty_id ? Number(formData.faculty_id) : (profile.faculty_id || undefined),
-          department_id: formData.department_id ? Number(formData.department_id) : (profile.department_id || undefined),
-          person_id: profile.person_id || undefined,
-        } as any,
-        user.uid,
-        profile.name
-      );
+      const reqPayload: any = {
+        faculty: formData.faculty,
+        departmentOrPerson: formData.departmentOrPerson,
+        reason: formData.reason,
+        originalRequestLevel: formData.requestLevel,
+        currentRequestLevel: formData.requestLevel,
+        items: requestItems,
+        faculty_id: formData.faculty_id ? Number(formData.faculty_id) : (profile.faculty_id || undefined),
+        department_id: formData.department_id ? Number(formData.department_id) : (profile.department_id || undefined),
+        person_id: profile.person_id || undefined,
+      };
+      const requestId = await createRequest(reqPayload, user.uid, profile.name);
+
+      // ── Auto-sync proposal & SI-9 form data so it's pre-filled in فورمونه ──
+      try {
+        const mockRequest: any = {
+          ...reqPayload,
+          id: requestId,
+          requesterName: profile.name,
+        };
+        saveOfficialFormData(requestId, "proposal", mapRequestToProposal(mockRequest));
+        saveOfficialFormData(requestId, "si9",      mapRequestToSI9(mockRequest));
+      } catch { /* form sync is non-critical */ }
+
       navigate(`/requests/details/${requestId}`);
     } catch (err: any) {
       console.error("Error creating request:", err);
@@ -619,6 +629,20 @@ export default function CreateRequest() {
                         {sItem.totalPrice > 0 ? sItem.totalPrice.toLocaleString() : "—"}
                       </div>
                     </div>
+                  </div>
+
+                  {/* ── بل جنس هم غواړم ── */}
+                  <div className="mt-3 flex justify-start border-t border-gray-100 dark:border-gray-700 pt-3">
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      {pick("بل جنس هم غواړم", "جنس دیگری هم می‌خواهم")}
+                    </button>
                   </div>
                 </div>
               ))}

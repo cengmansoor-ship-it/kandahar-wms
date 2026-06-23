@@ -502,8 +502,8 @@ export default function OfficialFormsPage() {
           })}
         </div>
 
-        {/* Non-Super Admin: info message instead of Document Editor */}
-        {!isSuperAdmin && (
+        {/* Non-Super Admin (excluding Requesters): info message instead of Document Editor */}
+        {!isSuperAdmin && profile?.role !== ROLES.REQUESTER && (
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-5 text-right dark:border-blue-900/40 dark:bg-blue-900/10">
             <div className="flex items-start gap-3">
               <span className="text-2xl">📋</span>
