@@ -222,20 +222,111 @@ export default function TraceabilityPage() {
     } catch {}
   }, []);
 
-  const handleExportCSV = async () => {
-    try {
-      const data = await traceabilityService.getExportData();
-      const headers = ["شخص", "موقف", "دپارتمنت", "پوهنځی", "سطح", "جنس کوډ", "جنس نوم", "مقدار", "واحد", "نیټه", "سرچینه", "وضعیت", "یادداشت"];
-      const rows = data.map((r: any) => [
-        r.person_name, r.position, r.dept_name_ps, r.faculty_name_ps || '', r.level || '',
-        r.item_code, r.item_name_ps, r.quantity, r.unit_name, r.assigned_at, r.source_type, r.status, r.notes || ''
-      ]);
-      const csv = [headers, ...rows].map(row => row.map((c: any) => `"${String(c || '').replace(/"/g, '""')}"`).join(",")).join("\n");
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = "traceability_export.csv"; a.click();
-      URL.revokeObjectURL(url);
-    } catch { setError(pick("اکسیل اکستراکت ونه شو.", "اکسپورت ناموفق بود.")); }
+  const buildCSV = (rows: Record<string, any>[]) => {
+    const headers = Object.keys(rows[0]);
+    const lines = [
+      headers.join(","),
+      ...rows.map(obj => headers.map(h => `"${String(obj[h] ?? '').replace(/"/g, '""')}"`).join(","))
+    ];
+    return "\uFEFF" + lines.join("\n");
+  };
+
+  const downloadCSV = (csv: string, filename: string) => {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${filename}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = () => {
+    let csvRows: Record<string, any>[] = [];
+    let filename = "traceability";
+
+    if (view === "admin-depts") {
+      const src = search ? filteredDepts : depts;
+      csvRows = src.map(d => ({
+        'اداره': d.name_ps,
+        'کسان': d.person_count,
+        'اجناس ډولونه': d.item_count,
+        'ټوله مقدار': Number(d.total_quantity) || 0,
+      }));
+      filename = "admin_departments";
+    } else if (view === "faculty-levels") {
+      const src = search ? filteredLevels : levels;
+      csvRows = src.map(l => ({
+        'سطح': LEVEL_LABELS[l.level]?.ps || l.level,
+        'پوهنځیانه': l.faculty_count,
+        'ادارې': l.department_count,
+        'کسان': l.person_count,
+        'اجناس ډولونه': l.item_count,
+        'ټوله مقدار': Number(l.total_quantity) || 0,
+      }));
+      filename = "faculty_levels";
+    } else if (view === "faculty-depts") {
+      const src = search ? filteredFacultyDepts : facultyDepts;
+      csvRows = src.map(d => ({
+        'پوهنځی': d.faculty_name_ps,
+        'اداره': d.dept_name_ps,
+        'سطح': LEVEL_LABELS[d.level || '']?.ps || d.level || "",
+        'کسان': d.person_count,
+        'اجناس ډولونه': d.item_count,
+        'ټوله مقدار': Number(d.total_quantity) || 0,
+      }));
+      filename = "faculty_departments";
+    } else if (view === "persons") {
+      const src = search ? filteredPersons : persons;
+      csvRows = src.map(p => ({
+        'نوم': p.full_name,
+        'موقف': p.position || "",
+        'اداره': p.dept_name_ps || "",
+        'پوهنځی': p.faculty_name_ps || "",
+        'اجناس ډولونه': p.item_count,
+        'ټوله مقدار': p.total_quantity,
+      }));
+      filename = "persons_traceability";
+    } else if (summary) {
+      csvRows = [
+        {
+          'برخه': pick("اداري برخه", "بخش اداری"),
+          'کسان': summary.admin?.total_persons || 0,
+          'ادارې': summary.admin?.total_departments || 0,
+          'اجناس ډولونه': summary.admin?.item_count || 0,
+          'ټوله مقدار': Number(summary.admin?.total_quantity) || 0,
+        },
+        {
+          'برخه': pick("د پوهنځیو برخه", "بخش دانشکده‌ها"),
+          'کسان': summary.faculty?.total_persons || 0,
+          'ادارې': summary.faculty?.total_faculties || 0,
+          'اجناس ډولونه': summary.faculty?.item_count || 0,
+          'ټوله مقدار': Number(summary.faculty?.total_quantity) || 0,
+        },
+      ];
+      filename = "traceability_summary";
+    }
+
+    if (!csvRows.length) {
+      setError(pick("صادر کولو لپاره ډيټا نشته.", "داده‌ای برای صدور وجود ندارد."));
+      return;
+    }
+    downloadCSV(buildCSV(csvRows), filename);
+  };
+
+  const handleExportLedger = () => {
+    if (!ledger.length) {
+      setError(pick("د دې شخص لپاره ثبت شوي اجناس نشته.", "جنسی ثبت‌شده برای این شخص وجود ندارد."));
+      return;
+    }
+    const csvRows = ledger.map(e => ({
+      'جنس کود': e.item_code || "",
+      'جنس نوم': e.item_name_ps || "",
+      'مقدار': e.quantity,
+      'واحد': e.unit_name_ps || "",
+      'سرچینه': SOURCE_LABELS[e.source_type]?.ps || e.source_type || "",
+      'نیټه': e.assigned_at ? new Date(e.assigned_at).toLocaleDateString() : "",
+      'وضعیت': e.status || "",
+      'یادداشت': e.notes || "",
+    }));
+    downloadCSV(buildCSV(csvRows), `ledger_${selectedPerson?.full_name?.replace(/\s+/g, '_') || 'export'}`);
   };
 
   const handlePrint = () => window.print();
