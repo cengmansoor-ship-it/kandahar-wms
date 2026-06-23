@@ -110,7 +110,12 @@ export class TraceabilityService {
         d.id as department_id, d.name_ps as dept_name_ps, d.name_fa as dept_name_fa,
         COUNT(DISTINCT p.id) as person_count,
         COUNT(DISTINCT ia.item_id) as item_count,
-        COALESCE(SUM(ia.quantity), 0) as total_quantity
+        COALESCE(SUM(ia.quantity), 0) as total_quantity,
+        (SELECT COUNT(DISTINCT fp.id) FROM people fp
+         WHERE (
+           fp.department_id IN (SELECT id FROM departments WHERE faculty_id = f.id AND is_deleted = FALSE)
+           OR (fp.faculty_id = f.id AND fp.department_id IS NULL)
+         ) AND fp.is_deleted = FALSE) as faculty_total_persons
       FROM faculties f
       LEFT JOIN departments d ON d.faculty_id = f.id AND d.is_deleted = FALSE AND d.department_type = 'FACULTY'
       LEFT JOIN people p ON (

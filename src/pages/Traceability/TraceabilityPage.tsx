@@ -13,7 +13,7 @@ type ViewLevel = "main" | "admin-depts" | "faculty-levels" | "faculty-depts" | "
 interface Summary { admin: any; faculty: any; }
 interface Dept { id: number; name_ps: string; name_fa: string; person_count: number; item_count: number; total_quantity: number; last_assignment_date?: string; }
 interface LevelInfo { level: string; faculty_count: number; department_count: number; person_count: number; item_count: number; total_quantity: number; }
-interface FacultyDept { faculty_id: number; faculty_name_ps: string; faculty_name_fa: string; level?: string; department_id: number; dept_name_ps: string; dept_name_fa: string; person_count: number; item_count: number; total_quantity: number; }
+interface FacultyDept { faculty_id: number; faculty_name_ps: string; faculty_name_fa: string; level?: string; department_id: number; dept_name_ps: string; dept_name_fa: string; person_count: number; item_count: number; total_quantity: number; faculty_total_persons?: number; }
 interface Person { id: number; full_name: string; position: string; email?: string; phone?: string; photo?: string; dept_name_ps: string; dept_name_fa: string; faculty_name_ps?: string; faculty_name_fa?: string; item_count: number; total_quantity: number; latest_assignment_date?: string; }
 interface LedgerEntry { id: number; item_name_ps: string; item_name_fa: string; item_code: string; quantity: number; unit_name_ps: string; unit_name_fa: string; assigned_at: string; source_type: string; tracking_id?: string; request_tracking_id?: string; delivery_id?: number; delivery_fs5?: string; status: string; notes?: string; assigned_by_name?: string; }
 
@@ -484,7 +484,17 @@ export default function TraceabilityPage() {
                 </div>
                 <div className="text-right flex-1">
                   <h3 className="font-bold text-gray-800 dark:text-white text-sm leading-snug">{splitPick(`${facultyRow.faculty_name_ps} / ${facultyRow.faculty_name_fa}`)}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{departments.length} {pick("اداره","دپارتمان")} — {pick("کلیک وکړئ د ټولو کسانو لیدو لپاره","کلیک کنید برای مشاهده همه افراد")}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {departments.length} {pick("اداره","دپارتمان")}
+                    {facultyRow.faculty_total_persons != null && (
+                      <span className="mx-1">·</span>
+                    )}
+                    {facultyRow.faculty_total_persons != null && (
+                      <span className="font-semibold text-brand-600 dark:text-brand-400">{facultyRow.faculty_total_persons} {pick("کسان","نفر")}</span>
+                    )}
+                    <span className="mx-1">—</span>
+                    {pick("کلیک وکړئ د ټولو کسانو لیدو لپاره","کلیک کنید برای مشاهده همه افراد")}
+                  </p>
                 </div>
                 <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${levelMeta.color} flex items-center justify-center shadow flex-shrink-0 group-hover:scale-110 transition-transform`}>
                   <span className="text-white text-sm font-bold">🎓</span>
