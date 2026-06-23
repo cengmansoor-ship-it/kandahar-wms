@@ -224,9 +224,18 @@ export default function UserManagement() {
     const allUsers = getDemoUsers();
 
     if (editUser) {
+      // Build faculty_id / department_id to persist on the user record (traceability linkage)
+      const persistFacultyId  = traceForm.faculty_id  ? Number(traceForm.faculty_id)  : undefined;
+      const persistDeptId     = traceForm.department_id ? Number(traceForm.department_id) : undefined;
       const updated = allUsers.map(u =>
         u.uid === editUser.uid
-          ? { ...u, name: formData.name, email: formData.email, role: formData.role, phone: formData.phone, active: formData.active, updatedAt: dates.timestamp }
+          ? {
+              ...u,
+              name: formData.name, email: formData.email, role: formData.role,
+              phone: formData.phone, active: formData.active, updatedAt: dates.timestamp,
+              ...(persistFacultyId !== undefined ? { faculty_id: persistFacultyId } : {}),
+              ...(persistDeptId    !== undefined ? { department_id: persistDeptId } : {}),
+            }
           : u
       );
       setLocalItem("users", updated);
@@ -268,14 +277,15 @@ export default function UserManagement() {
 
       setLocalItem("password_overrides", overrides);
 
-      if (traceForm.section_type && traceForm.department_id) {
+      if (traceForm.section_type && (traceForm.department_id || traceForm.faculty_id)) {
         try {
           await fetch("/api/management/people", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               full_name: formData.name,
-              department_id: Number(traceForm.department_id),
+              ...(traceForm.department_id ? { department_id: Number(traceForm.department_id) } : {}),
+              ...(traceForm.faculty_id    ? { faculty_id:    Number(traceForm.faculty_id)    } : {}),
               position: traceForm.position || allRoleLabels[formData.role] || formData.role,
               email: formData.email,
               phone: formData.phone || null,
@@ -302,6 +312,8 @@ export default function UserManagement() {
         forcePasswordChange: false,
         createdAt: dates.timestamp,
         updatedAt: dates.timestamp,
+        ...(traceForm.faculty_id  ? { faculty_id:  Number(traceForm.faculty_id)  } : {}),
+        ...(traceForm.department_id ? { department_id: Number(traceForm.department_id) } : {}),
       };
       const updatedUsers = [newUser, ...allUsers];
       setLocalItem("users", updatedUsers);
@@ -311,14 +323,15 @@ export default function UserManagement() {
       const overrides = getLocalItem<{ email: string; password: string }[]>("password_overrides", []);
       setLocalItem("password_overrides", [...overrides, { email: formData.email.trim().toLowerCase(), password: formData.password.trim() }]);
 
-      if (traceForm.section_type && traceForm.department_id) {
+      if (traceForm.section_type && (traceForm.department_id || traceForm.faculty_id)) {
         try {
           await fetch("/api/management/people", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               full_name: formData.name,
-              department_id: Number(traceForm.department_id),
+              ...(traceForm.department_id ? { department_id: Number(traceForm.department_id) } : {}),
+              ...(traceForm.faculty_id    ? { faculty_id:    Number(traceForm.faculty_id)    } : {}),
               position: traceForm.position || allRoleLabels[formData.role] || formData.role,
               email: formData.email,
               phone: formData.phone || null,
@@ -624,7 +637,8 @@ export default function UserManagement() {
                           </div>
                         )}
 
-                        {traceForm.faculty_id && (
+                        {/* Department dropdown — hidden for REQUEST_CONFIRMER (faculty dean, not dept-level) */}
+                        {traceForm.faculty_id && formData.role !== ROLES.REQUEST_CONFIRMER && (
                           <div>
                             <label className={labelCls}>ډیپارټمنټ *</label>
                             {filteredFacultyDepts.length === 0 ? (
@@ -641,6 +655,12 @@ export default function UserManagement() {
                                 ))}
                               </select>
                             )}
+                          </div>
+                        )}
+                        {/* Informational note for REQUEST_CONFIRMER */}
+                        {traceForm.faculty_id && formData.role === ROLES.REQUEST_CONFIRMER && (
+                          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 p-2.5 text-xs text-blue-700 dark:text-blue-300">
+                            ℹ️ د تاییدوونکي (رئیس پوهنځی) لپاره یوازې پوهنځي کچه کافي ده — د ټول پوهنځي ټولې غوښتنې ورته ولاړ سي.
                           </div>
                         )}
 

@@ -67,11 +67,15 @@ export default function RequestList() {
     if (!user || !profile) return;
     setLoading(true);
     try {
-      let filters: { requesterId?: string; assignedRole?: string } = {};
+      let filters: { requesterId?: string; assignedRole?: string; faculty_id?: number } = {};
       if (profile.role === ROLES.REQUESTER) {
         filters = { requesterId: user.uid };
       } else if (profile.role === ROLES.REQUEST_CONFIRMER) {
-        filters = { assignedRole: "REQUEST_CONFIRMER" };
+        // Confirmer sees all requests from their faculty only (faculty-dean level)
+        filters = {
+          assignedRole: "REQUEST_CONFIRMER",
+          ...(profile.faculty_id ? { faculty_id: profile.faculty_id } : {}),
+        };
       } else if (profile.role === ROLES.ADMIN) {
         filters = { assignedRole: "ADMIN" };
       } else if (profile.role === ROLES.PROCUREMENT_DIRECTOR) {

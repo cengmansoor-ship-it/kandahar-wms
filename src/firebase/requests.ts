@@ -79,6 +79,7 @@ const mapRequestFromApi = (apiReq: any): InventoryRequest => {
     requesterId: apiReq.requester_id?.toString() || "",
     requesterName: apiReq.requester_name || "",
     faculty: apiReq.faculty_name || "",
+    faculty_id: apiReq.faculty_id ? Number(apiReq.faculty_id) : undefined,
     departmentOrPerson: apiReq.department_name || apiReq.person_name || "",
     reason: apiReq.notes || "",
     items: (apiReq.items || []).map((i: any) => ({
@@ -153,6 +154,7 @@ export interface InventoryRequest {
   requesterId: string;
   requesterName: string;
   faculty: string;
+  faculty_id?: number;
   departmentOrPerson: string;
   reason: string;
   items: RequestItem[];
@@ -549,6 +551,7 @@ const normalizeLocalRequest = (r: InventoryRequest): InventoryRequest => {
 export const getRequests = async (filters: {
   requesterId?: string;
   assignedRole?: string;
+  faculty_id?: number;
 } = {}) => {
   try {
     const apiReqs = await apiClient.get('/requests');
@@ -577,6 +580,10 @@ export const getRequests = async (filters: {
         (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted')
       );
     }
+    // Filter by faculty for REQUEST_CONFIRMER — confirmer sees only their faculty's requests
+    if (filters.faculty_id) {
+      mapped = mapped.filter(r => r.faculty_id === filters.faculty_id);
+    }
     return mapped;
   } catch (apiError) {
     console.warn("Backend getRequests failed; falling back to Firebase/Local");
@@ -594,6 +601,9 @@ export const getRequests = async (filters: {
           r.currentStage === filters.assignedRole ||
           (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted')
         );
+      }
+      if (filters.faculty_id) {
+        requests = requests.filter(r => r.faculty_id === filters.faculty_id);
       }
       return requests;
     }
