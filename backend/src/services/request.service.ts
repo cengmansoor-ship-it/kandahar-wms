@@ -97,7 +97,7 @@ export class RequestService {
   }
 
   static async getRequests() {
-    const [rows] = await db.query(`
+    const [rows] = await db.query<RowDataPacket[]>(`
       SELECT r.*,
         COALESCE(r.requester_name_text, u.name) as requester_name,
         COALESCE(r.faculty_name_text, f.name_ps)   as faculty_name,
@@ -111,7 +111,30 @@ export class RequestService {
       WHERE r.is_deleted = FALSE
       ORDER BY r.created_at DESC
     `);
-    return rows;
+
+    if ((rows as any[]).length === 0) return rows;
+
+    // Fetch items for all requests in one query and merge
+    const ids = (rows as any[]).map((r: any) => r.id);
+    const placeholders = ids.map(() => '?').join(',');
+    const [itemRows] = await db.query<RowDataPacket[]>(`
+      SELECT ri.*, i.item_code, u2.name_ps as unit_name
+      FROM request_items ri
+      LEFT JOIN items i ON ri.item_id = i.id
+      LEFT JOIN units u2 ON ri.unit_id = u2.id
+      WHERE ri.request_id IN (${placeholders})
+    `, ids);
+
+    const itemsByRequest: Record<number, any[]> = {};
+    for (const item of itemRows as any[]) {
+      if (!itemsByRequest[item.request_id]) itemsByRequest[item.request_id] = [];
+      itemsByRequest[item.request_id].push(item);
+    }
+
+    return (rows as any[]).map((r: any) => ({
+      ...r,
+      items: itemsByRequest[r.id] || []
+    }));
   }
 
   static async getRequestById(id: number) {

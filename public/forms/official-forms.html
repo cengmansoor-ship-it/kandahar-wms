@@ -71110,6 +71110,20 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       case 'SET_READONLY': {
+        // Hide outer ribbon (Paragraph/Main/Font toolbar in this document)
+        [].forEach.call(document.querySelectorAll('.ribbon-shell, .ribbon-content, .ribbon-topbar'), function (el) {
+          el.style.cssText = 'display:none!important;';
+        });
+        // Hide outer nav buttons (form selector tabs)
+        [].forEach.call(document.querySelectorAll('.nav-btn, .nav-bar, .nav-tabs, .topbar-actions button'), function (el) {
+          el.style.cssText = 'display:none!important;';
+        });
+        // Disable outer inputs/selects too
+        [].forEach.call(document.querySelectorAll('input, textarea, select'), function (el) {
+          el.disabled = true;
+        });
+
+        // Also apply readonly to inner iframe
         var vwr3 = viewer();
         if (!vwr3) break;
         try {
@@ -71126,6 +71140,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 btn.id !== 'printBtn') {
               btn.style.display = 'none';
             }
+          });
+          // Hide inner ribbon too (if any form template has one)
+          [].forEach.call(doc3.querySelectorAll('.ribbon-shell, .ribbon-content, .ribbon-topbar'), function (el) {
+            el.style.cssText = 'display:none!important;';
           });
         } catch (e3) {}
         break;
