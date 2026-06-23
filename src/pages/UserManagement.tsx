@@ -8,7 +8,15 @@ import { useAuth } from "../context/AuthContext";
 import { getCurrentHijriDates } from "../utils/dateUtils";
 import CurrentDateBadge from "../components/common/CurrentDateBadge";
 
-const ALL_ROLES = [
+interface CustomRole {
+  id: number;
+  name: string;
+  name_ps: string;
+  name_dr: string;
+  permissions: string[];
+}
+
+const BUILTIN_ROLES = [
   ROLES.SUPER_ADMIN,
   ROLES.ADMIN,
   ROLES.PROCUREMENT_DIRECTOR,
@@ -30,6 +38,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState<UserProfile | null>(null);
@@ -42,7 +51,24 @@ export default function UserManagement() {
   const [msg, setMsg] = useState("");
   const { profile } = useAuth();
 
-  useEffect(() => { setUsers(getDemoUsers()); }, []);
+  const loadCustomRoles = async () => {
+    try {
+      const res = await fetch("/api/custom-roles");
+      const data = await res.json();
+      if (data.success) setCustomRoles(data.data);
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => {
+    setUsers(getDemoUsers());
+    loadCustomRoles();
+  }, []);
+
+  const allRoleLabels = useMemo(() => {
+    const map: Record<string, string> = { ...ROLE_LABELS };
+    customRoles.forEach(cr => { map[cr.name] = cr.name_ps || cr.name; });
+    return map;
+  }, [customRoles]);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
@@ -51,9 +77,9 @@ export default function UserManagement() {
       (u.name || "").toLowerCase().includes(q) ||
       (u.email || "").toLowerCase().includes(q) ||
       (u.role || "").toLowerCase().includes(q) ||
-      (ROLE_LABELS[u.role] || "").includes(q)
+      (allRoleLabels[u.role] || "").includes(q)
     );
-  }, [users, search]);
+  }, [users, search, allRoleLabels]);
 
   const openAdd = () => {
     setEditUser(null);
@@ -241,7 +267,7 @@ export default function UserManagement() {
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">{u.email}</td>
                       <td className="px-4 py-3 text-right">
                         <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                          {ROLE_LABELS[u.role] || u.role}
+                          {allRoleLabels[u.role] || u.role}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -338,9 +364,18 @@ export default function UserManagement() {
                     onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
                   >
-                    {ALL_ROLES.map(r => (
-                      <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
-                    ))}
+                    <optgroup label="— سیستم رولونه —">
+                      {BUILTIN_ROLES.map(r => (
+                        <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
+                      ))}
+                    </optgroup>
+                    {customRoles.length > 0 && (
+                      <optgroup label="— ځانګړي رولونه —">
+                        {customRoles.map(cr => (
+                          <option key={`custom_${cr.id}`} value={cr.name}>{cr.name_ps || cr.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
                 <div className="flex items-center gap-3">
