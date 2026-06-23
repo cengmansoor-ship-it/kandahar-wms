@@ -21,7 +21,6 @@ const LEVEL_LABELS: Record<string, { ps: string; dr: string; color: string; grad
   Bachelor: { ps: "لېسانس", dr: "لیسانس", color: "from-sky-500 to-blue-600", gradient: "bg-gradient-to-br from-sky-50 to-blue-100 dark:from-sky-900/30 dark:to-blue-900/20" },
   Master:   { ps: "ماسټري", dr: "ماسترگیری", color: "from-violet-500 to-purple-600", gradient: "bg-gradient-to-br from-violet-50 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/20" },
   PhD:      { ps: "دوکتورا", dr: "دکترا", color: "from-rose-500 to-pink-600", gradient: "bg-gradient-to-br from-rose-50 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/20" },
-  General:  { ps: "عمومي", dr: "عمومی", color: "from-teal-500 to-emerald-600", gradient: "bg-gradient-to-br from-teal-50 to-emerald-100 dark:from-teal-900/30 dark:to-emerald-900/20" },
 };
 
 const STATUS_LABELS: Record<string, { ps: string; dr: string; cls: string }> = {
@@ -403,7 +402,7 @@ export default function TraceabilityPage() {
   const renderFacultyLevels = () => (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 animate-fade-in">
       {filteredLevels.length === 0 ? renderEmpty() : filteredLevels.map((lv, i) => {
-        const meta = LEVEL_LABELS[lv.level] || LEVEL_LABELS.General;
+        const meta = LEVEL_LABELS[lv.level] || LEVEL_LABELS.Bachelor;
         return (
           <button key={lv.level}
             onClick={() => {
@@ -455,7 +454,7 @@ export default function TraceabilityPage() {
       if (d.department_id) grouped[key].departments.push(d);
     });
     const entries = Object.entries(grouped);
-    const levelMeta = LEVEL_LABELS[selectedLevel] || LEVEL_LABELS.General;
+    const levelMeta = LEVEL_LABELS[selectedLevel] || LEVEL_LABELS.Bachelor;
     return (
       <div className="space-y-8 animate-fade-in">
         {entries.length === 0 ? renderEmpty() :

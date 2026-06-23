@@ -6,13 +6,12 @@ import JSZip from "jszip";
 
 type Tab = "faculties" | "departments" | "people" | "assignments";
 
-const LEVELS = ["Bachelor", "Master", "PhD", "General"];
-const LEVEL_LABELS: Record<string, string> = { Bachelor: "لېسانس", Master: "ماسټري", PhD: "دوکتورا", General: "عمومي" };
+const LEVELS = ["Bachelor", "Master", "PhD"];
+const LEVEL_LABELS: Record<string, string> = { Bachelor: "لېسانس", Master: "ماسټري", PhD: "دوکتورا" };
 const LEVEL_COLORS: Record<string, { bg: string; badge: string; dot: string }> = {
   Bachelor: { bg: "bg-sky-50 dark:bg-sky-900/20", badge: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300", dot: "bg-sky-500" },
   Master:   { bg: "bg-violet-50 dark:bg-violet-900/20", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300", dot: "bg-violet-500" },
   PhD:      { bg: "bg-rose-50 dark:bg-rose-900/20", badge: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300", dot: "bg-rose-500" },
-  General:  { bg: "bg-teal-50 dark:bg-teal-900/20", badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300", dot: "bg-teal-500" },
   "":       { bg: "bg-gray-50 dark:bg-gray-800/50", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300", dot: "bg-gray-400" },
 };
 const DEPT_TYPES = [{ value: "ADMIN", label: "اداري / اداری" }, { value: "FACULTY", label: "پوهنځی / دانشکده" }];

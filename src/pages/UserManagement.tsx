@@ -57,7 +57,6 @@ const LEVELS = [
   { value: "Bachelor", label: "لېسانس" },
   { value: "Master",   label: "ماسټري" },
   { value: "PhD",      label: "دوکتورا" },
-  { value: "General",  label: "عمومي" },
 ];
 
 const emptyTraceForm = {
