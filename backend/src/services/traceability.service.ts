@@ -48,7 +48,7 @@ export class TraceabilityService {
         (p.department_id = d.id) OR (p.faculty_id = f.id AND p.department_id IS NULL)
       ) AND p.is_deleted = FALSE
       LEFT JOIN item_assignments ia ON (ia.department_id = d.id OR ia.person_id = p.id OR ia.faculty_id = f.id) AND ia.is_deleted = FALSE
-      WHERE f.is_deleted = FALSE
+      WHERE f.is_deleted = FALSE AND f.level IN ('Bachelor', 'Master', 'PhD')
     `);
     return { admin: (admin as any)[0], faculty: (faculty as any)[0] };
   }
@@ -74,7 +74,7 @@ export class TraceabilityService {
   static async getFacultyLevels() {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT
-        COALESCE(f.level, 'General') as level,
+        f.level,
         COUNT(DISTINCT f.id) as faculty_count,
         COUNT(DISTINCT d.id) as department_count,
         COUNT(DISTINCT p.id) as person_count,
@@ -86,9 +86,9 @@ export class TraceabilityService {
         (p.department_id = d.id) OR (p.faculty_id = f.id AND p.department_id IS NULL)
       ) AND p.is_deleted = FALSE
       LEFT JOIN item_assignments ia ON (ia.faculty_id = f.id OR ia.department_id = d.id OR ia.person_id = p.id) AND ia.is_deleted = FALSE
-      WHERE f.is_deleted = FALSE
-      GROUP BY level
-      ORDER BY FIELD(level, 'Bachelor', 'Master', 'PhD', 'General')
+      WHERE f.is_deleted = FALSE AND f.level IN ('Bachelor', 'Master', 'PhD')
+      GROUP BY f.level
+      ORDER BY FIELD(f.level, 'Bachelor', 'Master', 'PhD')
     `);
     const levels = ['Bachelor', 'Master', 'PhD'];
     const result: any[] = [...rows];
