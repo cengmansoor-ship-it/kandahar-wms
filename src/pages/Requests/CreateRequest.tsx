@@ -127,10 +127,16 @@ export default function CreateRequest() {
         const filtered = (data || []).filter((d: any) => String(d.faculty_id) === String(formData.faculty_id));
         setDepartments(filtered);
         setDepartmentMode(filtered.length > 0 ? "dropdown" : "text");
-        setFormData(prev => ({ ...prev, departmentOrPerson: "", department_id: "" }));
+        // For requester with a pre-assigned faculty, don't reset their department
+        const isRequesterOwnFaculty = isRequester &&
+          profile?.faculty_id &&
+          String(profile.faculty_id) === formData.faculty_id;
+        if (!isRequesterOwnFaculty) {
+          setFormData(prev => ({ ...prev, departmentOrPerson: "", department_id: "" }));
+        }
       })
       .catch(() => setDepartmentMode("text"));
-  }, [formData.faculty_id]);
+  }, [formData.faculty_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addItem = () => {
     setSelectedItems(prev => [...prev, {

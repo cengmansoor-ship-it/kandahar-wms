@@ -8,6 +8,27 @@ import { useAuth } from "../context/AuthContext";
 import { getCurrentHijriDates } from "../utils/dateUtils";
 import CurrentDateBadge from "../components/common/CurrentDateBadge";
 
+interface TracePersonInfo {
+  id: number;
+  full_name: string;
+  position?: string;
+  dept_name_ps?: string;
+  faculty_name_ps?: string;
+  faculty_level?: string;
+  email?: string;
+}
+
+interface TraceAssignment {
+  id: number;
+  item_name_ps: string;
+  item_code: string;
+  quantity: number;
+  unit_name_ps?: string;
+  status: string;
+  assigned_at: string;
+  source_type: string;
+}
+
 interface CustomRole {
   id: number;
   name: string;
@@ -95,6 +116,45 @@ export default function UserManagement() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const { profile } = useAuth();
+
+  // ─── Traceability view modal ───────────────────────────────────────────────
+  const [traceViewUser, setTraceViewUser] = useState<UserProfile | null>(null);
+  const [traceViewPerson, setTraceViewPerson] = useState<TracePersonInfo | null>(null);
+  const [traceViewAssignments, setTraceViewAssignments] = useState<TraceAssignment[]>([]);
+  const [traceViewLoading, setTraceViewLoading] = useState(false);
+  const [traceViewError, setTraceViewError] = useState("");
+
+  const openTraceView = async (u: UserProfile) => {
+    setTraceViewUser(u);
+    setTraceViewPerson(null);
+    setTraceViewAssignments([]);
+    setTraceViewError("");
+    setTraceViewLoading(true);
+    try {
+      const res = await fetch(`/api/management/people/find-by-email?email=${encodeURIComponent(u.email)}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setTraceViewPerson(data.data);
+        const aRes = await fetch(`/api/management/assignments?person_id=${data.data.id}`);
+        const aData = await aRes.json();
+        if (aData.success) setTraceViewAssignments(aData.data || []);
+      } else {
+        setTraceViewError("دا کاروونکی د اجناسو تعقیب مینیو کې ثبت شوی نه دی.");
+      }
+    } catch {
+      setTraceViewError("د معلوماتو پورته کول ونه شو.");
+    } finally {
+      setTraceViewLoading(false);
+    }
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    ASSIGNED: "ټاکل شوی", RETURNED: "بیرته راستون", DAMAGED: "خراب شوی",
+    TRANSFERRED: "لیږدول شوی", Delivered: "تسلیم شو", Completed: "بشپړه شوه",
+  };
+  const SOURCE_LABELS: Record<string, string> = {
+    manual: "لاسي", delivery: "سپارنه", request: "غوښتنه", stock_out: "د ګدام وتل",
+  };
 
   const loadCustomRoles = async () => {
     try {
@@ -452,12 +512,19 @@ export default function UserManagement() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-2 justify-end flex-wrap">
                           <button
                             onClick={() => openEdit(u)}
                             className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 transition"
                           >
                             سمون
+                          </button>
+                          <button
+                            onClick={() => openTraceView(u)}
+                            title="د اجناسو تعقیب مشاهده"
+                            className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 transition"
+                          >
+                            📦 تعقیب
                           </button>
                           {profile?.uid !== u.uid && (
                             <button
@@ -476,6 +543,111 @@ export default function UserManagement() {
             </table>
           </div>
         </div>
+
+        {/* ─── Traceability View Modal ──────────────────────────────────── */}
+        {traceViewUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-xl rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 shadow-xl flex flex-col max-h-[88vh]" dir="rtl">
+              <div className="px-6 pt-5 pb-3 shrink-0 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-gray-800 dark:text-white/90">
+                      📦 د اجناسو تعقیب — {traceViewUser.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{traceViewUser.email}</p>
+                  </div>
+                  <button onClick={() => setTraceViewUser(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none">✕</button>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+                {traceViewLoading && (
+                  <div className="flex items-center justify-center py-10 text-gray-400 text-sm gap-2">
+                    <span className="animate-spin">⏳</span> د معلوماتو پورته کول...
+                  </div>
+                )}
+                {traceViewError && !traceViewLoading && (
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 p-4 text-center">
+                    <p className="text-amber-700 dark:text-amber-300 text-sm">{traceViewError}</p>
+                    <p className="text-xs text-gray-400 mt-1">د کاروونکو مدیریت نه تعقیب قسم کې ورته فاکولتي/ډیپارمنټ اساین کړئ.</p>
+                  </div>
+                )}
+                {!traceViewLoading && traceViewPerson && (
+                  <>
+                    {/* Person Info */}
+                    <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 p-4">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-xs text-gray-400 block mb-0.5">دنده / وظیفه</span>
+                          <span className="font-semibold text-gray-700 dark:text-gray-200">{traceViewPerson.position || "—"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-400 block mb-0.5">ډیپارمنټ</span>
+                          <span className="font-semibold text-gray-700 dark:text-gray-200">{traceViewPerson.dept_name_ps || "—"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-400 block mb-0.5">پوهنځی</span>
+                          <span className="font-semibold text-gray-700 dark:text-gray-200">{traceViewPerson.faculty_name_ps || "—"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-400 block mb-0.5">کچه</span>
+                          <span className="font-semibold text-gray-700 dark:text-gray-200">
+                            {traceViewPerson.faculty_level === "Bachelor" ? "لېسانس" : traceViewPerson.faculty_level === "Master" ? "ماسټري" : traceViewPerson.faculty_level === "PhD" ? "دوکتورا" : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Assignments */}
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                        <span>📋</span>
+                        ټاکل شوي اجناس
+                        <span className="text-xs font-normal text-gray-400">({traceViewAssignments.length})</span>
+                      </h4>
+                      {traceViewAssignments.length === 0 ? (
+                        <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 dark:bg-gray-800/40 rounded-xl">
+                          هیڅ جنس ټاکل شوی نه دی
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {traceViewAssignments.map(a => (
+                            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 px-3 py-2.5 text-sm">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-800 dark:text-white/80 truncate">{a.item_name_ps}</p>
+                                <p className="text-xs text-gray-400">{a.item_code} · {SOURCE_LABELS[a.source_type] || a.source_type}</p>
+                              </div>
+                              <div className="text-left shrink-0">
+                                <p className="font-bold text-gray-700 dark:text-gray-200">{a.quantity} {a.unit_name_ps || ""}</p>
+                                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                                  a.status === "ASSIGNED" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                                  : a.status === "RETURNED" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                                  : a.status === "DAMAGED" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                  : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                                }`}>
+                                  {STATUS_LABELS[a.status] || a.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 shrink-0">
+                <button
+                  onClick={() => setTraceViewUser(null)}
+                  className="w-full py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  بندول
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
