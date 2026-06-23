@@ -545,11 +545,10 @@ export default function UserManagement() {
 
                     <div className="mb-3">
                       <label className={labelCls}>بخش / سکتور</label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {[
-                          { val: "" as const,       label: "نه — بې ارتباطه",  icon: "🚫" },
-                          { val: "ADMIN" as const,   label: "اداري",           icon: "🏛️" },
-                          { val: "FACULTY" as const, label: "پوهنځی",          icon: "🎓" },
+                          { val: "ADMIN" as const,   label: "اداري",  icon: "🏛️" },
+                          { val: "FACULTY" as const, label: "پوهنځی", icon: "🎓" },
                         ].map(opt => (
                           <button
                             key={opt.val}
