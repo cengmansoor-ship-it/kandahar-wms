@@ -42,11 +42,13 @@ export class TraceabilityService {
         COUNT(DISTINCT ia.item_id) as total_items,
         COALESCE(SUM(ia.quantity), 0) as total_quantity,
         MAX(ia.assigned_at) as last_assignment_date
-      FROM departments d
-      LEFT JOIN faculties f ON d.faculty_id = f.id AND f.is_deleted = FALSE
-      LEFT JOIN people p ON p.department_id = d.id AND p.is_deleted = FALSE
+      FROM faculties f
+      LEFT JOIN departments d ON d.faculty_id = f.id AND d.is_deleted = FALSE AND d.department_type = 'FACULTY'
+      LEFT JOIN people p ON (
+        (p.department_id = d.id) OR (p.faculty_id = f.id AND p.department_id IS NULL)
+      ) AND p.is_deleted = FALSE
       LEFT JOIN item_assignments ia ON (ia.department_id = d.id OR ia.person_id = p.id OR ia.faculty_id = f.id) AND ia.is_deleted = FALSE
-      WHERE d.department_type = 'FACULTY' AND d.is_deleted = FALSE
+      WHERE f.is_deleted = FALSE
     `);
     return { admin: (admin as any)[0], faculty: (faculty as any)[0] };
   }
@@ -80,7 +82,9 @@ export class TraceabilityService {
         COALESCE(SUM(ia.quantity), 0) as total_quantity
       FROM faculties f
       LEFT JOIN departments d ON d.faculty_id = f.id AND d.is_deleted = FALSE
-      LEFT JOIN people p ON p.department_id = d.id AND p.is_deleted = FALSE
+      LEFT JOIN people p ON (
+        (p.department_id = d.id) OR (p.faculty_id = f.id AND p.department_id IS NULL)
+      ) AND p.is_deleted = FALSE
       LEFT JOIN item_assignments ia ON (ia.faculty_id = f.id OR ia.department_id = d.id OR ia.person_id = p.id) AND ia.is_deleted = FALSE
       WHERE f.is_deleted = FALSE
       GROUP BY level
@@ -109,7 +113,10 @@ export class TraceabilityService {
         COALESCE(SUM(ia.quantity), 0) as total_quantity
       FROM faculties f
       LEFT JOIN departments d ON d.faculty_id = f.id AND d.is_deleted = FALSE AND d.department_type = 'FACULTY'
-      LEFT JOIN people p ON p.department_id = d.id AND p.is_deleted = FALSE
+      LEFT JOIN people p ON (
+        (d.id IS NOT NULL AND p.department_id = d.id) OR
+        (d.id IS NULL AND p.faculty_id = f.id AND p.department_id IS NULL)
+      ) AND p.is_deleted = FALSE
       LEFT JOIN item_assignments ia ON (ia.department_id = d.id OR ia.person_id = p.id OR ia.faculty_id = f.id) AND ia.is_deleted = FALSE
       WHERE f.is_deleted = FALSE AND ${whereLevel}
       GROUP BY f.id, f.name_ps, f.name_fa, f.level, d.id, d.name_ps, d.name_fa
