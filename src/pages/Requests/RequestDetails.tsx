@@ -94,7 +94,8 @@ export default function RequestDetails() {
 
   const submitRequest = async () => {
     if (!id || !user || !profile) return;
-    if (!request?.formInstances.proposalId || !request?.formInstances.si9Id) {
+    const isRequester = profile?.role === ROLES.REQUESTER;
+    if (!isRequester && (!request?.formInstances.proposalId || !request?.formInstances.si9Id)) {
       alert(pick("مهرباني وکړئ لومړی پیشنهاد او ف، س، ۹ فورمونه ډک کړئ.", "لطفا ابتدا فورم‌های پیشنهاد و ف، س، ۹ را پر کنید."));
       return;
     }
@@ -141,7 +142,7 @@ export default function RequestDetails() {
       <PageMeta title="د غوښتنې جزیات | Kandahar University WMS" description="د غوښتنې جزیات او فورمونه" />
       <Breadcrumb pageTitle={pick("د غوښتنې جزیات", "جزیات درخواست")} />
 
-      {activeForm ? (
+      {activeForm && profile?.role !== ROLES.REQUESTER ? (
         <div className="h-[85vh]">
           <div className="mb-4">
             <Button variant="outline" size="sm" onClick={() => setActiveForm(null)}>← {pick("بیرته", "بازګشت")}</Button>
@@ -343,29 +344,31 @@ export default function RequestDetails() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("رسمي فورمونه", "فورم‌های رسمی")}</h3>
-              <div className="space-y-3">
-                <button 
-                  onClick={() => openForm('Proposal')}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-                    request.formInstances.proposalId ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
-                  }`}
-                >
-                  <span className="font-bold text-sm">{pick("پیشنهاد", "پروپوزل")}</span>
-                  {request.formInstances.proposalId ? '✅' : '⏳'}
-                </button>
-                <button 
-                  onClick={() => openForm('SI-9')}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-                    request.formInstances.si9Id ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
-                  }`}
-                >
-                  <span className="font-bold text-sm">ف، س، ۹</span>
-                  {request.formInstances.si9Id ? '✅' : '⏳'}
-                </button>
+            {profile?.role !== ROLES.REQUESTER && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("رسمي فورمونه", "فورم‌های رسمی")}</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => openForm('Proposal')}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                      request.formInstances.proposalId ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
+                    }`}
+                  >
+                    <span className="font-bold text-sm">{pick("پیشنهاد", "پروپوزل")}</span>
+                    {request.formInstances.proposalId ? '✅' : '⏳'}
+                  </button>
+                  <button 
+                    onClick={() => openForm('SI-9')}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                      request.formInstances.si9Id ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
+                    }`}
+                  >
+                    <span className="font-bold text-sm">ف، س، ۹</span>
+                    {request.formInstances.si9Id ? '✅' : '⏳'}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-4 border-b pb-2 dark:border-gray-700">{pick("پرمختګ", "پیشرفت")}</h3>

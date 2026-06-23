@@ -1,18 +1,17 @@
-const CACHE_NAME = 'ku-wms-v1';
+const CACHE_NAME = 'ku-wms-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/kandahar-university-logo.png',
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(STATIC_ASSETS).catch(() => {})
+    )
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -27,32 +26,55 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Always fetch API calls from network — never cache
+  if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) return;
+
+  // API calls: network-first, fall back to cached response or offline JSON
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(event.request).then((cached) => {
+            if (cached) return cached;
+            return new Response(
+              JSON.stringify({ success: false, offline: true, data: null, message: 'آفلاین — شبکه اتصال نشته' }),
+              { status: 503, headers: { 'Content-Type': 'application/json' } }
+            );
+          })
+        )
+    );
     return;
   }
 
-  // For navigation requests: serve index.html from cache or network
+  // Navigation requests: try network, fall back to cached index.html
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() =>
-        caches.match('/index.html')
+        caches.match('/index.html').then((r) => r || new Response('Offline', { status: 503 }))
       )
     );
     return;
   }
 
-  // For other requests: network first, cache fallback
+  // Static assets: cache-first, then network + cache
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((res) => {
+        if (res.ok && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone)).catch(() => {});
         }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
+        return res;
+      }).catch(() =>
+        caches.match('/').then((r) => r || new Response('Offline', { status: 503 }))
+      );
+    })
   );
 });

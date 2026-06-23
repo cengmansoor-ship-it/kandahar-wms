@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { managementService } from "../../services/management";
 import { apiClient } from "../../api/apiClient";
-import { saveOfficialFormData, mapRequestToProposal, mapRequestToSI9 } from "../../utils/officialFormDataAdapter";
+import { saveOfficialFormData, mapRequestToProposal, mapRequestToSI9, syncForwardOnly } from "../../utils/officialFormDataAdapter";
 
 const REQUEST_LEVELS_PS = ["ډېر عاجل", "ډېر مهم", "متوسط", "عادي", "لږ مهم"];
 const REQUEST_LEVELS_DR = ["بسیار عاجل", "بسیار مهم", "متوسط", "عادی", "کم‌اهمیت"];
@@ -264,15 +264,20 @@ export default function CreateRequest() {
       };
       const requestId = await createRequest(reqPayload, user.uid, profile.name);
 
-      // ── Auto-sync proposal & SI-9 form data so it's pre-filled in فورمونه ──
+      // ── Auto-sync ALL official forms on new request creation ──
+      // Item specs from proposal table flow into tender, comparison, purchase order, etc.
       try {
         const mockRequest: any = {
           ...reqPayload,
           id: requestId,
           requesterName: profile.name,
         };
-        saveOfficialFormData(requestId, "proposal", mapRequestToProposal(mockRequest));
-        saveOfficialFormData(requestId, "si9",      mapRequestToSI9(mockRequest));
+        const proposalData = mapRequestToProposal(mockRequest);
+        const si9Data = mapRequestToSI9(mockRequest);
+        saveOfficialFormData(requestId, "proposal", proposalData);
+        saveOfficialFormData(requestId, "si9", si9Data);
+        // Push item specs forward into all downstream forms (tender → fs5)
+        syncForwardOnly(requestId, "proposal", proposalData);
       } catch { /* form sync is non-critical */ }
 
       navigate(`/requests/details/${requestId}`);
