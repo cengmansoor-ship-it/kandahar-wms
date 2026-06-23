@@ -119,11 +119,21 @@ export default function SettingsPage() {
   const [cpLoading, setCpLoading] = useState(false);
   const [cpMsg, setCpMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
+  const checkPasswordStrength = (pw: string): string[] => {
+    const errors: string[] = [];
+    if (pw.length < 8)        errors.push(pick("لږترلږه ۸ کرکټره وي", "حداقل ۸ کاراکتر"));
+    if (!/[A-Z]/.test(pw))    errors.push(pick("یو لوی توری (A-Z)", "یک حرف بزرگ (A-Z)"));
+    if (!/[a-z]/.test(pw))    errors.push(pick("یو کوچنی توری (a-z)", "یک حرف کوچک (a-z)"));
+    if (!/[0-9]/.test(pw))    errors.push(pick("یو عدد (0-9)", "یک عدد (0-9)"));
+    return errors;
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setCpMsg(null);
     if (!cpForm.current) return setCpMsg({ text: pick("اوسنی پاسورډ ولیکئ.", "رمز فعلی را وارد کنید."), ok: false });
-    if (cpForm.newPass.length < 6) return setCpMsg({ text: pick("نوی پاسورډ باید لږ تر لږه ۶ توري ولري.", "رمز جدید باید حداقل ۶ کاراکتر داشته باشد."), ok: false });
+    const pwErrors = checkPasswordStrength(cpForm.newPass);
+    if (pwErrors.length > 0) return setCpMsg({ text: pick("پاسورډ ضعیف دی: ", "رمز ضعیف است: ") + pwErrors.join(" | "), ok: false });
     if (cpForm.newPass !== cpForm.confirm) return setCpMsg({ text: pick("نوی پاسورډونه سره برابر نه دي.", "رمزهای جدید با هم مطابقت ندارند."), ok: false });
     if (!profile?.email) return setCpMsg({ text: pick("ایمیل پته ونه موندل شوه.", "آدرس ایمیل یافت نشد."), ok: false });
 
@@ -724,7 +734,7 @@ export default function SettingsPage() {
                   type={cpShowNew ? "text" : "password"}
                   value={cpForm.newPass}
                   onChange={e => { setCpForm(f => ({ ...f, newPass: e.target.value })); setCpMsg(null); }}
-                  placeholder={pick("نوی پاسورډ (لږ تر لږه ۶ توري)", "رمز جدید (حداقل ۶ کاراکتر)")}
+                  placeholder={pick("نوی پاسورډ (لږ تر لږه ۸ توري)", "رمز جدید (حداقل ۸ کاراکتر)")}
                   className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-400 pr-10"
                   autoComplete="new-password"
                 />
@@ -737,17 +747,33 @@ export default function SettingsPage() {
                   {cpShowNew ? "🙈" : "👁️"}
                 </button>
               </div>
-              {cpForm.newPass.length > 0 && (
-                <div className="mt-1.5 flex gap-1">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
-                      cpForm.newPass.length >= i * 3
-                        ? cpForm.newPass.length >= 10 ? "bg-green-500" : "bg-yellow-400"
-                        : "bg-gray-200 dark:bg-gray-700"
-                    }`} />
-                  ))}
-                </div>
-              )}
+              {cpForm.newPass.length > 0 && (() => {
+                const errs = checkPasswordStrength(cpForm.newPass);
+                const score = 4 - errs.length;
+                const bars = [
+                  score >= 1 ? "bg-red-400" : "bg-gray-200 dark:bg-gray-700",
+                  score >= 2 ? "bg-orange-400" : "bg-gray-200 dark:bg-gray-700",
+                  score >= 3 ? "bg-yellow-400" : "bg-gray-200 dark:bg-gray-700",
+                  score >= 4 ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700",
+                ];
+                const lbl = score === 4 ? { t: pick("قوي ✓","قوی ✓"), c: "text-green-600 dark:text-green-400" }
+                          : score === 3 ? { t: pick("منځني","متوسط"),  c: "text-yellow-600 dark:text-yellow-400" }
+                          : score === 2 ? { t: pick("کمزوری","ضعیف"),  c: "text-orange-600 dark:text-orange-400" }
+                          :               { t: pick("ضعیف","خیلی ضعیف"), c: "text-red-600 dark:text-red-400" };
+                return (
+                  <div className="mt-2 space-y-1.5" dir="rtl">
+                    <div className="flex items-center gap-1.5">
+                      {bars.map((cls, i) => <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${cls}`} />)}
+                      <span className={`text-xs font-semibold mr-1 ${lbl.c}`}>{lbl.t}</span>
+                    </div>
+                    {errs.length > 0 && (
+                      <ul className="space-y-0.5">
+                        {errs.map((er, i) => <li key={i} className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400"><span>✗</span>{er}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Confirm Password */}

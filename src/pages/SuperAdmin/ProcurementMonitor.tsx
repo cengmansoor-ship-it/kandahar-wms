@@ -100,7 +100,12 @@ export default function ProcurementMonitor() {
   return (
     <>
       <PageMeta title={pick("تدارکات نظارت", "نظارت تدارکات") + " | Kandahar WMS"} description="" />
-      <div className="flex justify-end mb-2" dir="rtl"><CurrentDateBadge /></div>
+      <div className="flex items-center justify-between mb-2" dir="rtl">
+        <Link to="/superadmin" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-all shadow-sm">
+          <span>📊</span> {pick("د احصائیې ډشبورډ", "داشبورد آمار")}
+        </Link>
+        <CurrentDateBadge />
+      </div>
       <div className="space-y-6" dir="rtl">
 
         {/* Header */}
