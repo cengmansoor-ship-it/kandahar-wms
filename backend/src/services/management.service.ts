@@ -6,8 +6,9 @@ export class ManagementService {
 
   static async runMigrations() {
     const cols = [
-      { table: 'people',    col: 'photo', def: `MEDIUMTEXT DEFAULT NULL` },
-      { table: 'faculties', col: 'level', def: `VARCHAR(20) DEFAULT NULL` },
+      { table: 'people',    col: 'photo',      def: `MEDIUMTEXT DEFAULT NULL` },
+      { table: 'faculties', col: 'level',       def: `VARCHAR(20) DEFAULT NULL` },
+      { table: 'people',    col: 'faculty_id',  def: `INT DEFAULT NULL` },
     ];
     for (const c of cols) {
       try {
@@ -16,6 +17,10 @@ export class ManagementService {
         console.warn(`[Management] Migration warning for ${c.table}.${c.col}:`, e.message);
       }
     }
+    // Make department_id nullable for faculty-level people (e.g. confirmers)
+    try {
+      await db.query(`ALTER TABLE people MODIFY COLUMN department_id INT DEFAULT NULL`);
+    } catch (_e: any) { /* already nullable */ }
   }
 
   // ─── Faculties ─────────────────────────────────────────────────────────────
@@ -109,12 +114,16 @@ export class ManagementService {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT p.id, p.full_name, p.position, p.phone, p.email, p.photo,
              p.department_id, d.name_ps as dept_name_ps, d.name_fa as dept_name_fa,
-             d.department_type, d.faculty_id,
-             f.name_ps as faculty_name_ps, f.name_fa as faculty_name_fa,
+             d.department_type, COALESCE(d.faculty_id, p.faculty_id) as faculty_id,
+             COALESCE(f2.name_ps, f.name_ps) as faculty_name_ps,
+             COALESCE(f2.name_fa, f.name_fa) as faculty_name_fa,
+             COALESCE(f2.level, f.level) as faculty_level,
+             p.faculty_id as direct_faculty_id,
              p.created_at, p.updated_at
       FROM people p
       LEFT JOIN departments d ON p.department_id = d.id
       LEFT JOIN faculties f ON d.faculty_id = f.id
+      LEFT JOIN faculties f2 ON p.faculty_id = f2.id
       WHERE ${where}
       ORDER BY p.full_name ASC
     `, params);
@@ -124,7 +133,9 @@ export class ManagementService {
   static async getPersonById(id: number) {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT p.id, p.full_name, p.position, p.phone, p.email, p.photo,
-             p.department_id, d.name_ps as dept_name_ps, d.name_fa as dept_name_fa
+             p.department_id, d.name_ps as dept_name_ps, d.name_fa as dept_name_fa,
+             COALESCE(d.faculty_id, p.faculty_id) as faculty_id,
+             p.faculty_id as direct_faculty_id
       FROM people p
       LEFT JOIN departments d ON p.department_id = d.id
       WHERE p.id = ? AND p.is_deleted = FALSE
@@ -132,24 +143,67 @@ export class ManagementService {
     return rows[0] || null;
   }
 
+  static async findPersonByEmail(email: string) {
+    const [rows] = await db.query<RowDataPacket[]>(`
+      SELECT p.id, p.full_name, p.position, p.phone, p.email, p.photo,
+             p.department_id, p.faculty_id as direct_faculty_id,
+             COALESCE(d.faculty_id, p.faculty_id) as faculty_id,
+             d.name_ps as dept_name_ps, d.department_type,
+             f.level as faculty_level
+      FROM people p
+      LEFT JOIN departments d ON p.department_id = d.id
+      LEFT JOIN faculties f ON COALESCE(d.faculty_id, p.faculty_id) = f.id
+      WHERE p.email = ? AND p.is_deleted = FALSE
+      LIMIT 1
+    `, [email.trim().toLowerCase()]);
+    return rows[0] || null;
+  }
+
   static async createPerson(data: {
     full_name: string;
-    department_id: number;
+    department_id?: number | null;
+    faculty_id?: number | null;
     position?: string;
     phone?: string;
     email?: string;
     photo?: string;
   }) {
     const [result] = await db.query<ResultSetHeader>(
-      `INSERT INTO people (full_name, department_id, position, phone, email, photo) VALUES (?, ?, ?, ?, ?, ?)`,
-      [data.full_name, data.department_id, data.position || null, data.phone || null, data.email || null, data.photo || null]
+      `INSERT INTO people (full_name, department_id, faculty_id, position, phone, email, photo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [data.full_name, data.department_id || null, data.faculty_id || null, data.position || null, data.phone || null, data.email || null, data.photo || null]
     );
     return result.insertId;
   }
 
+  static async upsertPersonByEmail(data: {
+    full_name: string;
+    department_id?: number | null;
+    faculty_id?: number | null;
+    position?: string;
+    phone?: string;
+    email: string;
+    photo?: string;
+  }): Promise<{ id: number; created: boolean }> {
+    const existing = await ManagementService.findPersonByEmail(data.email);
+    if (existing) {
+      await ManagementService.updatePerson(existing.id, {
+        full_name: data.full_name,
+        department_id: data.department_id ?? undefined,
+        faculty_id: data.faculty_id ?? undefined,
+        position: data.position,
+        phone: data.phone,
+        email: data.email,
+      });
+      return { id: existing.id, created: false };
+    }
+    const id = await ManagementService.createPerson(data);
+    return { id, created: true };
+  }
+
   static async updatePerson(id: number, data: {
     full_name?: string;
-    department_id?: number;
+    department_id?: number | null;
+    faculty_id?: number | null;
     position?: string;
     phone?: string;
     email?: string;
@@ -158,7 +212,8 @@ export class ManagementService {
     const fields: string[] = [];
     const params: any[] = [];
     if (data.full_name !== undefined) { fields.push('full_name = ?'); params.push(data.full_name); }
-    if (data.department_id !== undefined) { fields.push('department_id = ?'); params.push(data.department_id); }
+    if (data.department_id !== undefined) { fields.push('department_id = ?'); params.push(data.department_id ?? null); }
+    if (data.faculty_id !== undefined) { fields.push('faculty_id = ?'); params.push(data.faculty_id ?? null); }
     if (data.position !== undefined) { fields.push('position = ?'); params.push(data.position || null); }
     if (data.phone !== undefined) { fields.push('phone = ?'); params.push(data.phone || null); }
     if (data.email !== undefined) { fields.push('email = ?'); params.push(data.email || null); }

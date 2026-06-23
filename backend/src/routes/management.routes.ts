@@ -17,6 +17,7 @@ router.delete('/departments/:id', M.deleteDepartment);
 
 // People
 router.get('/people', M.getPeople);
+router.get('/people/find-by-email', M.findPersonByEmail);
 router.get('/people/:id', M.getPersonById);
 router.post('/people', M.createPerson);
 router.post('/people/import', M.importPeople);

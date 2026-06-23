@@ -156,13 +156,43 @@ export default function UserManagement() {
     setMsg("");
   };
 
-  const openEdit = (u: UserProfile) => {
+  const openEdit = async (u: UserProfile) => {
     setEditUser(u);
     setFormData({ name: u.name, email: u.email, role: u.role, phone: u.phone || "", active: u.active, password: "" });
     setTraceForm(emptyTraceForm);
     setShowPass(false);
-    setShowForm(true);
     setMsg("");
+    // Try to load existing person linkage from backend by email
+    try {
+      const res = await fetch(`/api/management/people/find-by-email?email=${encodeURIComponent(u.email)}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        const p = data.data;
+        if (p.department_id) {
+          // Find which faculty this dept belongs to
+          const deptObj = departments.find(d => d.id === p.department_id);
+          const sectionType = deptObj?.department_type === "ADMIN" ? "ADMIN" : "FACULTY";
+          setTraceForm({
+            section_type: sectionType,
+            level: deptObj?.faculty_level || "",
+            faculty_id: deptObj?.faculty_id ? String(deptObj.faculty_id) : "",
+            department_id: String(p.department_id),
+            position: p.position || "",
+          });
+        } else if (p.direct_faculty_id || p.faculty_id) {
+          const fid = p.direct_faculty_id || p.faculty_id;
+          const facObj = faculties.find(f => f.id === fid);
+          setTraceForm({
+            section_type: "FACULTY",
+            level: facObj?.level || "",
+            faculty_id: String(fid),
+            department_id: "",
+            position: p.position || "",
+          });
+        }
+      }
+    } catch { /* non-blocking */ }
+    setShowForm(true);
   };
 
   const handleSave = async () => {
@@ -175,12 +205,17 @@ export default function UserManagement() {
       return;
     }
 
+    const isConfirmer = formData.role === ROLES.REQUEST_CONFIRMER;
     if (traceForm.section_type === "ADMIN" && !traceForm.department_id) {
       setMsg("مهرباني وکړئ اداري ډیپارټمنټ غوره کړئ.");
       return;
     }
-    if (traceForm.section_type === "FACULTY" && !traceForm.department_id) {
+    if (traceForm.section_type === "FACULTY" && !isConfirmer && !traceForm.department_id) {
       setMsg("مهرباني وکړئ د پوهنځي ډیپارټمنټ غوره کړئ.");
+      return;
+    }
+    if (traceForm.section_type === "FACULTY" && isConfirmer && !traceForm.faculty_id) {
+      setMsg("مهرباني وکړئ پوهنځی غوره کړئ.");
       return;
     }
 

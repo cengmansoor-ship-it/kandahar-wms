@@ -96,12 +96,44 @@ export const getPersonById = async (req: Request, res: Response) => {
   } catch (e) { handleError(res, e); }
 };
 
+export const findPersonByEmail = async (req: Request, res: Response) => {
+  try {
+    const email = req.query.email as string;
+    if (!email) return res.status(400).json({ success: false, message: 'email is required' });
+    const data = await ManagementService.findPersonByEmail(email);
+    res.json({ success: true, data });
+  } catch (e) { handleError(res, e); }
+};
+
 export const createPerson = async (req: Request, res: Response) => {
   try {
-    const { full_name, department_id, position, phone, email, photo } = req.body;
-    if (!full_name || !department_id) return res.status(400).json({ success: false, message: 'full_name and department_id are required' });
-    const id = await ManagementService.createPerson({ full_name, department_id: Number(department_id), position, phone, email, photo });
-    res.json({ success: true, data: { id } });
+    const { full_name, department_id, faculty_id, position, phone, email, photo } = req.body;
+    if (!full_name) return res.status(400).json({ success: false, message: 'full_name is required' });
+    if (!department_id && !faculty_id) return res.status(400).json({ success: false, message: 'department_id or faculty_id is required' });
+    let result: { id: number; created: boolean };
+    if (email) {
+      result = await ManagementService.upsertPersonByEmail({
+        full_name,
+        department_id: department_id ? Number(department_id) : null,
+        faculty_id: faculty_id ? Number(faculty_id) : null,
+        position,
+        phone,
+        email,
+        photo,
+      });
+    } else {
+      const id = await ManagementService.createPerson({
+        full_name,
+        department_id: department_id ? Number(department_id) : null,
+        faculty_id: faculty_id ? Number(faculty_id) : null,
+        position,
+        phone,
+        email,
+        photo,
+      });
+      result = { id, created: true };
+    }
+    res.json({ success: true, data: result });
   } catch (e) { handleError(res, e); }
 };
 
