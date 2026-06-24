@@ -43,7 +43,7 @@ export default function ChecklistManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN;
+  const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.WAREHOUSE_DIRECTOR;
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -71,7 +71,7 @@ export default function ChecklistManagement() {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 p-8 text-center" dir="rtl">
         <p className="text-red-700 dark:text-red-400 font-semibold text-lg">لاسرسی نشته</p>
-        <p className="text-red-600 dark:text-red-300 mt-2 text-sm">یوازې سوپر ادمین دې پاڼې ته لاسرسی لري.</p>
+        <p className="text-red-600 dark:text-red-300 mt-2 text-sm">یوازې سوپر ادمین او د ګدام مدیر دې پاڼې ته لاسرسی لري.</p>
         <Button className="mt-4" onClick={() => navigate("/inventory")}>بیرته</Button>
       </div>
     );
