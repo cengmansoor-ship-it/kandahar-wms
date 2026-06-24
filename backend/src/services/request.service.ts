@@ -391,6 +391,30 @@ export class RequestService {
     return { workflow: workflowSummary, pipeline: pipelineRows, level_history: levelHistory };
   }
 
+  static async updateItems(id: number, items: any[], userId: number) {
+    const connection = await (db as any).getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query(`DELETE FROM request_items WHERE request_id = ?`, [id]);
+      for (const item of items) {
+        await connection.query(`
+          INSERT INTO request_items (request_id, item_id, item_name, quantity, unit_id, unit_name, specifications, unit_price, total_price)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [id, item.item_id || null, item.item_name, item.quantity, item.unit_id || null, item.unit_name || '', item.specifications || '', item.unit_price || 0, item.total_price || 0]);
+      }
+      await connection.query(`
+        INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_value)
+        VALUES (?, ?, ?, ?, ?)
+      `, [userId, 'UPDATE_ITEMS', 'REQUEST', id, JSON.stringify({ items_count: items.length })]);
+      await connection.commit();
+    } catch (e) {
+      await connection.rollback();
+      throw e;
+    } finally {
+      connection.release();
+    }
+  }
+
   static async deleteRequest(id: number, userId: number | null) {
     const [result] = await db.query<ResultSetHeader>(
       `UPDATE requests SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ?`, [id]);

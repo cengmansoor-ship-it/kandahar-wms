@@ -6,7 +6,7 @@ import type { InventoryRequest, PipelineRecord, RequestLevelRecord } from "./req
 const PREFIX = "kandahar_wms_";
 
 // ── Data version: bump this string to force a full reseed on all clients ──
-const DATA_VERSION = "fy1404-no-seed-v1";
+const DATA_VERSION = "fy1404-no-seed-v2";
 
 const BASE_TS = new Date(2026, 4, 14, 8, 0, 0).getTime(); // May 14 2026 = "today"
 const Y1     = new Date(2025, 4, 14, 8, 0, 0).getTime(); // May 14 2025 = one year ago
@@ -611,7 +611,7 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_02", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د انجینري پوهنځی", departmentOrPerson:"د شبکې او IT لابراتوار",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د شبکې او IT لابراتوار",
       reason:"د نوي تعلیمي ودانۍ لپاره د شبکې کیبل ته اړتیا ده.",
       items:[{itemId:"demo_item_5", name:"شبکې کیبل Cat6", unit:"متر", quantity:200}],
       status:"Delivered", progress:100, currentStage:"ف س ۵ او تسلیمي",
@@ -625,7 +625,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M1 (1404/04 - Jun 2025) ─────────────────────────────────
     {
       id:"req_y1_03", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د طب پوهنځی", departmentOrPerson:"کتابتون",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د معلوماتي سیستمونو کتابتون",
       reason:"د محصلینو لپاره کاپۍ او د صنف وایټ بورډ مارکرونه.",
       items:[
         {itemId:"demo_item_6", name:"کاپي", unit:"دانه", quantity:20},
@@ -640,8 +640,8 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_04", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د اقتصاد پوهنځی", departmentOrPerson:"د مالي چارو شعبه",
-      reason:"د مالي چارو لپاره حسابګر او فایل فولډرونه.",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"اداري مدیریت",
+      reason:"د اداري چارو لپاره حسابګر او فایل فولډرونه.",
       items:[
         {itemId:"demo_item_19", name:"حسابګر", unit:"دانه", quantity:5},
         {itemId:"demo_item_17", name:"فایل فولډر", unit:"دانه", quantity:20},
@@ -657,7 +657,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M2 (1404/05 - Jul 2025) ─────────────────────────────────
     {
       id:"req_y1_05", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د حقوقو پوهنځی", departmentOrPerson:"اداري مدیریت",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د لومړي کال محصلین",
       reason:"د نوو صنفونو لپاره فلزي چوکیو ته اړتیا ده.",
       items:[{itemId:"demo_item_4", name:"چوکي", unit:"دانه", quantity:12}],
       status:"Delivered", progress:100, currentStage:"ف س ۵ او تسلیمي",
@@ -669,7 +669,7 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_06", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د زراعت پوهنځی", departmentOrPerson:"د لابراتوار شعبه",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د نرم افزار لابراتوار",
       reason:"د لابراتوار صنفونو لپاره وایټ بورډونه.",
       items:[{itemId:"demo_item_18", name:"وایټ بورډ", unit:"دانه", quantity:2}],
       status:"Delivered", progress:100, currentStage:"ف س ۵ او تسلیمي",
@@ -683,7 +683,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M3 (1404/06 - Aug 2025) — semester peak ─────────────────
     {
       id:"req_y1_07", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د اسلامي علومو پوهنځی", departmentOrPerson:"د لومړي کال محصلین",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د دویم کال محصلین",
       reason:"د نوي اکاډمیک کال لپاره قرطاسیه — کاغذ، قلم، مارکر.",
       items:[
         {itemId:"demo_item_1", name:"A4 کاغذ", unit:"ریمه", quantity:10},
@@ -713,7 +713,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M4 (1404/07 - Sep 2025) ─────────────────────────────────
     {
       id:"req_y1_09", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د انجینري پوهنځی", departmentOrPerson:"د کمپیوټر لابراتوار",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د کمپیوټر لابراتوار",
       reason:"د لابراتوار کمپیوټرونو لپاره ماوس او کیبورډ.",
       items:[
         {itemId:"demo_item_11", name:"ماوس", unit:"دانه", quantity:10},
@@ -728,7 +728,7 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_10", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د طب پوهنځی", departmentOrPerson:"اداري دفتر",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"اداري دفتر",
       reason:"د اسنادو لپاره فایل فولډر او سټیپلرونه.",
       items:[
         {itemId:"demo_item_17", name:"فایل فولډر", unit:"دانه", quantity:30},
@@ -745,7 +745,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M5 (1404/08 - Oct 2025) ─────────────────────────────────
     {
       id:"req_y1_11", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د اجتماعي علومو پوهنځی", departmentOrPerson:"د احصایې شعبه",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د سافټویر انجینرۍ شعبه",
       reason:"د احصایوي او مالي کارونو لپاره حسابګرونه.",
       items:[{itemId:"demo_item_19", name:"حسابګر", unit:"دانه", quantity:8}],
       status:"Delivered", progress:100, currentStage:"ف س ۵ او تسلیمي",
@@ -757,7 +757,7 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_12", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د اقتصاد پوهنځی", departmentOrPerson:"اداري مدیریت",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د شعبې اداري دفتر",
       reason:"د اوسني کال لپاره د دفتر چوکیو ته اړتیا ده.",
       items:[{itemId:"demo_item_4", name:"چوکي", unit:"دانه", quantity:14}],
       status:"ReceiptRecorded", progress:75, currentStage:"راپور رسید او ترلاسه کول",
@@ -771,7 +771,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M6 (1404/09 - Nov 2025) ─────────────────────────────────
     {
       id:"req_y1_13", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د ژورنالیزم پوهنځی", departmentOrPerson:"د رسنیو لابراتوار",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د ډیجیټل سیستمونو لابراتوار",
       reason:"د خپرولو لپاره کاغذ او کاپۍ.",
       items:[
         {itemId:"demo_item_1", name:"A4 کاغذ", unit:"ریمه", quantity:6},
@@ -786,7 +786,7 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_14", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د انجینري پوهنځی", departmentOrPerson:"د IT مدیریت",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د IT مدیریت",
       reason:"د فایلونو د لیږد لپاره فلش ډرایو او اضافي ماوس.",
       items:[
         {itemId:"demo_item_13", name:"فلش ډرایو 32GB", unit:"دانه", quantity:8},
@@ -803,7 +803,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M7 (1404/10 - Dec 2025) ─────────────────────────────────
     {
       id:"req_y1_15", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د حقوقو پوهنځی", departmentOrPerson:"اداري دفتر",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د استادانو اداري دفتر",
       reason:"د دفتر اکسټینشن کارډونه او نوي کیبورډونه.",
       items:[
         {itemId:"demo_item_14", name:"اکسټینشن کارډ", unit:"دانه", quantity:6},
@@ -835,7 +835,7 @@ function seedDemoRequests(): InventoryRequest[] {
     },
     {
       id:"req_y1_17", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"مرکزي اداره", departmentOrPerson:"د ودانیو او خدماتو شعبه",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د ودانیو او خدماتو شعبه",
       reason:"د پوهنتون ودانیو د صفایۍ لپاره مواد ته اړتیا ده.",
       items:[{itemId:"demo_item_20", name:"صفایی مواد", unit:"پاکټ", quantity:30}],
       status:"TenderCreated", progress:25, currentStage:"جګړه پاڼه او قیمتونه",
@@ -849,7 +849,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M9 (1404/12 - Feb 2026) ─────────────────────────────────
     {
       id:"req_y1_18", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د زراعت پوهنځی", departmentOrPerson:"د صنف مدیریت",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د صنف مدیریت",
       reason:"د نوو صنفونو لپاره وایټ بورډ مارکرونه.",
       items:[{itemId:"demo_item_7", name:"وایټ بورډ مارکر", unit:"دانه", quantity:20}],
       status:"WinnerSelected", progress:40, currentStage:"مقایسوي فورم",
@@ -863,7 +863,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M10 (1405/01 - Mar 2026) ────────────────────────────────
     {
       id:"req_y1_19", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د طب پوهنځی", departmentOrPerson:"د رادیولوژۍ شعبه",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د IT لابراتوار",
       reason:"د پرنټ لابراتوار لپاره نوي لیزر پرنټر ته اړتیا ده.",
       items:[{itemId:"demo_item_9", name:"پرنټر HP LaserJet M1005", unit:"دانه", quantity:1}],
       status:"ApprovedBySuperAdmin", progress:10, currentStage:"د سوپر اډمین تایید",
@@ -877,7 +877,7 @@ function seedDemoRequests(): InventoryRequest[] {
     // ── M11 (1405/02 - Apr 2026) ────────────────────────────────
     {
       id:"req_y1_20", requesterId:"seed_requester", requesterName:"Afghan Sahib",
-      faculty:"د انجینري پوهنځی", departmentOrPerson:"د تعمیراتو شعبه",
+      faculty:"د کمپیوټر ساینس پوهنځی", departmentOrPerson:"د تعمیراتو شعبه",
       reason:"د نوي سیمسټر لپاره د صنف چوکیو ته اړتیا ده.",
       items:[{itemId:"demo_item_4", name:"چوکي", unit:"دانه", quantity:10}],
       status:"Submitted", progress:0, currentStage:"غوښتنه ثبت شوه",

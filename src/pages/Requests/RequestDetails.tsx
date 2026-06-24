@@ -6,9 +6,11 @@ import Button from "../../components/ui/button/Button";
 import { 
   getRequestById, 
   InventoryRequest, 
+  RequestItem,
   saveFormInstance, 
   getFormInstance, 
   updateRequestStage, 
+  updateRequestItems,
   getPipelineHistory, 
   PipelineRecord 
 } from "../../firebase/requests";
@@ -25,6 +27,16 @@ import { ROLES } from "../../constants/roles";
 import { getWorkflowStage } from "../../constants/workflow";
 import { mapRequestToProposal, mapRequestToSI9, loadOfficialFormData, saveOfficialFormData } from "../../utils/officialFormDataAdapter";
 
+interface EditRow {
+  name: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  specifications: string;
+  itemId?: string;
+}
+
 export default function RequestDetails() {
   const { id } = useParams();
   const [request, setRequest] = useState<InventoryRequest | null>(null);
@@ -32,6 +44,9 @@ export default function RequestDetails() {
   const [activeForm, setActiveForm] = useState<'Proposal' | 'SI-9' | null>(null);
   const [formData, setFormData] = useState<OfficialFormSharedData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingItems, setEditingItems] = useState(false);
+  const [editRows, setEditRows] = useState<EditRow[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
   const { user, profile } = useAuth();
   const { pick } = useLanguage();
   const { pickDate } = useCalendar();
@@ -125,6 +140,63 @@ export default function RequestDetails() {
     .filter(p => p.status === 'ReviewReturned' && p.comment)
     .slice(-1)[0]?.comment ?? "";
 
+  const CAN_EDIT_ITEMS_ROLES = [ROLES.REQUESTER, ROLES.REQUEST_CONFIRMER, ROLES.PROCUREMENT_DIRECTOR, ROLES.WAREHOUSE_DIRECTOR];
+  const canEditItems = profile?.role && CAN_EDIT_ITEMS_ROLES.includes(profile.role as any);
+
+  const startEditItems = () => {
+    if (!request) return;
+    setEditRows(request.items.map(i => ({
+      name: i.name,
+      unit: i.unit || '',
+      quantity: i.quantity,
+      unitPrice: i.unitPrice || 0,
+      totalPrice: i.totalPrice || 0,
+      specifications: (i as any).specifications || '',
+      itemId: i.itemId || '',
+    })));
+    setEditingItems(true);
+  };
+
+  const updateEditRow = (idx: number, field: keyof EditRow, val: string | number) => {
+    setEditRows(prev => {
+      const next = [...prev];
+      const row = { ...next[idx], [field]: val } as EditRow;
+      if (field === 'quantity' || field === 'unitPrice') {
+        row.totalPrice = (field === 'quantity' ? Number(val) : row.quantity) * (field === 'unitPrice' ? Number(val) : row.unitPrice);
+      }
+      next[idx] = row;
+      return next;
+    });
+  };
+
+  const addEditRow = () => setEditRows(prev => [...prev, { name: '', unit: '', quantity: 1, unitPrice: 0, totalPrice: 0, specifications: '' }]);
+  const removeEditRow = (idx: number) => setEditRows(prev => prev.filter((_, i) => i !== idx));
+
+  const saveEditedItems = async () => {
+    if (!id) return;
+    if (editRows.length === 0) { alert(pick('لږترلږه یو جنس اړین دی.', 'حداقل یک جنس اجباری است.')); return; }
+    if (editRows.find(r => !r.name.trim())) { alert(pick('د هر جنس نوم اړین دی.', 'نام هر جنس اجباری است.')); return; }
+    setEditSaving(true);
+    try {
+      const mapped: RequestItem[] = editRows.map(r => ({
+        itemId: r.itemId || '',
+        name: r.name,
+        unit: r.unit,
+        quantity: r.quantity,
+        unitPrice: r.unitPrice,
+        totalPrice: r.totalPrice,
+        specifications: r.specifications,
+      } as any));
+      await updateRequestItems(id, mapped);
+      setEditingItems(false);
+      await fetchData(id);
+    } catch (e) {
+      alert(pick('د اجناسو سمول ناکام شول.', 'ذخیره‌سازی ناموفق بود.'));
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const canShowConfirmerPanel = profile?.role === ROLES.REQUEST_CONFIRMER &&
     (request?.status === 'PendingReview' ||
      request?.status === 'Submitted' ||
@@ -196,7 +268,104 @@ export default function RequestDetails() {
               </div>
 
               <div className="mt-8">
-                <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 mb-3 border-b pb-2 dark:border-gray-700">{pick("غوښتل شوي اجناس:", "اجناس درخواستی:")}</h4>
+                <div className="flex items-center justify-between border-b pb-2 dark:border-gray-700 mb-3">
+                  <h4 className="text-sm font-bold text-gray-800 dark:text-white/90">{pick("غوښتل شوي اجناس:", "اجناس درخواستی:")}</h4>
+                  {canEditItems && !editingItems && (
+                    <button
+                      onClick={startEditItems}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition"
+                    >
+                      ✏️ {pick("اجناس سم کړئ", "ویرایش اجناس")}
+                    </button>
+                  )}
+                  {editingItems && (
+                    <div className="flex gap-2">
+                      <button onClick={addEditRow} className="text-xs px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 font-bold border border-green-200 transition">
+                        + {pick("جنس اضافه کړئ", "افزودن جنس")}
+                      </button>
+                      <button onClick={() => setEditingItems(false)} className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold border border-gray-200 transition">
+                        {pick("لغو", "لغو")}
+                      </button>
+                      <button
+                        onClick={saveEditedItems}
+                        disabled={editSaving}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold transition disabled:opacity-50"
+                      >
+                        {editSaving ? pick("ذخیره...", "در حال ذخیره...") : pick("✓ ذخیره", "✓ ذخیره")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {editingItems ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right text-sm">
+                      <thead>
+                        <tr className="text-gray-500 text-xs bg-gray-50 dark:bg-gray-800/50">
+                          <th className="py-2 px-2">{pick("جنس", "جنس")}</th>
+                          <th className="py-2 px-2">{pick("واحد", "واحد")}</th>
+                          <th className="py-2 px-2">{pick("مقدار", "مقدار")}</th>
+                          <th className="py-2 px-2">{pick("في قیمت", "قیمت واحد")}</th>
+                          <th className="py-2 px-2">{pick("مجموعه", "مجموع")}</th>
+                          <th className="py-2 px-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {editRows.map((row, idx) => (
+                          <tr key={idx} className="border-t dark:border-gray-700">
+                            <td className="py-2 px-1">
+                              <input
+                                type="text"
+                                value={row.name}
+                                onChange={e => updateEditRow(idx, 'name', e.target.value)}
+                                className="w-full border rounded-lg px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                placeholder={pick("د جنس نوم", "نام جنس")}
+                              />
+                            </td>
+                            <td className="py-2 px-1">
+                              <input
+                                type="text"
+                                value={row.unit}
+                                onChange={e => updateEditRow(idx, 'unit', e.target.value)}
+                                className="w-24 border rounded-lg px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                placeholder={pick("واحد", "واحد")}
+                              />
+                            </td>
+                            <td className="py-2 px-1">
+                              <input
+                                type="number"
+                                min={1}
+                                value={row.quantity}
+                                onChange={e => updateEditRow(idx, 'quantity', Number(e.target.value))}
+                                className="w-20 border rounded-lg px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                              />
+                            </td>
+                            <td className="py-2 px-1">
+                              <input
+                                type="number"
+                                min={0}
+                                value={row.unitPrice}
+                                onChange={e => updateEditRow(idx, 'unitPrice', Number(e.target.value))}
+                                className="w-28 border rounded-lg px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                              />
+                            </td>
+                            <td className="py-2 px-2 text-primary font-semibold text-sm">
+                              {row.totalPrice > 0 ? `؋ ${row.totalPrice.toLocaleString()}` : "—"}
+                            </td>
+                            <td className="py-2 px-1">
+                              <button
+                                onClick={() => removeEditRow(idx)}
+                                disabled={editRows.length === 1}
+                                className="text-red-400 hover:text-red-600 disabled:opacity-30 text-lg leading-none"
+                                title={pick("لرې کړئ", "حذف")}
+                              >×</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-right text-sm">
                     <thead>

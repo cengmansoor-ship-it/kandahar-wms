@@ -778,6 +778,33 @@ export const saveFormInstance = async (requestId: string, formType: OfficialForm
   return formRef.id;
 };
 
+export const updateRequestItems = async (requestId: string, items: RequestItem[]): Promise<void> => {
+  if (!isFirebaseConfigured) {
+    const all = getLocalItem<InventoryRequest[]>("requests", []);
+    const idx = all.findIndex(r => r.id === requestId);
+    if (idx !== -1) {
+      all[idx] = { ...all[idx], items, updatedAt: Date.now() };
+      setLocalItem("requests", all);
+    }
+    return;
+  }
+  const payload = items.map(i => ({
+    item_id: i.itemId || null,
+    item_name: i.name,
+    quantity: i.quantity,
+    unit_name: i.unit || '',
+    specifications: i.specifications || '',
+    unit_price: i.unitPrice || 0,
+    total_price: i.totalPrice || 0,
+  }));
+  const resp = await fetch(`/api/requests/${requestId}/items`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: payload }),
+  });
+  if (!resp.ok) throw new Error('د اجناسو سمول ناکام شول.');
+};
+
 export const getFormInstance = async (id: string) => {
   if (!isFirebaseConfigured) {
     return getLocalItem<OfficialFormInstance[]>("official_form_instances", []).find((instance) => instance.id === id) || null;

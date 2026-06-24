@@ -122,6 +122,19 @@ export const getPipelineHistory = async (req: Request, res: Response): Promise<a
   }
 };
 
+export const updateItems = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ناسم ID.' });
+    const { items } = req.body;
+    if (!Array.isArray(items)) return res.status(400).json({ success: false, message: 'اجناس (items) اړین دي.' });
+    await RequestService.updateItems(id, items, 1);
+    res.json({ success: true, message: 'اجناس سم شول.' });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 export const deleteRequest = async (req: Request, res: Response): Promise<any> => {
   try {
     const id = Number(req.params.id);
