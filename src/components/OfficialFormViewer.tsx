@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { useLanguage } from "../context/LanguageContext";
 
 export type OfficialTemplateId =
@@ -105,6 +105,26 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
     } catch (_) {}
   }, []);
 
+  useLayoutEffect(() => {
+    const keysToClean = [
+      "proposal_v7_balanced_hard_save",
+      "proposal_v7_balanced_hard_backup",
+      "proposal_v7_balanced_content",
+      "proposal_v7_balanced_ultimate_content",
+      "proposal_v7_balanced_word_like_content",
+      "proposal_v7_balanced_history_content",
+      "proposal_safe_rebuild_v3_content",
+      "proposal_integrated_final_v2_content",
+      "proposal_hard_save_final_content_v1",
+      "proposal_hard_save_final_content_backup_v1",
+      "proposal_hard_fixed_content_v3",
+      "ku-final-saved-html-formTemplate0",
+      "ku_procurement_single_file_formTemplate0_snapshot_v3",
+      "procurement_form_proposal",
+    ];
+    try { keysToClean.forEach((k) => localStorage.removeItem(k)); } catch (_) {}
+  }, [requestId]);
+
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const msg = event.data as Record<string, unknown>;
@@ -126,14 +146,16 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
 
       if (rid) sendMsg({ type: "SET_REQUEST_SCOPE", requestId: rid });
 
+      sendMsg({ type: "SHOW_FORM", templateId: tid });
+
       if (allFormsData && Object.keys(allFormsData).length > 0) {
-        setTimeout(() => sendMsg({ type: "INJECT_ALL_FORMS", allData: allFormsData }), 400);
+        setTimeout(() => sendMsg({ type: "INJECT_ALL_FORMS", allData: allFormsData }), 500);
       } else if (initialData && Object.keys(initialData).length > 0) {
-        setTimeout(() => sendMsg({ type: "INJECT_DATA", templateId: tid, sharedData: initialData }), 400);
+        setTimeout(() => sendMsg({ type: "INJECT_DATA", templateId: tid, sharedData: initialData }), 500);
       }
 
       if (readOnly) {
-        setTimeout(() => sendMsg({ type: "SET_READONLY" }), 900);
+        setTimeout(() => sendMsg({ type: "SET_READONLY" }), 1000);
       }
     },
     [allFormsData, initialData, readOnly, sendMsg, injectHeightFix, applyZoom, zoom]
