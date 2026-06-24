@@ -802,6 +802,13 @@ export default function TraceabilityPage() {
             {pick("وتل","بستن")}
           </button>
           <div className="flex gap-2">
+            <button
+              onClick={handleExportLedger}
+              disabled={!filteredLedger.length}
+              className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200"
+            >
+              📥 {pick("CSV صادرول","صادر CSV")}
+            </button>
             <button onClick={handlePrint} className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200">
               🖨️ {pick("چاپ","چاپ")}
             </button>
