@@ -701,57 +701,6 @@ export default function CreateRequest() {
             </div>
           </div>
 
-          {/* ── پیشنهاد جدول: Live Preview ── */}
-          {selectedItems.length > 0 && (
-            <div className="border-t pt-6 dark:border-gray-700">
-              <h3 className="text-base font-bold text-gray-800 dark:text-white/90 mb-3 flex items-center gap-2">
-                📋 {pick("د پیشنهاد جدول پیش‌لید", "پیش‌نمایش جدول پیشنهاد")}
-                <span className="text-xs font-normal text-gray-400">{pick("(د ثبتولو وروسته دې جدول ته ورځي)", "(پس از ثبت به جدول می‌رود)")}</span>
-              </h3>
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
-                <table className="w-full text-sm" dir="rtl">
-                  <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                      <th className="px-3 py-2.5 text-center font-bold border-b border-gray-200 dark:border-gray-700 w-10">شماره</th>
-                      <th className="px-3 py-2.5 text-right font-bold border-b border-gray-200 dark:border-gray-700">اسم جنس</th>
-                      <th className="px-3 py-2.5 text-right font-bold border-b border-gray-200 dark:border-gray-700">اسم جنس نوعیت آن</th>
-                      <th className="px-3 py-2.5 text-center font-bold border-b border-gray-200 dark:border-gray-700">مقدار</th>
-                      <th className="px-3 py-2.5 text-center font-bold border-b border-gray-200 dark:border-gray-700">واحد</th>
-                      <th className="px-3 py-2.5 text-center font-bold border-b border-gray-200 dark:border-gray-700">قیمت فی واحد</th>
-                      <th className="px-3 py-2.5 text-center font-bold border-b border-gray-200 dark:border-gray-700">قیمت مجموعی</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedItems.map((item, idx) => (
-                      <tr key={idx} className="border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="px-3 py-2.5 text-center text-gray-500 dark:text-gray-400 font-mono text-xs">{idx + 1}</td>
-                        <td className="px-3 py-2.5 text-right font-medium text-gray-800 dark:text-white/90">{item.name || <span className="text-gray-300 italic text-xs">{pick("نوم نشته","نام ندارد")}</span>}</td>
-                        <td className="px-3 py-2.5 text-right text-gray-600 dark:text-gray-400 text-xs">{item.typeOrSpecification || "—"}</td>
-                        <td className="px-3 py-2.5 text-center font-semibold text-gray-800 dark:text-white/90">{item.quantity}</td>
-                        <td className="px-3 py-2.5 text-center text-gray-600 dark:text-gray-400">{item.unit || "—"}</td>
-                        <td className="px-3 py-2.5 text-center text-gray-700 dark:text-gray-300">
-                          {item.unitPrice > 0 ? `؋ ${item.unitPrice.toLocaleString()}` : "—"}
-                        </td>
-                        <td className="px-3 py-2.5 text-center font-bold text-primary">
-                          {item.totalPrice > 0 ? `؋ ${item.totalPrice.toLocaleString()}` : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                    {(() => {
-                      const grand = selectedItems.reduce((s, i) => s + (i.totalPrice || 0), 0);
-                      return grand > 0 ? (
-                        <tr className="bg-primary/5 dark:bg-primary/10">
-                          <td colSpan={6} className="px-3 py-2.5 text-right font-bold text-gray-700 dark:text-gray-300">{pick("ټولټال مجموعه:", "جمع کل:")}</td>
-                          <td className="px-3 py-2.5 text-center font-black text-primary text-base">؋ {grand.toLocaleString()}</td>
-                        </tr>
-                      ) : null;
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-end gap-4 border-t pt-6 dark:border-gray-700">
             <button type="button" onClick={() => navigate("/requests")}
               className="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 transition font-medium">

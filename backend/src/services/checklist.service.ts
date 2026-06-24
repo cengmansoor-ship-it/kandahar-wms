@@ -239,19 +239,21 @@ export class ChecklistService {
         try { await connection.query(sql); } catch (e: any) { if (!e.message?.includes('Duplicate column')) throw e; }
       }
 
-      const [rows] = await connection.query<RowDataPacket[]>(`SELECT COUNT(*) as cnt FROM checklist_items`);
-      if (rows[0].cnt === 0) {
-        for (const item of SEED_DATA) {
-          try {
-            await connection.query(
-              `INSERT IGNORE INTO checklist_items (original_id, category, item_name, description, unit, estimated_price, item_code, is_active)
-               VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`,
-              [item.original_id, item.category, item.item_name, item.description, item.unit, item.estimated_price, item.item_code]
-            );
-          } catch (_) {}
-        }
-        console.log(`[WMS] Checklist seeded with ${SEED_DATA.length} items.`);
+      for (const item of SEED_DATA) {
+        try {
+          await connection.query(
+            `INSERT IGNORE INTO checklist_items (original_id, category, item_name, description, unit, estimated_price, item_code, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`,
+            [item.original_id, item.category, item.item_name, item.description, item.unit, item.estimated_price, item.item_code]
+          );
+          await connection.query(
+            `UPDATE checklist_items SET deleted_at = NULL, is_active = TRUE
+             WHERE original_id = ? AND (deleted_at IS NOT NULL OR is_active = FALSE)`,
+            [item.original_id]
+          );
+        } catch (_) {}
       }
+      console.log(`[WMS] Checklist seed verified: ${SEED_DATA.length} items ensured active.`);
     } finally {
       connection.release();
     }
