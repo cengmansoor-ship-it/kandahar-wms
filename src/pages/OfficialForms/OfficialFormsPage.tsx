@@ -140,9 +140,19 @@ export default function OfficialFormsPage() {
     fetchRequestData(requestId);
   }, [requestId, fetchRequestData]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   // Re-fetch requests after save to reflect updated progress
   const refreshRequests = useCallback(() => {
     getRequests().then(setRequests).catch(() => {});
+  }, []);
+
+  const handleRefreshRequests = useCallback(() => {
+    setRefreshing(true);
+    getRequests()
+      .then(setRequests)
+      .catch(() => {})
+      .finally(() => setRefreshing(false));
   }, []);
 
   const activeRequest = useMemo(
@@ -434,18 +444,28 @@ export default function OfficialFormsPage() {
           >
             {levels.map((l) => <option key={l}>{l}</option>)}
           </select>
-          <select
-            className="rounded-xl border border-gray-200 bg-white p-3 text-right dark:border-gray-800 dark:bg-gray-900"
-            value={requestId}
-            onChange={(e) => setRequestId(e.target.value)}
-          >
-            <option value="">— غوښتنه وټاکئ —</option>
-            {filteredRequests.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.faculty} · {r.requesterName} · {r.progress}%
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              className="flex-1 rounded-xl border border-gray-200 bg-white p-3 text-right dark:border-gray-800 dark:bg-gray-900"
+              value={requestId}
+              onChange={(e) => setRequestId(e.target.value)}
+            >
+              <option value="">— غوښتنه وټاکئ —</option>
+              {filteredRequests.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.faculty} · {r.requesterName} · {r.progress}%
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleRefreshRequests}
+              disabled={refreshing}
+              title="د غوښتنو لیست تازه کړئ"
+              className="rounded-xl border border-gray-200 bg-white px-3 text-gray-500 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 disabled:opacity-50"
+            >
+              {refreshing ? "⏳" : "🔄"}
+            </button>
+          </div>
         </div>
 
         {/* Active request info bar */}

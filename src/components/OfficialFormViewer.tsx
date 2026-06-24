@@ -188,10 +188,8 @@ const OfficialFormViewer: React.FC<OfficialFormViewerProps> = ({
     if (allFormsData === lastAllFormsData.current) return;
     lastAllFormsData.current = allFormsData;
     if (!allFormsData || Object.keys(allFormsData).length === 0) return;
-    setTimeout(() => {
-      sendMsg({ type: "INJECT_ALL_FORMS", allData: allFormsData });
-      setTimeout(() => sendMsg({ type: "SHOW_FORM", templateId }), 200);
-    }, 200);
+    sendMsg({ type: "SHOW_FORM", templateId });
+    setTimeout(() => sendMsg({ type: "INJECT_ALL_FORMS", allData: allFormsData }), 500);
   }, [allFormsData, iframeReady, templateId, sendMsg]);
 
   // Re-apply zoom whenever it changes (after iframe is ready)
