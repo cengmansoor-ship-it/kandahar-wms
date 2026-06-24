@@ -49,20 +49,6 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 checkDbConnection();
-InventoryService.runBarcodeMigrations().catch(e => console.warn('[WMS] Barcode migrations warning:', e.message));
-TraceabilityService.runMigrations().then(() => console.log('[WMS] Traceability migrations complete.')).catch(e => console.warn('[WMS] Traceability migrations warning:', e.message));
-ManagementService.runMigrations().then(() => console.log('[WMS] Management migrations complete.')).catch(e => console.warn('[WMS] Management migrations warning:', e.message));
-EmailConfigService.runMigrations().then(() => console.log('[WMS] Email config migrations complete.')).catch(e => console.warn('[WMS] Email config migrations warning:', e.message));
-CustomRolesService.runMigrations().then(() => console.log('[WMS] Custom roles migrations complete.')).catch(e => console.warn('[WMS] Custom roles migrations warning:', e.message));
-BudgetService.runMigrations().then(() => console.log('[WMS] Budget migrations complete.')).catch(e => console.warn('[WMS] Budget migrations warning:', e.message));
-BudgetService.runCeilingMigration().then(() => console.log('[WMS] Budget ceiling migration complete.')).catch(e => console.warn('[WMS] Budget ceiling migration warning:', e.message));
-RequestService.runMigrations().then(() => console.log('[WMS] Request pipeline migrations complete.')).catch(e => console.warn('[WMS] Request pipeline migrations warning:', e.message));
-TrashService.runMigrations().then(() => console.log('[WMS] Trash migrations complete.')).catch(e => console.warn('[WMS] Trash migrations warning:', e.message));
-TrashService.purgeExpired(30).catch(e => console.warn('[WMS] Trash purge warning:', e.message));
-SmsService.runMigrations().then(() => console.log('[WMS] SMS config migrations complete.')).catch(e => console.warn('[WMS] SMS config migrations warning:', e.message));
-ChecklistService.runMigrations().then(() => console.log('[WMS] Checklist migrations & seed complete.')).catch(e => console.warn('[WMS] Checklist migrations warning:', e.message));
-DelegationService.runMigration().catch(e => console.warn('[WMS] Delegation migration warning:', e.message));
-SettingsService.runMigrations().then(() => console.log('[WMS] System settings migrations complete.')).catch(e => console.warn('[WMS] Settings migrations warning:', e.message));
 
 // Schedule auto backup every 3 hours
 BackupService.scheduleAutoBackup();
@@ -126,4 +112,21 @@ if (fs.existsSync(distPath)) {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  // Run all migrations sequentially after server is listening (avoids deadlocks)
+  (async () => {
+    try { await InventoryService.runBarcodeMigrations(); } catch(e: any) { console.warn('[WMS] Barcode migrations warning:', e.message); }
+    try { await TraceabilityService.runMigrations(); console.log('[WMS] Traceability migrations complete.'); } catch(e: any) { console.warn('[WMS] Traceability migrations warning:', e.message); }
+    try { await ManagementService.runMigrations(); console.log('[WMS] Management migrations complete.'); } catch(e: any) { console.warn('[WMS] Management migrations warning:', e.message); }
+    try { await EmailConfigService.runMigrations(); console.log('[WMS] Email config migrations complete.'); } catch(e: any) { console.warn('[WMS] Email config migrations warning:', e.message); }
+    try { await CustomRolesService.runMigrations(); console.log('[WMS] Custom roles migrations complete.'); } catch(e: any) { console.warn('[WMS] Custom roles migrations warning:', e.message); }
+    try { await BudgetService.runMigrations(); console.log('[WMS] Budget migrations complete.'); } catch(e: any) { console.warn('[WMS] Budget migrations warning:', e.message); }
+    try { await BudgetService.runCeilingMigration(); console.log('[WMS] Budget ceiling migration complete.'); } catch(e: any) { console.warn('[WMS] Budget ceiling migration warning:', e.message); }
+    try { await RequestService.runMigrations(); console.log('[WMS] Request pipeline migrations complete.'); } catch(e: any) { console.warn('[WMS] Request pipeline migrations warning:', e.message); }
+    try { await TrashService.runMigrations(); console.log('[WMS] Trash migrations complete.'); } catch(e: any) { console.warn('[WMS] Trash migrations warning:', e.message); }
+    try { await TrashService.purgeExpired(30); } catch(e: any) { console.warn('[WMS] Trash purge warning:', e.message); }
+    try { await SmsService.runMigrations(); console.log('[WMS] SMS config migrations complete.'); } catch(e: any) { console.warn('[WMS] SMS config migrations warning:', e.message); }
+    try { await ChecklistService.runMigrations(); console.log('[WMS] Checklist migrations & seed complete.'); } catch(e: any) { console.warn('[WMS] Checklist migrations warning:', e.message); }
+    try { await DelegationService.runMigration(); console.log('[WMS] Delegation migrations complete.'); } catch(e: any) { console.warn('[WMS] Delegation migration warning:', e.message); }
+    try { await SettingsService.runMigrations(); console.log('[WMS] System settings migrations complete.'); } catch(e: any) { console.warn('[WMS] Settings migrations warning:', e.message); }
+  })();
 });

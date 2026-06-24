@@ -12,11 +12,20 @@ const handleErr = (res: Response, e: any) => {
 export const getChecklist = async (req: Request, res: Response) => {
   try {
     const { category, search, active_only } = req.query;
-    const items = await ChecklistService.getAll({
+    let items = await ChecklistService.getAll({
       category: category as string,
       search: search as string,
       active_only: active_only !== 'false',
-    });
+    }) as any[];
+    // Auto-seed if table is empty (handles deadlock at startup)
+    if (items.length === 0 && !category && !search) {
+      await ChecklistService.runMigrations();
+      items = await ChecklistService.getAll({
+        category: category as string,
+        search: search as string,
+        active_only: active_only !== 'false',
+      }) as any[];
+    }
     res.json({ success: true, data: items });
   } catch (e) { handleErr(res, e); }
 };
