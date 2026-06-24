@@ -240,6 +240,8 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
         item_id: null,
         item_name: i.name,
         quantity: i.quantity,
+        unit_name: i.unit || "",
+        specifications: i.specifications || "",
         unit_price: i.unitPrice || 0,
         total_price: i.totalPrice || 0,
       }))
@@ -550,6 +552,7 @@ const normalizeLocalRequest = (r: InventoryRequest): InventoryRequest => {
 
 export const getRequests = async (filters: {
   requesterId?: string;
+  requesterName?: string;
   assignedRole?: string;
   faculty_id?: number;
 } = {}) => {
@@ -558,7 +561,6 @@ export const getRequests = async (filters: {
     let mapped: InventoryRequest[] = (apiReqs as any[]).map(mapRequestFromApi);
 
     // Merge any locally-pending requests that aren't in the backend response yet
-    // (handles the race where backend create succeeded but getRequests doesn't include them yet)
     if (!isFirebaseConfigured) {
       const localReqs = getDemoRequests().map(normalizeLocalRequest);
       const backendIds = new Set(mapped.map(r => r.id));
@@ -567,7 +569,14 @@ export const getRequests = async (filters: {
     }
 
     // Apply role-based filters
-    if (filters.requesterId) {
+    if (filters.requesterName) {
+      // Match by requester name (works in both demo and real mode)
+      mapped = mapped.filter(r =>
+        r.requesterName === filters.requesterName ||
+        r.requesterId === filters.requesterId ||
+        (r as any).createdBy === filters.requesterId
+      );
+    } else if (filters.requesterId) {
       mapped = mapped.filter(r =>
         r.requesterId === filters.requesterId ||
         (r as any).createdBy === filters.requesterId
@@ -577,7 +586,8 @@ export const getRequests = async (filters: {
       mapped = mapped.filter(r =>
         r.assignedRole === filters.assignedRole ||
         r.currentStage === filters.assignedRole ||
-        (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted')
+        (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted') ||
+        (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'PendingReview')
       );
     }
     // Filter by faculty for REQUEST_CONFIRMER — confirmer sees only their faculty's requests
@@ -589,7 +599,13 @@ export const getRequests = async (filters: {
     console.warn("Backend getRequests failed; falling back to Firebase/Local");
     if (!isFirebaseConfigured) {
       let requests = getDemoRequests().map(normalizeLocalRequest);
-      if (filters.requesterId) {
+      if (filters.requesterName) {
+        requests = requests.filter(r =>
+          r.requesterName === filters.requesterName ||
+          r.requesterId === filters.requesterId ||
+          (r as any).createdBy === filters.requesterId
+        );
+      } else if (filters.requesterId) {
         requests = requests.filter(r =>
           r.requesterId === filters.requesterId ||
           (r as any).createdBy === filters.requesterId
@@ -599,7 +615,8 @@ export const getRequests = async (filters: {
         requests = requests.filter(r =>
           r.assignedRole === filters.assignedRole ||
           r.currentStage === filters.assignedRole ||
-          (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted')
+          (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted') ||
+          (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'PendingReview')
         );
       }
       if (filters.faculty_id) {

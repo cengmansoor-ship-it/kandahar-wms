@@ -16,19 +16,21 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { useCalendar } from "../../context/CalendarContext";
 import OfficialFormViewer from "../../components/OfficialFormViewer";
+import type { OfficialFormSharedData } from "../../components/OfficialFormViewer";
 import PipelineTimeline from "../../components/requests/PipelineTimeline";
 import ConfirmerPanel from "../../components/requests/ConfirmerPanel";
 import SuperAdminPanel from "../../components/requests/SuperAdminPanel";
 import AdminDecisionPanel from "../../components/requests/AdminDecisionPanel";
 import { ROLES } from "../../constants/roles";
 import { getWorkflowStage } from "../../constants/workflow";
+import { mapRequestToProposal, mapRequestToSI9, loadOfficialFormData, saveOfficialFormData } from "../../utils/officialFormDataAdapter";
 
 export default function RequestDetails() {
   const { id } = useParams();
   const [request, setRequest] = useState<InventoryRequest | null>(null);
   const [pipeline, setPipeline] = useState<PipelineRecord[]>([]);
   const [activeForm, setActiveForm] = useState<'Proposal' | 'SI-9' | null>(null);
-  const [formData, setFormData] = useState<any>(null);
+  const [formData, setFormData] = useState<OfficialFormSharedData | null>(null);
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const { pick } = useLanguage();
@@ -53,38 +55,36 @@ export default function RequestDetails() {
   };
 
   const openForm = async (type: 'Proposal' | 'SI-9') => {
-    const formId = type === 'Proposal' ? request?.formInstances.proposalId : request?.formInstances.si9Id;
-    if (formId) {
-      const instance = await getFormInstance(formId);
-      setFormData(instance?.formData || {});
-    } else {
-      const prefill: any = {};
-      if (type === 'Proposal') {
-        prefill['faculty_name'] = request?.faculty;
-        prefill['reason'] = request?.reason;
-        request?.items.forEach((item, idx) => {
-          prefill[`item_name_${idx + 1}`] = item.name;
-          prefill[`qty_${idx + 1}`] = item.quantity;
-          prefill[`unit_${idx + 1}`] = item.unit;
-        });
-      } else if (type === 'SI-9') {
-        prefill['department'] = request?.faculty;
-        request?.items.forEach((item, idx) => {
-          prefill[`desc_${idx + 1}`] = item.name;
-          prefill[`requested_qty_${idx + 1}`] = item.quantity;
-          prefill[`unit_${idx + 1}`] = item.unit;
-        });
-      }
-      setFormData(prefill);
+    if (!request || !id) return;
+
+    const formKey = type === 'Proposal' ? 'proposal' : 'si9';
+
+    // First try to load saved form data from localStorage
+    let saved = loadOfficialFormData(id, formKey);
+
+    if (!saved || !saved.itemRows || saved.itemRows.length === 0) {
+      // Build from the request items using the proper adapter
+      saved = type === 'Proposal'
+        ? mapRequestToProposal(request)
+        : mapRequestToSI9(request);
+      // Persist so it's available next time
+      saveOfficialFormData(id, formKey, saved);
     }
+
+    setFormData(saved);
     setActiveForm(type);
   };
 
   const handleSaveForm = async (data: any) => {
     if (!id || !activeForm || !user || !profile) return;
     try {
+      const formKey = activeForm === 'Proposal' ? 'proposal' : 'si9';
+      // Merge saved data back into localStorage
+      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+        const existing = loadOfficialFormData(id, formKey) || {};
+        saveOfficialFormData(id, formKey, { ...existing, ...data, savedAt: new Date().toISOString() });
+      }
       await saveFormInstance(id, activeForm, data, user.uid, profile.name);
-      alert(pick("فورم په بریالیتوب سره ذخیره شو.", "فورم با موفقیت ذخیره شد."));
       fetchData(id);
       setActiveForm(null);
     } catch (error) {
@@ -148,8 +148,9 @@ export default function RequestDetails() {
             <Button variant="outline" size="sm" onClick={() => setActiveForm(null)}>← {pick("بیرته", "بازګشت")}</Button>
           </div>
           <OfficialFormViewer 
-            templateId={activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5'} 
-            initialData={formData}
+            templateId={activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5'}
+            requestId={id}
+            allFormsData={formData ? { [activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5']: formData } : undefined}
             onSave={handleSaveForm}
             readOnly={profile?.role === ROLES.REQUESTER || request.status !== 'Draft'}
           />

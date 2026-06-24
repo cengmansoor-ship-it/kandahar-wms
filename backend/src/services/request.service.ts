@@ -59,6 +59,7 @@ export class RequestService {
 
     await withRetry(() => db.query(`ALTER TABLE request_items ADD COLUMN unit_price DECIMAL(15,2) DEFAULT 0`)).catch(() => {});
     await withRetry(() => db.query(`ALTER TABLE request_items ADD COLUMN total_price DECIMAL(15,2) DEFAULT 0`)).catch(() => {});
+    await withRetry(() => db.query(`ALTER TABLE request_items ADD COLUMN unit_name VARCHAR(100) DEFAULT ''`)).catch(() => {});
 
     await withRetry(() => db.query(`ALTER TABLE requests MODIFY COLUMN status VARCHAR(100) DEFAULT 'Submitted'`)).catch(() => {});
     await withRetry(() => db.query(`ALTER TABLE requests ADD COLUMN current_stage VARCHAR(100) NULL`)).catch(() => {});
@@ -118,7 +119,7 @@ export class RequestService {
     const ids = (rows as any[]).map((r: any) => r.id);
     const placeholders = ids.map(() => '?').join(',');
     const [itemRows] = await db.query<RowDataPacket[]>(`
-      SELECT ri.*, i.item_code, u2.name_ps as unit_name
+      SELECT ri.*, i.item_code, COALESCE(u2.name_ps, ri.unit_name, '') as unit_name
       FROM request_items ri
       LEFT JOIN items i ON ri.item_id = i.id
       LEFT JOIN units u2 ON ri.unit_id = u2.id
@@ -155,7 +156,7 @@ export class RequestService {
     if (requests.length === 0) return null;
 
     const [items] = await db.query<RowDataPacket[]>(`
-      SELECT ri.*, i.item_code, u.name_ps as unit_name
+      SELECT ri.*, i.item_code, COALESCE(u.name_ps, ri.unit_name, '') as unit_name
       FROM request_items ri
       LEFT JOIN items i ON ri.item_id = i.id
       LEFT JOIN units u ON ri.unit_id = u.id
@@ -204,9 +205,9 @@ export class RequestService {
       if (data.items && Array.isArray(data.items)) {
         for (const item of data.items) {
           await connection.query(`
-            INSERT INTO request_items (request_id, item_id, item_name, quantity, unit_id, specifications, unit_price, total_price)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `, [requestId, item.item_id || null, item.item_name, item.quantity, item.unit_id || null, item.specifications || '', item.unit_price || 0, item.total_price || 0]);
+            INSERT INTO request_items (request_id, item_id, item_name, quantity, unit_id, unit_name, specifications, unit_price, total_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [requestId, item.item_id || null, item.item_name, item.quantity, item.unit_id || null, item.unit_name || '', item.specifications || '', item.unit_price || 0, item.total_price || 0]);
         }
       }
 

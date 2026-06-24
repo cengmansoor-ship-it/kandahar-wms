@@ -67,9 +67,9 @@ export default function RequestList() {
     if (!user || !profile) return;
     setLoading(true);
     try {
-      let filters: { requesterId?: string; assignedRole?: string; faculty_id?: number } = {};
+      let filters: { requesterId?: string; requesterName?: string; assignedRole?: string; faculty_id?: number } = {};
       if (profile.role === ROLES.REQUESTER) {
-        filters = { requesterId: user.uid };
+        filters = { requesterId: user.uid, requesterName: profile.name };
       } else if (profile.role === ROLES.REQUEST_CONFIRMER) {
         // Confirmer sees all requests from their faculty only (faculty-dean level)
         filters = {
