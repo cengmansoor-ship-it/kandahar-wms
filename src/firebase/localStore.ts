@@ -6,7 +6,7 @@ import type { InventoryRequest, PipelineRecord, RequestLevelRecord } from "./req
 const PREFIX = "kandahar_wms_";
 
 // ── Data version: bump this string to force a full reseed on all clients ──
-const DATA_VERSION = "fy1404-no-seed-v2";
+const DATA_VERSION = "fy1404-clean-v1";
 
 const BASE_TS = new Date(2026, 4, 14, 8, 0, 0).getTime(); // May 14 2026 = "today"
 const Y1     = new Date(2025, 4, 14, 8, 0, 0).getTime(); // May 14 2025 = one year ago
