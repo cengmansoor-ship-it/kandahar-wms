@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
+import path from "path";
 
 export default defineConfig({
   plugins: [
@@ -13,6 +14,30 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    dedupe: ["react", "react-dom"],
+    alias: {
+      react: path.resolve("./node_modules/react"),
+      "react-dom": path.resolve("./node_modules/react-dom"),
+    },
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-apexcharts",
+      "apexcharts",
+      "react-helmet-async",
+    ],
+    esbuildOptions: {
+      define: {
+        global: "globalThis",
+      },
+    },
+  },
   server: {
     host: "0.0.0.0",
     port: 5000,

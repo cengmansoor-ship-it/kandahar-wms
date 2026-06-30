@@ -221,7 +221,7 @@ export default function VendorOffersPage() {
                         {pick("ټولټال مجموعه:", "مجموع کل:")}
                       </td>
                       <td className="px-3 py-2.5 font-black text-primary text-sm">
-                        ؋ {grandTotal.toLocaleString()}
+                        {"\u060B"} {grandTotal.toLocaleString()}
                       </td>
                     </tr>
                   </tfoot>

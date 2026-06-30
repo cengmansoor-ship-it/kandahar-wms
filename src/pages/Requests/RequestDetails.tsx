@@ -393,7 +393,7 @@ export default function RequestDetails() {
                         <tr className="border-t-2 border-primary/20 dark:border-primary/30">
                           <td colSpan={4} className="py-2 text-xs font-bold text-gray-700 dark:text-gray-300 text-left">{pick("ټولټال:", "مجموع کل:")}</td>
                           <td className="py-2 font-black text-primary">
-                            ؋ {request.items.reduce((s, i) => s + (i.totalPrice || 0), 0).toLocaleString()}
+                            {"\u060B"} {request.items.reduce((s, i) => s + (i.totalPrice || 0), 0).toLocaleString()}
                           </td>
                         </tr>
                       </tfoot>

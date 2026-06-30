@@ -693,7 +693,7 @@ export default function CreateRequest() {
                       {pick("ټولټال مجموعه:", "مجموع کل:")}
                     </span>
                     <span className="text-lg font-black text-primary">
-                      ؋ {grandTotal.toLocaleString()}
+                      {"\u060B"} {grandTotal.toLocaleString()}
                     </span>
                   </div>
                 );

@@ -1,4 +1,3 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import "flatpickr/dist/flatpickr.css";
@@ -27,17 +26,15 @@ const savedFontSize = localStorage.getItem("wms_font_size") || "medium";
 document.documentElement.style.setProperty("--base-font-size", FONT_SIZE_MAP[savedFontSize] ?? "16px");
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ThemeProvider>
-      <LanguageProvider>
-        <CalendarProvider>
-          <AuthProvider>
-            <AppWrapper>
-              <App />
-            </AppWrapper>
-          </AuthProvider>
-        </CalendarProvider>
-      </LanguageProvider>
-    </ThemeProvider>
-  </StrictMode>,
+  <ThemeProvider>
+    <LanguageProvider>
+      <CalendarProvider>
+        <AuthProvider>
+          <AppWrapper>
+            <App />
+          </AppWrapper>
+        </AuthProvider>
+      </CalendarProvider>
+    </LanguageProvider>
+  </ThemeProvider>,
 );
