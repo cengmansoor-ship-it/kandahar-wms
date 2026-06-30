@@ -56,12 +56,22 @@ export function saveOfficialFormData(requestId: string, formType: string, data: 
 }
 
 export function extractSharedRequestData(request: InventoryRequest): Record<string, string> {
+  const faculty = (request.faculty || "").trim();
   return {
     v7RequesterName: request.requesterName || "",
     v7ProposalSubject: request.reason || request.items?.[0]?.name || "",
     v7FacultySelect: request.faculty || "",
     v7FacultyDepartment: request.departmentOrPerson || "",
     v7FacultyLevel: request.currentRequestLevel || request.originalRequestLevel || "",
+    // Dynamic proposal header/signature faculty — only injected when a real
+    // (non-empty, non-whitespace) faculty name exists, so empty values never
+    // blank out the static defaults.
+    ...(faculty
+      ? {
+          v7HeaderFaculty: faculty,
+          v7SignatureFaculty: `${faculty} رئیس`,
+        }
+      : {}),
   };
 }
 
