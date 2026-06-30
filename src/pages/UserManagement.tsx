@@ -68,7 +68,7 @@ const ROLE_LABELS: Record<string, string> = {
   [ROLES.SUPER_ADMIN]: "سوپر اډمین",
   [ROLES.ADMIN]: "اجناسو آمر",
   [ROLES.PROCUREMENT_DIRECTOR]: "د تدارکاتو مدیر",
-  [ROLES.WAREHOUSE_DIRECTOR]: "اجناسو آمر",
+  [ROLES.WAREHOUSE_DIRECTOR]: "اجناسو مدیر",
   [ROLES.WAREHOUSE_ENTRY_PERSON]: "ګدام مدیر",
   [ROLES.REQUEST_CONFIRMER]: "د غوښتنې تاییدوونکی",
   [ROLES.REQUESTER]: "غوښتونکی",

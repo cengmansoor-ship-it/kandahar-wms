@@ -14,7 +14,7 @@ INSERT IGNORE INTO roles (id, name, label_ps, label_fa) VALUES
 (1,  'Super Admin',              'سوپر ادمین',              'سوپر ادمین'),
 (2,  'Admin',                    'اجناسو آمر',               'آمر اجناس'),
 (3,  'Procurement Director',     'د تدارکاتو مدیر',          'مدیر تدارکات'),
-(4,  'Warehouse Director',       'اجناسو آمر',               'آمر اجناس'),
+(4,  'Warehouse Director',       'اجناسو مدیر',              'مدیر اجناس'),
 (5,  'Requester',                'غوښتنه کوونکی',            'درخواست‌دهنده'),
 (6,  'Request Confirmer',        'د غوښتنې تاییدوونکی',     'تأییدکننده درخواست'),
 (7,  'Warehouse Entry Person',   'د ګدام ثبت کوونکی',       'ثبت‌کننده انبار');
