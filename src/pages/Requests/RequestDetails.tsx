@@ -400,6 +400,7 @@ export default function RequestDetails() {
                     )}
                   </table>
                 </div>
+                )}
               </div>
             </div>
 
