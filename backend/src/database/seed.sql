@@ -12,9 +12,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ════════════════════════════════════════════════════════════════
 INSERT IGNORE INTO roles (id, name, label_ps, label_fa) VALUES
 (1,  'Super Admin',              'سوپر ادمین',              'سوپر ادمین'),
-(2,  'Admin',                    'ادمین',                    'ادمین'),
+(2,  'Admin',                    'اجناسو مدیر',              'مدیر اجناس'),
 (3,  'Procurement Director',     'د تدارکاتو مدیر',          'مدیر تدارکات'),
-(4,  'Warehouse Director',       'د ګدام مدیر',              'مدیر انبار'),
+(4,  'Warehouse Director',       'اجناسو مدیر',              'مدیر اجناس'),
 (5,  'Requester',                'غوښتنه کوونکی',            'درخواست‌دهنده'),
 (6,  'Request Confirmer',        'د غوښتنې تاییدوونکی',     'تأییدکننده درخواست'),
 (7,  'Warehouse Entry Person',   'د ګدام ثبت کوونکی',       'ثبت‌کننده انبار');

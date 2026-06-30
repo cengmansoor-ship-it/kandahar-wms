@@ -66,10 +66,10 @@ const BUILTIN_ROLES = [
 
 const ROLE_LABELS: Record<string, string> = {
   [ROLES.SUPER_ADMIN]: "سوپر اډمین",
-  [ROLES.ADMIN]: "اډمین",
-  [ROLES.PROCUREMENT_DIRECTOR]: "د تدارکاتو آمر",
-  [ROLES.WAREHOUSE_DIRECTOR]: "د ګدام آمر",
-  [ROLES.WAREHOUSE_ENTRY_PERSON]: "د ګدام ثبت کوونکی",
+  [ROLES.ADMIN]: "اجناسو مدیر",
+  [ROLES.PROCUREMENT_DIRECTOR]: "د تدارکاتو مدیر",
+  [ROLES.WAREHOUSE_DIRECTOR]: "اجناسو مدیر",
+  [ROLES.WAREHOUSE_ENTRY_PERSON]: "ګدام مدیر",
   [ROLES.REQUEST_CONFIRMER]: "د غوښتنې تاییدوونکی",
   [ROLES.REQUESTER]: "غوښتونکی",
 };
