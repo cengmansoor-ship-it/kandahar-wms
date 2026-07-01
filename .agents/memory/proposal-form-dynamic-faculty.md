@@ -30,6 +30,15 @@ default header. Only include the keys when a real faculty name exists.
 the same pattern — add a stable `id` in the static template + both V7_BASELINE copies,
 then emit the value (guarded against empty) from `extractSharedRequestData`.
 
+## Table row / dataStart coupling
+The item-injection engine (`applyItemsToRoot`) reads each form's `configs[templateId]`
+with a `dataStart` = the 0-based table row index where data rows begin. If you
+ADD or REMOVE a non-data row above the data rows (e.g. a header/number reference
+row), you MUST update that form's `dataStart` in lockstep, or injected data lands
+in the wrong row (skips the first, or overwrites a header). Example: SI-9
+(formTemplate5) originally had header(0)+number-row(1)+items(2) with `dataStart:2`;
+after removing the ۵–۱۰ `fs9-number-row` it became header(0)+items(1) → `dataStart:1`.
+
 ## Gotchas
 - The `read` tool mis-reports `public/forms/official-forms.html` as ~36,137 lines; it
   is actually ~71,082 lines (`wc -l`). Use `sed -n` / `grep -n` for accurate line
