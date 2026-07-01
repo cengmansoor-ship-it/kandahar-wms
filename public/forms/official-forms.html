@@ -56579,6 +56579,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   originalDocumentSnapshot = documentArea.innerHTML;
   loadContent();
+  (function(){try{var _p=documentArea.querySelectorAll('.fs9-page');if(_p.length>2){var _o=false,_t=false;Array.prototype.slice.call(_p).forEach(function(p){var i1=p.classList.contains('fs9-page-one'),i2=p.classList.contains('fs9-page-two');if(i1){if(_o){if(p.parentNode){p.parentNode.removeChild(p);}}else{_o=true;}}else if(i2){if(_t){if(p.parentNode){p.parentNode.removeChild(p);}}else{_t=true;}}});}}catch(e){}})();
   loadLogo();
   ensureAllCellWrappers();
   makeEditable();
@@ -68014,11 +68015,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function sanitizeAreaHtml(templateId, html) {
-    if (!html || templateId !== 'formTemplate5' || html.indexOf('fs9-number-row') === -1) return html;
+    if (!html || templateId !== 'formTemplate5') return html;
+    var hasNumberRow = html.indexOf('fs9-number-row') !== -1;
+    var hasDupPages = html.split('fs9-page-one').length > 2 || html.split('fs9-page-two').length > 2;
+    if (!hasNumberRow && !hasDupPages) return html;
     var holder = document.createElement('div');
     holder.innerHTML = html;
     Array.prototype.slice.call(holder.querySelectorAll('.fs9-number-row')).forEach(function (row) {
       if (row.parentNode) row.parentNode.removeChild(row);
+    });
+    var seenOne = false, seenTwo = false;
+    Array.prototype.slice.call(holder.querySelectorAll('.fs9-page')).forEach(function (p) {
+      var i1 = p.classList.contains('fs9-page-one'), i2 = p.classList.contains('fs9-page-two');
+      if (i1) { if (seenOne) { if (p.parentNode) p.parentNode.removeChild(p); } else seenOne = true; }
+      else if (i2) { if (seenTwo) { if (p.parentNode) p.parentNode.removeChild(p); } else seenTwo = true; }
     });
     return holder.innerHTML;
   }
