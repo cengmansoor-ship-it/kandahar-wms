@@ -39,6 +39,22 @@ in the wrong row (skips the first, or overwrites a header). Example: SI-9
 (formTemplate5) originally had header(0)+number-row(1)+items(2) with `dataStart:2`;
 after removing the ۵–۱۰ `fs9-number-row` it became header(0)+items(1) → `dataStart:1`.
 
+## Stale saved snapshot survives template edits (per-form storageKey)
+Editing a form's static `<template>` markup does NOT fix what an existing user sees:
+the iframe srcdoc = fresh `template.innerHTML`, but each form's embedded editor runtime
+then RESTORES the last saved HTML from its OWN localStorage key (e.g. SI-9 uses
+`si9_form_save_font_dropdown_fixed_vN`, defined twice in the template). That stale
+snapshot can still contain markup you deleted from the template. To force the fresh
+template to win, BUMP that per-form storageKey version (v1→v2) in ALL its copies.
+Separately, the parent adapter's `loadAreaHtml` (finalKey `ku-final-saved-html-<tid>` /
+runtimeKey `..._snapshot_v3`) also serves persisted HTML for forward-sync/persistence;
+sanitize there too if a removed element must never resurface (see `sanitizeAreaHtml`,
+which strips `.fs9-number-row` for formTemplate5).
+**Why:** removing the SI-9 number-row from the template left ۶/۱۰ visible because the
+old snapshot was restored and re-injected onto the leftover row (unmapped cells kept
+their values). **How to apply:** whenever you delete/restructure rows in a form
+template, bump its editor storageKey AND consider a loadAreaHtml sanitizer.
+
 ## Gotchas
 - The `read` tool mis-reports `public/forms/official-forms.html` as ~36,137 lines; it
   is actually ~71,082 lines (`wc -l`). Use `sed -n` / `grep -n` for accurate line

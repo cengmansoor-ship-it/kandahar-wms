@@ -55325,7 +55325,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const undoBtn = document.getElementById("undoBtn");
   const redoBtn = document.getElementById("redoBtn");
 
-  const storageKey = "si9_form_save_font_dropdown_fixed_v1";
+  const storageKey = "si9_form_save_font_dropdown_fixed_v2";
   const ribbonStateKey = "si9_form_ribbon_state_v1";
 
   let activeEditable = null;
@@ -57845,7 +57845,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const undoBtn = document.getElementById("undoBtn");
   const redoBtn = document.getElementById("redoBtn");
 
-  const storageKey = "si9_form_save_font_dropdown_fixed_v1";
+  const storageKey = "si9_form_save_font_dropdown_fixed_v2";
   const ribbonStateKey = "si9_form_ribbon_state_v1";
 
   let activeEditable = null;
@@ -70532,8 +70532,18 @@ document.addEventListener("DOMContentLoaded", function () {
     return a ? a.innerHTML : (template.innerHTML || '');
   }
 
+  function sanitizeAreaHtml(templateId, html) {
+    if (!html || templateId !== 'formTemplate5' || html.indexOf('fs9-number-row') === -1) return html;
+    var holder = document.createElement('div');
+    holder.innerHTML = html;
+    Array.prototype.slice.call(holder.querySelectorAll('.fs9-number-row')).forEach(function (row) {
+      if (row.parentNode) row.parentNode.removeChild(row);
+    });
+    return holder.innerHTML;
+  }
+
   function loadAreaHtml(templateId) {
-    return parseSavedAreaHtml(storage.getItem(finalKey(templateId))) || parseSavedAreaHtml(storage.getItem(runtimeKey(templateId))) || areaHtmlFromTemplate(templateId);
+    return sanitizeAreaHtml(templateId, parseSavedAreaHtml(storage.getItem(finalKey(templateId))) || parseSavedAreaHtml(storage.getItem(runtimeKey(templateId))) || areaHtmlFromTemplate(templateId));
   }
 
   function saveAreaHtml(templateId, html) {
