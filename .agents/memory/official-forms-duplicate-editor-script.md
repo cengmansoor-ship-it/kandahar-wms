@@ -6,18 +6,24 @@ description: Some form templates in public/forms/official-forms.html shipped wit
 ## Symptom
 A form template renders its pages twice (e.g. SI-9 / formTemplate5 showed 4 pages when it is legitimately 2: fs9-page-one = header+items table, fs9-page-two = signatures + copy-distribution notes + ملاحظات). The source `#documentArea` contains only the correct number of `<section class="page">`, so the extra pages are RUNTIME-generated.
 
-## Root cause (the REAL one — verified after a first wrong fix)
-The visible form = inner `#formViewer` iframe `srcdoc` (= `template.innerHTML`) + `injectDataIntoViewer` (fills fields ONLY, never replaces `documentArea.innerHTML`). The inner editor's `loadContent()` restores ONLY its own `storageKey`; the injected runtime does NOT restore `finalKey`/`runtimeKey` into the display. So duplicated pages come from a **stale multi-page snapshot cached in localStorage under the editor's storageKey**, NOT from the markup. Editing/bumping the source does nothing until the user's browser actually loads the new file — and the React iframe `src="/forms/official-forms.html"` gets **browser-cached**, so a plain refresh keeps serving the old file + old key. The two byte-identical editor `<script>` blocks were a real copy-paste defect (worth removing) but were NOT the cause of the duplication on their own.
+## Root cause (the REAL one — found only after TWO wrong fixes)
+There are THREE independent scripts that can push HTML into the visible inner `#formViewer` doc, and they run in this order:
+1. `loadForm()` sets `viewer.srcdoc = injectRuntime(template.innerHTML)` — clean 2-page template.
+2. The inner editor's `loadContent()` restores ONLY its own editor `storageKey` (e.g. `si9_..._v3`).
+3. **THE ACTUAL CULPRIT:** a separate parent script — the "ku-final-functional-controls" `patchFrame` — has `function loadSaved()` that runs on viewer `'load'` with delays `[40,180,500,1100]` (so AFTER 1 and 2) and does `a.innerHTML = storage.getItem('ku-final-saved-html-' + formId)`. That key IS the parent **finalKey** (`ku-final-saved-html-formTemplate5`). So a stale 4-page finalKey snapshot gets injected LAST, overwriting any earlier dedup.
+
+Do NOT assume the display restore comes from the editor's `loadContent` or the injected runtime — grep ALL scripts for `getItem(storageKey)` / `.innerHTML = saved` on the inner doc's area. Also: the React iframe `src="/forms/official-forms.html"` is **browser-cached**, so source edits never reach the user until the URL changes (cache-bust). The two byte-identical editor `<script>` blocks were a real copy-paste defect (worth removing) but were NOT the cause of the duplication.
 
 The label "Tender Form - Same editor system as Proposal" is shared across many templates, so counting that comment is NOT a reliable per-form check — count the form's UNIQUE storageKey instead (e.g. `si9_form_save_font_dropdown_fixed_*`).
 
-## Fix pattern (what actually worked)
-1. **Defensive dedup in the editor** — right after `loadContent();` in the form's editor script, add an IIFE that removes duplicate `.fs9-page` sections (keep first `fs9-page-one` + first `fs9-page-two`). This self-heals the VISIBLE doc no matter what stale snapshot was restored.
-2. **Defensive dedup in parent `sanitizeAreaHtml`** (used by `loadAreaHtml`, feeds sync/holder, re-saved via `saveAreaHtml`) — dedupe pages there too so stored/synced snapshots self-heal and don't propagate to other forms.
-3. **Cache-bust the iframe** — `src="/forms/official-forms.html?v=..."` in `OfficialFormViewer.tsx`. Without this, the browser keeps serving the old cached file and NONE of the html edits reach the user. Bump the `?v=` token on future official-forms.html changes.
-4. (cleanup) delete any redundant duplicate editor `<script>` block, preserving `</body></html></template>`; bump the editor `storageKey` to drop the old snapshot key.
+## Fix pattern (what ACTUALLY worked)
+1. **Dedup in patchFrame `loadSaved()`** (THE decisive one) — right after `a.innerHTML = saved;`, if `a.querySelectorAll('.fs9-page').length > 2`, remove duplicate pages keeping first `fs9-page-one` + first `fs9-page-two`, then `storage.setItem(storageKey, a.innerHTML)` to re-persist the cleaned finalKey so it self-heals permanently. This is the LAST writer to the visible doc, so dedup MUST be here.
+2. **Dedup in the editor** (defense in depth) — same logic right after `loadContent();`.
+3. **Dedup in parent `sanitizeAreaHtml`** (feeds sync/holder path) — so synced snapshots don't re-propagate to other forms.
+4. **Cache-bust the iframe** — `src="/forms/official-forms.html?v=..."` in `OfficialFormViewer.tsx`; bump the token on EVERY official-forms.html change or the browser serves the stale cached file and none of the edits reach the user.
+5. (cleanup) delete any redundant duplicate editor `<script>` block; bump the editor `storageKey`.
 
-**Why:** html edits are invisible until the browser refetches the file; the display is driven by srcdoc + the editor's own storageKey snapshot, so the only bulletproof fixes are (a) runtime dedup on the live doc and (b) forcing a fresh file fetch. Bumping storageKey / editing markup alone is NOT enough when the file itself is cached.
+**Why:** whichever script writes the inner doc LAST wins. The delayed `patchFrame.loadSaved()` was overwriting fixes placed only in the editor. So dedup must live at the final restore point AND the file must be re-fetched (cache-bust). Editing markup / bumping the editor storageKey alone is never enough.
 
 **How to apply:** if the user reports an official form "appearing twice"/"repeated pages" even after edits, assume a STALE localStorage snapshot + a CACHED file — add runtime dedup + cache-bust rather than only editing markup.
 

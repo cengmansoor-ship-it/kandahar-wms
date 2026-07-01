@@ -66866,7 +66866,21 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         if (!storage.getItem(baselineKey)) storage.setItem(baselineKey, a.innerHTML);
         var saved = storage.getItem(storageKey);
-        if (saved && saved.trim()) a.innerHTML = saved;
+        if (saved && saved.trim()) {
+          a.innerHTML = saved;
+          try {
+            var _pp = a.querySelectorAll('.fs9-page');
+            if (_pp.length > 2) {
+              var _o1 = false, _t1 = false;
+              Array.prototype.slice.call(_pp).forEach(function (p) {
+                var c1 = p.classList.contains('fs9-page-one'), c2 = p.classList.contains('fs9-page-two');
+                if (c1) { if (_o1) { if (p.parentNode) p.parentNode.removeChild(p); } else _o1 = true; }
+                else if (c2) { if (_t1) { if (p.parentNode) p.parentNode.removeChild(p); } else _t1 = true; }
+              });
+              try { storage.setItem(storageKey, a.innerHTML); } catch (e2) {}
+            }
+          } catch (e) {}
+        }
       } catch (error) {}
     }
 
