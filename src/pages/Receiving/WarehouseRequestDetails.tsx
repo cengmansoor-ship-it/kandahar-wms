@@ -50,7 +50,7 @@ export default function WarehouseRequestDetails() {
   const handleSaveRR = async (data: any) => {
     setActionLoading(true);
     const ok = await saveRR(data);
-    if (ok) {
+    if (ok && id) {
       fetchData(id);
       setActiveView('details');
     }
