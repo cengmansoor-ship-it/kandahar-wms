@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import { getRequests, InventoryRequest } from "../../firebase/requests";
@@ -9,21 +9,42 @@ import CurrentDateBadge from "../../components/common/CurrentDateBadge";
 
 const STATUS_LABELS: Record<string, string> = {
   StockAvailable: "جنس شتون لري — سپارل",
+  PurchaseOrderCreated: "د راپور رسید په تمه",
   ReceiptReportCreated: "راپور رسید جوړ شو",
   ReceivedToInventory: "ګدام ته داخل شو",
   FS5Created: "ف، س، ۵ جوړه شوه",
+  DeliveryReferredToWarehouse: "ګدام ته راجع شو",
   Delivered: "تسلیم شو",
 };
 
 const STATUS_COLORS: Record<string, string> = {
   StockAvailable: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  PurchaseOrderCreated: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
   ReceiptReportCreated: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
   ReceivedToInventory: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
   FS5Created: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  DeliveryReferredToWarehouse: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   Delivered: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
 };
 
+const TAB_CONFIG: Record<string, { statuses: string[]; title: string; heading: string }> = {
+  "receiving": {
+    statuses: ["StockAvailable", "ReceiptReportCreated", "ReceivedToInventory", "FS5Created", "DeliveryReferredToWarehouse", "Delivered"],
+    title: "رسید او ف، س، ۵ / دریافت و ف-۵-س",
+    heading: "د رسید او ف، س، ۵ غوښتنې / مدیریت دریافت و فورم ۵-س",
+  },
+  "receipt-reports": {
+    statuses: ["PurchaseOrderCreated"],
+    title: "راپور رسید / گزارش دریافت",
+    heading: "د راپور رسید غوښتنې / مدیریت گزارش دریافت",
+  },
+};
+
 export default function WarehouseRequestList() {
+  const location = useLocation();
+  const tabKey = location.pathname === "/receiving/receipt-reports" ? "receipt-reports" : "receiving";
+  const config = TAB_CONFIG[tabKey];
+
   const { pickDate } = useCalendar();
   const [requests, setRequests] = useState<InventoryRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,14 +52,14 @@ export default function WarehouseRequestList() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [tabKey]);
 
   const fetchRequests = async () => {
     setLoading(true);
     try {
       const all = await getRequests();
       const filtered = all.filter((r: InventoryRequest) =>
-        ["StockAvailable", "ReceiptReportCreated", "ReceivedToInventory", "FS5Created", "Delivered"].includes(r.status)
+        config.statuses.includes(r.status)
       );
       setRequests(safeSortByCreatedAt(filtered));
     } catch (e) {
@@ -63,12 +84,12 @@ export default function WarehouseRequestList() {
 
   return (
     <>
-      <PageMeta title="ګودام ته سپارل شوې غوښتنې | Kandahar University WMS" description="د ترلاسه کولو او سپارلو مدیریت" />
-      <Breadcrumb pageTitle="ګودام ته سپارل شوې غوښتنې / مدیریت تسلیم" />
+      <PageMeta title={`${config.title} | Kandahar University WMS`} description="د ترلاسه کولو او سپارلو مدیریت" />
+      <Breadcrumb pageTitle={config.heading} />
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">د سپارلو او ویش مدیریت</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{config.heading}</h3>
           <div className="flex items-center gap-3">
             <CurrentDateBadge />
             <span className="text-xs text-gray-400">{requests.length} ټولې</span>

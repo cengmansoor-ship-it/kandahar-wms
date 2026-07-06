@@ -40,8 +40,32 @@ const normalizeStatus = (raw: string): string => {
 };
 
 // Infer assignedRole from status when column is missing
+const normalizeAssignedRole = (raw: string | null | undefined): string => {
+  if (!raw) return "";
+  const value = String(raw).trim();
+  const normalized: Record<string, string> = {
+    REQUEST_CONFIRMER: "REQUEST_CONFIRMER",
+    "Request Confirmer": "REQUEST_CONFIRMER",
+    request_confirmer: "REQUEST_CONFIRMER",
+    REQUESTER: "REQUESTER",
+    Requester: "REQUESTER",
+    requester: "REQUESTER",
+    SUPER_ADMIN: "SUPER_ADMIN",
+    "Super Admin": "SUPER_ADMIN",
+    ADMIN: "ADMIN",
+    Admin: "ADMIN",
+    PROCUREMENT_DIRECTOR: "PROCUREMENT_DIRECTOR",
+    "Procurement Director": "PROCUREMENT_DIRECTOR",
+    WAREHOUSE_DIRECTOR: "WAREHOUSE_DIRECTOR",
+    "Warehouse Director": "WAREHOUSE_DIRECTOR",
+    NONE: "NONE",
+    none: "NONE",
+  };
+  return normalized[value] ?? value;
+};
+
 const inferAssignedRole = (status: string, assignedRoleCol: string | null): string => {
-  if (assignedRoleCol && assignedRoleCol !== '') return assignedRoleCol;
+  if (assignedRoleCol && assignedRoleCol !== '') return normalizeAssignedRole(assignedRoleCol);
   const roleMap: Record<string, string> = {
     Draft: "REQUESTER",
     PendingReview: "REQUEST_CONFIRMER",
@@ -51,6 +75,8 @@ const inferAssignedRole = (status: string, assignedRoleCol: string | null): stri
     RejectedByRequestConfirmer: "REQUESTER",
     ApprovedBySuperAdmin: "ADMIN",
     RejectedBySuperAdmin: "REQUESTER",
+    ReturnedToSuperAdmin: "SUPER_ADMIN",
+    RejectedByAdmin: "REQUESTER",
     StockAvailable: "WAREHOUSE_DIRECTOR",
     StockNotAvailable: "PROCUREMENT_DIRECTOR",
     ProcurementPending: "PROCUREMENT_DIRECTOR",
@@ -61,6 +87,17 @@ const inferAssignedRole = (status: string, assignedRoleCol: string | null): stri
     PurchaseOrderCreated: "WAREHOUSE_DIRECTOR",
     ReceiptReportCreated: "WAREHOUSE_DIRECTOR",
     ReceivedToInventory: "WAREHOUSE_DIRECTOR",
+    DeliveryFormsRequested: "REQUESTER",
+    DeliveryReviewReturned: "REQUESTER",
+    DeliveryFormsSubmitted: "REQUEST_CONFIRMER",
+    DeliveryConfirmedByRequestConfirmer: "SUPER_ADMIN",
+    DeliveryRejectedByRequestConfirmer: "REQUESTER",
+    DeliveryReturnedToConfirmer: "REQUEST_CONFIRMER",
+    DeliveryApprovedBySuperAdmin: "ADMIN",
+    DeliveryRejectedBySuperAdmin: "REQUESTER",
+    DeliveryReturnedToSuperAdmin: "SUPER_ADMIN",
+    DeliveryRejectedByAdmin: "REQUESTER",
+    DeliveryReferredToWarehouse: "WAREHOUSE_DIRECTOR",
     FS5Created: "WAREHOUSE_DIRECTOR",
     Delivered: "NONE",
     Completed: "NONE",
@@ -72,7 +109,7 @@ const mapRequestFromApi = (apiReq: any): InventoryRequest => {
   const rawStatus  = apiReq.status || "Submitted";
   const status     = normalizeStatus(rawStatus);
   const assignedRole = inferAssignedRole(status, apiReq.assigned_role ?? null);
-  const currentStage = apiReq.current_stage || assignedRole;
+  const currentStage = apiReq.current_stage ? normalizeAssignedRole(apiReq.current_stage) || apiReq.current_stage : assignedRole;
 
   return {
     id: apiReq.id ? apiReq.id.toString() : "",
@@ -92,7 +129,7 @@ const mapRequestFromApi = (apiReq: any): InventoryRequest => {
       totalPrice: Number(i.total_price) || 0,
     })),
     status,
-    progress: Number(apiReq.progress_percent) || 0,
+    progress: Number(apiReq.progress_percent) || (status === 'Delivered' || status === 'Completed' ? 100 : 0),
     currentStage,
     assignedRole,
     originalRequestLevel: apiReq.request_level || "عادي",
@@ -173,6 +210,7 @@ export interface InventoryRequest {
   formInstances: {
     proposalId?: string;
     si9Id?: string;
+    fs5Id?: string;
   };
   rejectionComment?: string;
 }
@@ -205,6 +243,7 @@ const buildLocalRequest = (
   requesterId: userId,
   requesterName: userName,
   faculty: requestData.faculty || "",
+  faculty_id: requestData.faculty_id ? Number(requestData.faculty_id) : undefined,
   departmentOrPerson: requestData.departmentOrPerson || "",
   reason: requestData.reason || "",
   items: requestData.items || [],
@@ -237,7 +276,8 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
       department_id: (requestData as any).department_id || null,
       person_id: (requestData as any).person_id || null,
       items: (requestData.items || []).map(i => ({
-        item_id: null,
+        item_id: i.itemId ? parseInt(i.itemId, 10) || null : null,
+        checklist_id: i.itemId ? parseInt(i.itemId, 10) || null : null,
         item_name: i.name,
         quantity: i.quantity,
         unit_name: i.unit || "",
@@ -313,6 +353,7 @@ export const createRequest = async (requestData: Partial<InventoryRequest>, user
     requesterId: userId,
     requesterName: userName,
     faculty: requestData.faculty || "",
+    faculty_id: requestData.faculty_id ? Number(requestData.faculty_id) : undefined,
     departmentOrPerson: requestData.departmentOrPerson || "",
     reason: requestData.reason || "",
     items: requestData.items || [],
@@ -542,10 +583,10 @@ export const checkStockAvailability = async (items: RequestItem[]) => {
 const normalizeLocalRequest = (r: InventoryRequest): InventoryRequest => {
   const status = normalizeStatus(r.status || "Submitted");
   const assignedRole = r.assignedRole && r.assignedRole !== ""
-    ? r.assignedRole
+    ? normalizeAssignedRole(r.assignedRole)
     : inferAssignedRole(status, null);
   const currentStage = r.currentStage && r.currentStage !== "" && r.currentStage !== r.status
-    ? r.currentStage
+    ? normalizeAssignedRole(r.currentStage) || r.currentStage
     : assignedRole;
   return { ...r, status, assignedRole, currentStage };
 };
@@ -583,16 +624,18 @@ export const getRequests = async (filters: {
       );
     }
     if (filters.assignedRole) {
-      mapped = mapped.filter(r =>
-        r.assignedRole === filters.assignedRole ||
-        r.currentStage === filters.assignedRole ||
-        (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted') ||
-        (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'PendingReview')
-      );
+      mapped = mapped.filter(r => {
+        const requestRole = normalizeAssignedRole(r.assignedRole);
+        const requestStage = normalizeAssignedRole(r.currentStage);
+        if (['ReceivedToInventory','DeliveryFormsRequested','DeliveryFormsSubmitted','DeliveryConfirmedByRequestConfirmer','DeliveryApprovedBySuperAdmin','DeliveryReferredToWarehouse','FS5Created','Delivered','Completed'].includes(r.status)) return true;
+        return requestRole === filters.assignedRole ||
+          requestStage === filters.assignedRole ||
+          (filters.assignedRole === 'REQUEST_CONFIRMER' && ['Submitted', 'PendingReview'].includes(r.status));
+      });
     }
     // Filter by faculty for REQUEST_CONFIRMER — confirmer sees only their faculty's requests
     if (filters.faculty_id) {
-      mapped = mapped.filter(r => r.faculty_id === filters.faculty_id);
+      mapped = mapped.filter(r => r.faculty_id !== undefined && r.faculty_id !== null && String(r.faculty_id) === String(filters.faculty_id));
     }
     return mapped;
   } catch (apiError) {
@@ -612,15 +655,17 @@ export const getRequests = async (filters: {
         );
       }
       if (filters.assignedRole) {
-        requests = requests.filter(r =>
-          r.assignedRole === filters.assignedRole ||
-          r.currentStage === filters.assignedRole ||
-          (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'Submitted') ||
-          (filters.assignedRole === 'REQUEST_CONFIRMER' && r.status === 'PendingReview')
-        );
+        requests = requests.filter(r => {
+          const requestRole = normalizeAssignedRole(r.assignedRole);
+          const requestStage = normalizeAssignedRole(r.currentStage);
+          if (['ReceivedToInventory','DeliveryFormsRequested','DeliveryFormsSubmitted','DeliveryConfirmedByRequestConfirmer','DeliveryApprovedBySuperAdmin','DeliveryReferredToWarehouse','FS5Created','Delivered','Completed'].includes(r.status)) return true;
+          return requestRole === filters.assignedRole ||
+            requestStage === filters.assignedRole ||
+            (filters.assignedRole === 'REQUEST_CONFIRMER' && ['Submitted', 'PendingReview'].includes(r.status));
+        });
       }
       if (filters.faculty_id) {
-        requests = requests.filter(r => r.faculty_id === filters.faculty_id);
+        requests = requests.filter(r => r.faculty_id !== undefined && r.faculty_id !== null && String(r.faculty_id) === String(filters.faculty_id));
       }
       return requests;
     }
@@ -754,6 +799,7 @@ export const saveFormInstance = async (requestId: string, formType: OfficialForm
       const formInstances = { ...request.formInstances };
       if (formType === "Proposal") formInstances.proposalId = formId;
       if (formType === "SI-9") formInstances.si9Id = formId;
+      if (formType === "FS-5") formInstances.fs5Id = formId;
       return { ...request, formInstances, updatedAt: dates.timestamp, updatedAtHijriShamsi: dates.shamsi, updatedAtHijriQamari: dates.qamari };
     });
     saveDemoRequests(requests);
@@ -770,7 +816,7 @@ export const saveFormInstance = async (requestId: string, formType: OfficialForm
     updatedAt: dates.timestamp,
   };
   await setDoc(formRef, instance);
-  const fieldName = formType === 'Proposal' ? 'formInstances.proposalId' : formType === 'SI-9' ? 'formInstances.si9Id' : null;
+  const fieldName = formType === 'Proposal' ? 'formInstances.proposalId' : formType === 'SI-9' ? 'formInstances.si9Id' : formType === 'FS-5' ? 'formInstances.fs5Id' : null;
   if (fieldName) {
     await updateDoc(doc(db, REQUESTS_COL, requestId), { [fieldName]: formRef.id, updatedAt: dates.timestamp });
   }

@@ -25,7 +25,7 @@ import SuperAdminPanel from "../../components/requests/SuperAdminPanel";
 import AdminDecisionPanel from "../../components/requests/AdminDecisionPanel";
 import { ROLES } from "../../constants/roles";
 import { getWorkflowStage } from "../../constants/workflow";
-import { mapRequestToProposal, mapRequestToSI9, loadOfficialFormData, saveOfficialFormData } from "../../utils/officialFormDataAdapter";
+import { mapRequestToProposal, mapRequestToSI9, mapRequestToFS5, loadOfficialFormData, saveOfficialFormData } from "../../utils/officialFormDataAdapter";
 
 interface EditRow {
   name: string;
@@ -41,12 +41,13 @@ export default function RequestDetails() {
   const { id } = useParams();
   const [request, setRequest] = useState<InventoryRequest | null>(null);
   const [pipeline, setPipeline] = useState<PipelineRecord[]>([]);
-  const [activeForm, setActiveForm] = useState<'Proposal' | 'SI-9' | null>(null);
+  const [activeForm, setActiveForm] = useState<'Proposal' | 'SI-9' | 'FS-5' | null>(null);
   const [formData, setFormData] = useState<OfficialFormSharedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingItems, setEditingItems] = useState(false);
   const [editRows, setEditRows] = useState<EditRow[]>([]);
   const [editSaving, setEditSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const { user, profile } = useAuth();
   const { pick } = useLanguage();
   const { pickDate } = useCalendar();
@@ -69,32 +70,32 @@ export default function RequestDetails() {
     }
   };
 
-  const openForm = async (type: 'Proposal' | 'SI-9') => {
+  const openForm = async (type: 'Proposal' | 'SI-9' | 'FS-5') => {
     if (!request || !id) return;
 
-    const formKey = type === 'Proposal' ? 'proposal' : 'si9';
+    const formKey = type === 'Proposal' ? 'proposal' : type === 'FS-5' ? 'pc5' : 'si9';
+    const templateId = type === 'Proposal' ? 'formTemplate0' : type === 'FS-5' ? 'formTemplate6' : 'formTemplate5';
 
     // First try to load saved form data from localStorage
     let saved = loadOfficialFormData(id, formKey);
 
     if (!saved || !saved.itemRows || saved.itemRows.length === 0) {
-      // Build from the request items using the proper adapter
       saved = type === 'Proposal'
         ? mapRequestToProposal(request)
-        : mapRequestToSI9(request);
-      // Persist so it's available next time
+        : type === 'FS-5'
+          ? mapRequestToFS5(request)
+          : mapRequestToSI9(request);
       saveOfficialFormData(id, formKey, saved);
     }
 
-    setFormData(saved);
+    setFormData({ ...saved, sourceTemplateId: templateId } as any);
     setActiveForm(type);
   };
 
   const handleSaveForm = async (data: any) => {
     if (!id || !activeForm || !user || !profile) return;
     try {
-      const formKey = activeForm === 'Proposal' ? 'proposal' : 'si9';
-      // Merge saved data back into localStorage
+      const formKey = activeForm === 'Proposal' ? 'proposal' : activeForm === 'FS-5' ? 'pc5' : 'si9';
       if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         const existing = loadOfficialFormData(id, formKey) || {};
         saveOfficialFormData(id, formKey, { ...existing, ...data, savedAt: new Date().toISOString() });
@@ -197,14 +198,20 @@ export default function RequestDetails() {
     }
   };
 
+  const isDeliveryStatus = request?.status?.startsWith('Delivery') ?? false;
   const canShowConfirmerPanel = profile?.role === ROLES.REQUEST_CONFIRMER &&
     (request?.status === 'PendingReview' ||
      request?.status === 'Submitted' ||
      request?.status === 'ReturnedToConfirmer' ||
+     request?.status === 'DeliveryFormsSubmitted' ||
+     request?.status === 'DeliveryReturnedToConfirmer' ||
      request?.assignedRole === 'REQUEST_CONFIRMER' ||
      request?.currentStage === 'REQUEST_CONFIRMER');
-  const canShowSuperAdminPanel = profile?.role === ROLES.SUPER_ADMIN && request?.status === 'ConfirmedByRequestConfirmer';
-  const canShowAdminPanel = (profile?.role === ROLES.ADMIN || profile?.role === ROLES.SUPER_ADMIN) && request?.status === 'ApprovedBySuperAdmin';
+  const canShowSuperAdminPanel = profile?.role === ROLES.SUPER_ADMIN && 
+    (request?.status === 'ConfirmedByRequestConfirmer' ||
+     request?.status === 'DeliveryConfirmedByRequestConfirmer' ||
+     request?.status === 'DeliveryReturnedToSuperAdmin');
+  const canShowAdminPanel = profile?.role === ROLES.ADMIN && request?.status !== 'Draft' && request?.status !== 'Submitted';
 
   if (loading) return <div className="p-10 text-center text-gray-500">بارول...</div>;
   if (!request) return <div className="p-10 text-center text-red-500">غوښتنه ونه موندل شوه.</div>;
@@ -220,11 +227,11 @@ export default function RequestDetails() {
             <Button variant="outline" size="sm" onClick={() => setActiveForm(null)}>← {pick("بیرته", "بازګشت")}</Button>
           </div>
           <OfficialFormViewer 
-            templateId={activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5'}
+            templateId={activeForm === 'Proposal' ? 'formTemplate0' : activeForm === 'FS-5' ? 'formTemplate6' : 'formTemplate5'}
             requestId={id}
-            allFormsData={formData ? { [activeForm === 'Proposal' ? 'formTemplate0' : 'formTemplate5']: formData } : undefined}
+            allFormsData={formData ? { [activeForm === 'Proposal' ? 'formTemplate0' : activeForm === 'FS-5' ? 'formTemplate6' : 'formTemplate5']: formData } : undefined}
             onSave={handleSaveForm}
-            readOnly={profile?.role === ROLES.REQUESTER || request.status !== 'Draft'}
+            readOnly={profile?.role === ROLES.REQUESTER && request.status !== 'DeliveryFormsRequested' && request.status !== 'Draft'}
           />
         </div>
       ) : (
@@ -242,6 +249,7 @@ export default function RequestDetails() {
                     request.status.includes('Rejected') ? 'bg-red-100 text-red-600' :
                     request.status === 'ReviewReturned' ? 'bg-orange-100 text-orange-600' :
                     request.status === 'ReturnedToConfirmer' ? 'bg-amber-100 text-amber-700' :
+                    request.status.startsWith('Delivery') ? 'bg-purple-100 text-purple-700' :
                     'bg-green-100 text-green-600'
                   }`}>
                     {request.status}
@@ -493,7 +501,8 @@ export default function RequestDetails() {
 
             {canShowSuperAdminPanel && (
               <SuperAdminPanel 
-                requestId={id!} 
+                requestId={id!}
+                currentStatus={request.status}
                 user={{ uid: user!.uid, name: profile!.name, role: profile!.role }}
                 onUpdate={() => fetchData(id!)}
               />
@@ -503,9 +512,35 @@ export default function RequestDetails() {
               <AdminDecisionPanel 
                 requestId={id!} 
                 items={request.items}
+                currentStatus={request.status}
                 user={{ uid: user!.uid, name: profile!.name, role: profile!.role }}
                 onUpdate={() => fetchData(id!)}
               />
+            )}
+
+            {(profile?.role === ROLES.ADMIN || profile?.role === ROLES.SUPER_ADMIN) && request?.status !== 'Delivered' && request?.status !== 'Completed' && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/10">
+                <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4">{pick("بېړنی حالت: غوښتنه په زور بشپړول", "وضعیت اضطراری: تکمیل اجباری درخواست")}</h3>
+                <p className="text-sm text-red-600 dark:text-red-400 mb-4">{pick("که غوښتنه په بشپړه توګه پروسس شوې خو د سیسټم د تېروتنې له امله د بشپړو شویو غوښتنو په لیست کې نه ښکاري، تاسو کولی شئ دلته یې په زور بشپړه کړئ.", "اگر درخواست به طور کامل پردازش شده است اما به دلیل خطای سیستم در لیست درخواست‌های تکمیل‌شده نمایش داده نمی‌شود، می‌توانید آن را به صورت اجباری تکمیل کنید.")}</p>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm(pick("آیا تاسو ډاډه یاست؟ دا به غوښتنه د بشپړو شویو غوښتنو لیست ته واستوي.", "آیا مطمئن هستید؟ این درخواست را به لیست درخواست‌های تکمیل‌شده می‌فرستد."))) return;
+                    setActionLoading(true);
+                    try {
+                      await updateRequestStage(id!, 'Delivered', 100, 'بشپړ شو', { uid: user!.uid, name: profile!.name, role: profile!.role }, 'په زور بشپړ شو / به اجبار تکمیل شد');
+                      fetchData(id!);
+                    } catch (e: any) {
+                      alert(e.message);
+                    } finally {
+                      setActionLoading(false);
+                    }
+                  }}
+                  disabled={actionLoading}
+                  className="w-full px-4 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition disabled:opacity-50"
+                >
+                  {actionLoading ? pick("اجرا کیږي...", "در حال اجرا...") : pick("🔴 په زور بشپړول", "🔴 تکمیل اجباری")}
+                </button>
+              </div>
             )}
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -527,15 +562,39 @@ export default function RequestDetails() {
                     <span className="font-bold text-sm">{pick("پیشنهاد", "پروپوزل")}</span>
                     {request.formInstances.proposalId ? '✅' : '⏳'}
                   </button>
-                  <button 
-                    onClick={() => openForm('SI-9')}
-                    className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-                      request.formInstances.si9Id ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
-                    }`}
-                  >
-                    <span className="font-bold text-sm">ف، س، ۹</span>
-                    {request.formInstances.si9Id ? '✅' : '⏳'}
-                  </button>
+                  {request.status === 'Draft' && (
+                    <button 
+                      onClick={() => openForm('SI-9')}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                        request.formInstances.si9Id ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 hover:border-primary text-gray-700'
+                      }`}
+                    >
+                      <span className="font-bold text-sm">ف، س، ۹</span>
+                      {request.formInstances.si9Id ? '✅' : '⏳'}
+                    </button>
+                  )}
+                  {request.status === 'DeliveryFormsRequested' && (
+                    <>
+                      <button 
+                        onClick={() => openForm('Proposal')}
+                        className={`w-full flex items-center justify-between p-4 rounded-xl border ${
+                          loadOfficialFormData(id!, 'proposal')?.itemRows?.length ? 'border-green-200 bg-green-50 text-green-700' : 'border-purple-200 bg-purple-50 text-purple-700'
+                        }`}
+                      >
+                        <span className="font-bold text-sm">{pick("پیشنهاد (د تسلیمۍ لپاره)", "پروپوزل (برای تحویلی)")}</span>
+                        {loadOfficialFormData(id!, 'proposal')?.itemRows?.length ? '✅' : '📝'}
+                      </button>
+                      <button 
+                        onClick={() => openForm('FS-5')}
+                        className={`w-full flex items-center justify-between p-4 rounded-xl border ${
+                          request.formInstances.fs5Id || loadOfficialFormData(id!, 'pc5')?.itemRows?.length ? 'border-green-200 bg-green-50 text-green-700' : 'border-purple-200 bg-purple-50 text-purple-700'
+                        }`}
+                      >
+                        <span className="font-bold text-sm">ف، س، ۵ (د تسلیمۍ لپاره)</span>
+                        {request.formInstances.fs5Id || loadOfficialFormData(id!, 'pc5')?.itemRows?.length ? '✅' : '📝'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -584,6 +643,47 @@ export default function RequestDetails() {
                 </p>
                 <Button onClick={submitRequest} variant="primary" fullWidth>
                   {pick("د بیاکتنې لپاره واستول", "ارسال برای پیش‌بررسی")}
+                </Button>
+              </div>
+            )}
+
+            {/* DeliveryFormsRequested - Requester submits delivery forms */}
+            {request.status === 'DeliveryFormsRequested' && profile?.role === ROLES.REQUESTER && (
+              <div className="rounded-2xl border border-dashed border-purple-500 bg-purple-50 p-6 text-center space-y-4">
+                <div className="text-purple-700">
+                  <span className="text-2xl">📋</span>
+                  <p className="text-sm font-bold mt-2">
+                    {pick("د تسلیمۍ لپاره پیشنهاد او ف.س-۵ فورمونه ډک او واستوئ!", "فرم‌های پیشنهاد و ف.س-۵ را برای تحویلی پر کنید و ارسال کنید!")}
+                  </p>
+                  <p className="text-xs text-purple-500 mt-1">
+                    {pick("مهرباني وکړئ د پورته فورمونو په کلیک کولو سره یې ډک کړئ او بیا د لاندې تڼۍ په کلیک سره یې واستوئ.", "لطفاً با کلیک روی فرم‌های بالا آنها را پر کنید و با دکمه زیر ارسال کنید.")}
+                  </p>
+                </div>
+                <Button 
+                  onClick={async () => {
+                    if (!id || !user || !profile) return;
+                    const hasProposal = loadOfficialFormData(id, 'proposal')?.itemRows?.length;
+                    const hasFs5 = request.formInstances.fs5Id || loadOfficialFormData(id, 'pc5')?.itemRows?.length;
+                    if (!hasProposal || !hasFs5) {
+                      alert(pick("مهرباني وکړئ لومړی پیشنهاد او ف.س-۵ فورمونه ډک کړئ.", "لطفاً ابتدا فرم‌های پیشنهاد و ف.س-۵ را پر کنید."));
+                      return;
+                    }
+                    try {
+                      await updateRequestStage(
+                        id, 'DeliveryFormsSubmitted', 84,
+                        pick('د تسلیمۍ پیشنهاد او ف.س-۵ تایید ته واستول شول', 'پیشنهاد و ف.س-۵ تحویلی برای تایید ارسال شد'),
+                        { uid: user.uid, name: profile.name, role: profile.role },
+                        pick("د تسلیمۍ فورمونه د غوښتونکي لخوا واستول شول.", "فرم‌های تحویلی توسط درخواست‌کننده ارسال شد.")
+                      );
+                      fetchData(id);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  variant="primary"
+                  fullWidth
+                >
+                  {pick("د تسلیمۍ فورمونه واستوئ", "ارسال فرم‌های تحویلی")}
                 </Button>
               </div>
             )}

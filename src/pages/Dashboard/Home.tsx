@@ -138,7 +138,11 @@ export default function Home() {
         if (!alive) return;
 
         const allReqs: InventoryRequest[] = results[0] || [];
-        setRequests(allReqs);
+        let filteredReqs = allReqs;
+        if (profile && profile.role === ROLES.REQUEST_CONFIRMER && profile.faculty_id) {
+          filteredReqs = allReqs.filter(r => r.faculty_id !== undefined && r.faculty_id !== null && String(r.faculty_id) === String(profile.faculty_id));
+        }
+        setRequests(filteredReqs);
 
         if (profile) {
           const mine = allReqs.filter(r =>
@@ -190,15 +194,16 @@ export default function Home() {
   const totalValue = items.reduce((s, i) => s + (Number(i.currentQuantity) || 0) * (Number(i.unitPrice) || 0), 0);
   const lowStock = items.filter(i => i.currentQuantity > 0 && i.currentQuantity <= i.minimumStockLevel).length;
   const outOfStock = items.filter(i => i.currentQuantity === 0).length;
-  const pendingReqs = requests.filter(r => r.progress < 100).length;
-  const completedReqs = requests.filter(r => r.progress >= 100).length;
-  const myPending = myRequests.filter(r => r.progress < 100).length;
-  const myCompleted = myRequests.filter(r => r.progress >= 100).length;
+  const completedStatuses = ['ReceivedToInventory','DeliveryFormsRequested','DeliveryFormsSubmitted','DeliveryConfirmedByRequestConfirmer','DeliveryApprovedBySuperAdmin','DeliveryReferredToWarehouse','FS5Created','Delivered','Completed'];
+  const pendingReqs = requests.filter(r => r.progress < 100 && !completedStatuses.includes(r.status)).length;
+  const completedReqs = requests.filter(r => r.progress >= 100 || completedStatuses.includes(r.status)).length;
+  const myPending = myRequests.filter(r => r.progress < 100 && !completedStatuses.includes(r.status)).length;
+  const myCompleted = myRequests.filter(r => r.progress >= 100 || completedStatuses.includes(r.status)).length;
   const procurementReqs = requests.filter(r =>
     ["StockNotAvailable", "ProcurementPending", "TenderCreated", "OffersReceived",
      "ComparisonCreated", "WinnerSelected", "PurchaseOrderCreated"].includes(r.status)
   ).length;
-  const pendingConfirmations = requests.filter(r => r.status === "Submitted").length;
+  const pendingConfirmations = requests.filter(r => ["Submitted", "PendingReview"].includes(r.status)).length;
   const confirmedByMe = requests.filter(r => r.status === "ConfirmedByRequestConfirmer").length;
 
   const { labels: statusLabels, series: statusSeries } = buildRequestStatusData(

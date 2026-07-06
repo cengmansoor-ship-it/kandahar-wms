@@ -19,6 +19,11 @@ const STATUS_PS: Record<string, string> = {
   ComparisonCreated: "مقایسه شوه", WinnerSelected: "ګټونکی ټاکل شو",
   PurchaseOrderCreated: "آمر خریداري", ReceiptReportCreated: "راپور رسید",
   ReceivedToInventory: "ګدام ته داخل شو", FS5Created: "ف، س، ۵ جوړه شوه", Delivered: "تسلیم شو",
+  DeliveryFormsRequested: "د تسلیمۍ فورمونه غوښتل شوي",
+  DeliveryFormsSubmitted: "د تسلیمۍ فورمونه واستول شول",
+  DeliveryConfirmedByRequestConfirmer: "د تسلیمۍ فورمونه تایید شول",
+  DeliveryApprovedBySuperAdmin: "د تسلیمۍ فورمونه منظور شول",
+  DeliveryReferredToWarehouse: "تسلیمۍ ته ګدام ته راجع شو",
 };
 
 const STATUS_DR: Record<string, string> = {
@@ -30,6 +35,11 @@ const STATUS_DR: Record<string, string> = {
   ComparisonCreated: "مقایسه انجام شد", WinnerSelected: "برنده انتخاب شد",
   PurchaseOrderCreated: "امر خرید", ReceiptReportCreated: "گزارش رسید",
   ReceivedToInventory: "وارد انبار شد", FS5Created: "ف، س، ۵ ایجاد شد", Delivered: "تحویل داده شد",
+  DeliveryFormsRequested: "فرم‌های تحویلی درخواست شد",
+  DeliveryFormsSubmitted: "فرم‌های تحویلی ارسال شد",
+  DeliveryConfirmedByRequestConfirmer: "فرم‌های تحویلی تایید شد",
+  DeliveryApprovedBySuperAdmin: "فرم‌های تحویلی تصویب شد",
+  DeliveryReferredToWarehouse: "برای تحویلی به انبار ارجاع شد",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -46,6 +56,11 @@ const STATUS_COLORS: Record<string, string> = {
   WinnerSelected: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   PurchaseOrderCreated: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
   Delivered: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  DeliveryFormsRequested: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  DeliveryFormsSubmitted: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  DeliveryConfirmedByRequestConfirmer: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  DeliveryApprovedBySuperAdmin: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  DeliveryReferredToWarehouse: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
 };
 
 export default function RequestList() {
@@ -77,7 +92,7 @@ export default function RequestList() {
           ...(profile.faculty_id ? { faculty_id: profile.faculty_id } : {}),
         };
       } else if (profile.role === ROLES.ADMIN) {
-        filters = { assignedRole: "ADMIN" };
+        // ADMIN sees all requests for monitoring (no assignedRole filter)
       } else if (profile.role === ROLES.PROCUREMENT_DIRECTOR) {
         filters = { assignedRole: "PROCUREMENT_DIRECTOR" };
       } else if (profile.role === ROLES.WAREHOUSE_DIRECTOR) {
@@ -97,10 +112,12 @@ export default function RequestList() {
 
   const filteredRequests = useMemo(() => {
     let list = requests;
-    if (filterParam === "pending") list = list.filter(r => r.progress < 100);
-    else if (filterParam === "completed") list = list.filter(r => r.progress >= 100);
+    const COMPLETED_ST = ['ReceivedToInventory','DeliveryFormsRequested','DeliveryFormsSubmitted','DeliveryConfirmedByRequestConfirmer','DeliveryApprovedBySuperAdmin','DeliveryReferredToWarehouse','FS5Created','Delivered','Completed'];
+    if (filterParam === "pending") list = list.filter(r => r.progress < 100 && !COMPLETED_ST.includes(r.status));
+    else if (filterParam === "completed") list = list.filter(r => r.progress >= 100 || COMPLETED_ST.includes(r.status));
     else if (filterParam === "procurement") list = list.filter(r =>
-      ["StockNotAvailable", "ProcurementPending", "TenderCreated", "OffersReceived", "ComparisonCreated", "WinnerSelected", "PurchaseOrderCreated"].includes(r.status)
+      ["StockNotAvailable", "ProcurementPending", "TenderCreated", "OffersReceived", "ComparisonCreated", "WinnerSelected", "PurchaseOrderCreated",
+       "ReceiptReportCreated", "ReceivedToInventory"].includes(r.status)
     );
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
